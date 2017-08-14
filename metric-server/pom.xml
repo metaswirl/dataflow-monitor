@@ -48,7 +48,7 @@
 					<target>1.8</target>
 					<archive>
 						<manifest>
-							<mainClass>flink.netty.metric.server.DiscardServer</mainClass>
+							<mainClass>flink.netty.metric.server.MetricServer</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>

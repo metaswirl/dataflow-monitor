@@ -84,7 +84,7 @@ public class MetricServer {
 			port = 9888;
 		}
 		try {
-			fw = new FileWriter("nettyTest.txt", true);
+			fw = new FileWriter("metrics.csv", true);
 		} catch (Exception e) {
 			System.out.println("Error while setting up FileWriter.");
 		}
