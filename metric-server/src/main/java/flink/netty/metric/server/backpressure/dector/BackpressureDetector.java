@@ -12,7 +12,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import flink.netty.metric.server.MetricServer;
 
-public class BackpressureDector implements Runnable {
+public class BackpressureDetector implements Runnable {
 
 	private FlinkExecutionPlan flinkExecutionPlan;
 	private boolean backpressureDetected = false;

@@ -4,7 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
-import flink.netty.metric.server.backpressure.dector.BackpressureDector;
+import flink.netty.metric.server.backpressure.dector.BackpressureDetector;
 import io.netty.bootstrap.ServerBootstrap;
 
 import io.netty.channel.ChannelFuture;
@@ -91,7 +91,7 @@ public class MetricServer {
 			System.out.println("Error while setting up FileWriter.");
 		}
 		System.out.println("BackpressuerDector started.");
-		new Thread(new BackpressureDector()).start();
+		new Thread(new BackpressureDetector()).start();
 		System.out.println("FlinkNettyMetricServer started.");
 		new MetricServer(port).run();
 	}
