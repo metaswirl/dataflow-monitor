@@ -2,7 +2,9 @@ package flink.netty.metric.server;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 
+import flink.netty.metric.server.backpressure.dector.BackpressureDector;
 import io.netty.bootstrap.ServerBootstrap;
 
 import io.netty.channel.ChannelFuture;
@@ -20,11 +22,11 @@ public class MetricServer {
 
 	private int port;
 	public static FileWriter fw;
-
+	public static  BackpressureData backpressureData = new BackpressureData();
 	public MetricServer(int port) {
 		this.port = port;
 	}
-
+	
 	public static synchronized void writeLineToFile(String line) {
 		if (line.contains("#")) {
 			try {
@@ -88,6 +90,8 @@ public class MetricServer {
 		} catch (Exception e) {
 			System.out.println("Error while setting up FileWriter.");
 		}
+		System.out.println("BackpressuerDector started.");
+		new Thread(new BackpressureDector()).start();
 		System.out.println("FlinkNettyMetricServer started.");
 		new MetricServer(port).run();
 	}

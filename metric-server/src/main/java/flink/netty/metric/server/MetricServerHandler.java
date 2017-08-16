@@ -19,6 +19,7 @@ public class MetricServerHandler extends ChannelInboundHandlerAdapter { // (1)
         try {
         	String received = in.toString(io.netty.util.CharsetUtil.US_ASCII);
         	MetricServer.writeLineToFile(received);
+        	MetricServer.backpressureData.updateBufferPoolUsageByLine(received);
         } finally {
             ReferenceCountUtil.release(msg); // (2)
         }
