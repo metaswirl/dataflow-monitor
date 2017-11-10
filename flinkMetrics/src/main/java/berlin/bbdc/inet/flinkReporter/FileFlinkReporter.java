@@ -180,11 +180,12 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 	@Override
 	public void notifyOfAddedMetric(Metric metric, String s, MetricGroup metricGroup) {
 		// Metric full name - namespace
-		// loadgen112.taskmanager.c7c9e536681dfa49a685712420394b75.SocketWordCountParallelism.Flat
-		// Map.0.buffers.inPoolUsage-gauge:0.0
-
+		// loadgen112.taskmanager.c7c9e536681dfa49a685712420394b75.SocketWordCountParallelism.Flat Map.0.buffers.inPoolUsage-gauge:0.0
+		//loadgen112.taskmanager.7641f1a77466868ea34277d05a3670e0.SocketWordCountParallelism.Keyed Reduce.0.numRecordsOutPerSecond
+		LOG.info("INET - notify: " +  metricGroup.getMetricIdentifier(s, this));
+		
 		String fullName = metricGroup.getMetricIdentifier(s, this);
-		if (fullName.contains("buffers")) {
+		if (fullName.split("\\.").length > 7) {
 			String editedFullName = fullName.split("\\.")[0]+"." + fullName.split("\\.")[4] + "." + fullName.split("\\.")[5]
 					+"."+ fullName.split("\\.")[7];
 			fullName = editedFullName;
@@ -281,8 +282,8 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 
 		for (Map.Entry<String, Gauge<?>> entry : gauges.entrySet()) {
 			try {
-//				fwGauge.write(entry.getKey() + "|" + entry.getValue().getValue().toString() + "\n");
-				if(entry.getKey().contains("Pool")) {
+//				fwGauge.write(entry.getKey() + "|" + entry.getValue().getValue().toString() + "\n"); 
+				if(entry.getKey().contains("Pool") || entry.getKey().contains("latency") || entry.getKey().contains("Length")) {
 					
 					try {
 						outputStream.writeBytes("#|" +entry.getKey() + "|" + entry.getValue().getValue().toString() + "\n");
@@ -315,7 +316,14 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 			try {
 //				fwCounters.write(entry.getKey() + ":" + System.currentTimeMillis() + ":"
 //						+ String.valueOf(entry.getValue().getRate()) + "\n");
-
+				if(entry.getKey().contains("numBytesOutPerSecond") || entry.getKey().contains("numRecordsOutPerSecond")) {
+					try {
+						outputStream.writeBytes("#|" +entry.getKey() + "|" + entry.getValue().getRate() + "\n");
+					} catch (Exception e) {
+						LOG.error("Failed to connection to MetricServer: " + e.getMessage());
+						restartConnection();
+					}
+				}
 			} catch (Exception e) {
 				LOG.error("Failed to access meter: " + entry.getKey());
 			}

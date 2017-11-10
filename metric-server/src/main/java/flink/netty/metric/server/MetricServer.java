@@ -22,18 +22,29 @@ public class MetricServer {
 
 	private int port;
 	public static FileWriter fw;
+	public static FileWriter fwMeter;
 	public static  BackpressureData backpressureData = new BackpressureData();
+	public static boolean mitigate = true;
 	public MetricServer(int port) {
 		this.port = port;
 	}
 	
 	public static synchronized void writeLineToFile(String line) {
 		if (line.contains("#")) {
-			try {
-				fw.write(sanitizeLine(line.replaceAll("#", System.currentTimeMillis() + "")));
-			} catch (IOException e) {
-				System.out.println("Error writing line to File: " + e.getMessage());
+			if(line.contains("numBytesOutPerSecond") || line.contains("numRecordsOutPerSecond")) {
+				try {
+					fwMeter.write(sanitizeLine(line.replaceAll("#", System.currentTimeMillis() + "")));
+				} catch (IOException e) {
+					System.out.println("Error writing line to File: " + e.getMessage());
+				}
+			} else {
+				try {
+					fw.write(sanitizeLine(line.replaceAll("#", System.currentTimeMillis() + "")));
+				} catch (IOException e) {
+					System.out.println("Error writing line to File: " + e.getMessage());
+				}
 			}
+
 		}
 	}
 
@@ -79,14 +90,22 @@ public class MetricServer {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int port;
+		int port = 9888;
 		if (args.length > 0) {
-			port = Integer.parseInt(args[0]);
+			//port = Integer.parseInt(args[0]);
+			if(args[0].equals("mitigate")) {
+				mitigate = true;
+				System.out.println("Mitigation active");
+			} else {
+				mitigate = false;
+			}
 		} else {
+			mitigate = false;
 			port = 9888;
 		}
 		try {
 			fw = new FileWriter("metrics.csv", true);
+			fwMeter = new FileWriter("meter-metrics.csv", true);
 		} catch (Exception e) {
 			System.out.println("Error while setting up FileWriter.");
 		}
