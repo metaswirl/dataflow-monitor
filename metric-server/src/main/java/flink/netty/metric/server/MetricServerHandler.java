@@ -10,10 +10,10 @@ import io.netty.util.ReferenceCountUtil;
 /**
  * Handles a server-side channel.
  */
-public class MetricServerHandler extends ChannelInboundHandlerAdapter { // (1)
+public class MetricServerHandler extends ChannelInboundHandlerAdapter { 
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) { // (2)
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
     	ByteBuf in = (ByteBuf) msg;
     	
         try {
@@ -21,12 +21,12 @@ public class MetricServerHandler extends ChannelInboundHandlerAdapter { // (1)
         	MetricServer.writeLineToFile(received);
         	MetricServer.backpressureData.updateBufferPoolUsageByLine(received);
         } finally {
-            ReferenceCountUtil.release(msg); // (2)
+            ReferenceCountUtil.release(msg);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) { // (4)
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) { 
         // Close the connection when an exception is raised.
         cause.printStackTrace();
         ctx.close();

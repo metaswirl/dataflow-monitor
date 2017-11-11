@@ -28,6 +28,7 @@ public class BackpressureDetector implements Runnable {
 	private double slaMaxLatency = 1000.0;
 	private int reScaleAttempds = 0;
 	private Node slowLinkNode = null;
+
 	/**
 	 * BufferPoolUsage over 50 % -> Backpressure
 	 * 
@@ -50,9 +51,11 @@ public class BackpressureDetector implements Runnable {
 			}
 		}
 	}
-	
+
 	private void markLatencyInExectuionPlan(String id, Double bufferPoolUsage) {
-		// example id: "Ma.taskmanager.a4e452faf111a732a7fed998bcb296b9.SocketWordCountParallelism.Keyed Reduce.0.latency"
+		// example id:
+		// "Ma.taskmanager.a4e452faf111a732a7fed998bcb296b9.SocketWordCountParallelism.Keyed
+		// Reduce.0.latency"
 		String type = id.split("\\.")[4];
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			if (node.getType().contains(type)) {
@@ -65,7 +68,7 @@ public class BackpressureDetector implements Runnable {
 
 	public void detectBackpressureInExecutionGraph() {
 		detectSlowTask();
-		//detectSlowLink();
+		detectSlowLink();
 	}
 
 	public int findSuccessor(int id) {
@@ -126,69 +129,102 @@ public class BackpressureDetector implements Runnable {
 	public void detectSlowTask() {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
+				// slow task found
 				if (entry.getValue().inputBufferPoolusage >= 0.99 && entry.getValue().outputBufferPoolusage <= 0.30) {
 
 					try {
-
+						// we only consider one slow task
 						if (slowTaskID.equals("-1")) {
 							slowTaskID = node.getId().toString() + entry.getKey();
 						}
 						if (backpressureNode == null) {
 							backpressureNode = node;
 						}
-						int affectedNodes = checkBackpressureExpansion(node.getId()) + 1; //including itself.
+						int affectedNodes = checkBackpressureExpansion(node.getId()) + 1; //including itself
+						// signal: we should have an extra method for this
 						fw.write(System.currentTimeMillis() + ";slowTask;" + node.getType() + ";" + entry.getKey() + ";"
 								+ affectedNodes + ";" + backpressureRatio + "\n");
 						fw.flush();
 						System.out.print("*");
 						return;
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				} else {
+					// is this our previous slow task?
 					if (slowTaskID.equals(node.getId().toString() + entry.getKey())) {
-
-						slowTaskID = "-1";
-						// fw.write(System.currentTimeMillis() + ";slowTask;" +
-						// node.getType() + ";" + entry.getKey()
-						// + ";" + checkBackpressureExpansion(node.getId()) +
-						// ";" + backpressureRatio + "\n");
-						// fw.flush();
-
+						boolean noPredecessorHasBackpressure = true;
+						// has some of its predecessors still backpressure?
+						for (Predecessor predecessor : node.getPredecessors()) {
+							Node currPredecessor = findNodebyID(predecessor.getId());
+							for (Map.Entry<String, Tuple> preEntry : currPredecessor.getTaskAndBufferUsage()
+									.entrySet()) {
+								if (preEntry.getValue().outputBufferPoolusage >= 0.90) {
+									noPredecessorHasBackpressure = false;
+								}
+							}
+						}
+						if (noPredecessorHasBackpressure) {
+							slowTaskID = "-1";
+							backpressureNode = null;
+						}
 					}
 				}
 			}
 		}
 	}
+
 	public void detectSlowLink() {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
 				if (entry.getValue().outputBufferPoolusage > 0.99) {
 					int succesor = findSuccessor(node.getId());
-					if(succesor == -1 ) {
+					if (succesor == -1) {
 						if (!node.getId().equals(slowTaskID)) {
-							System.out.print("l");
+
+							System.out.print("l" + node.getType());
 							slowLinkNode = node;
 						}
 
 					} else {
-						for (Map.Entry<String, Tuple>  sucEn : findNodebyID(succesor).getTaskAndBufferUsage().entrySet()) {
-							if(sucEn.getValue().inputBufferPoolusage < 0.3) {
-								if (!node.getId().equals(slowTaskID)) {
-									System.out.print("l");
-									slowLinkNode = node;
+						// is successor our backpressure node?
+						if (!findNodebyID(succesor).equals(backpressureNode)) {
+							boolean foundSuccesorWithBackpressure = false;
+							// are all nodes in front of this suspected slow link
+							// free of backpressure?
+							for (Map.Entry<String, Tuple> sucEn : findNodebyID(succesor).getTaskAndBufferUsage()
+									.entrySet()) {
+								if (sucEn.getValue().inputBufferPoolusage > 0.9) {
+									foundSuccesorWithBackpressure = true;
+								}
+							}
+							if (!foundSuccesorWithBackpressure) {
+								System.out.print("x" + node.getType());
+								slowLinkNode = node;
+								for (Map.Entry<String, Tuple> sucEn : findNodebyID(succesor).getTaskAndBufferUsage()
+										.entrySet()) {
+									System.out.println(sucEn.getValue().inputBufferPoolusage);
+									if (sucEn.getValue().inputBufferPoolusage > 0.9) {
+										System.out.println(sucEn.getValue().inputBufferPoolusage);
+									}
 								}
 							}
 						}
+
 					}
-				} 
+				}
 			}
 			slowLinkNode = null;
 		}
-		
+
 	}
 
+	/**
+	 * Counts how many tasks are effected by a slow task/link
+	 * 
+	 * @param nodeID
+	 * @return number of effected tasks by backpressure
+	 */
 	public int checkBackpressureExpansion(int nodeID) {
 		Node node = findNodebyID(nodeID);
 		int countAffectNodes = 0;
@@ -274,14 +310,33 @@ public class BackpressureDetector implements Runnable {
 
 		currentSuggestionForIncrementList = nodesWithBackpressure;
 	}
-	
-	private double maxPipeLatency () {
+
+	private double maxPipeLatency() {
 		double maxPipeLatency = 0;
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			maxPipeLatency += node.getMaxLatency();
 		}
 		return maxPipeLatency;
 	}
+
+	private void mitigateOrNot() {
+		try {
+			// we can only scale UP
+			if (backpressureNode != null && maxPipeLatency() > slaMaxLatency && reScaleAttempds == 0
+					&& MetricServer.mitigate) {
+				// we don't know how long rescaling actually takes, so it is
+				// only allowed to do it once.
+				reScaleAttempds++;
+				System.out.println("SLA violation! Latency is  " + maxPipeLatency() + "Attempding to rescale. Time: "
+						+ System.currentTimeMillis());
+				Runtime.getRuntime().exec("python3 cancelJob2.py canceled 30000");
+				System.out.println("Rescaled.");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void run() {
 		ObjectMapper mapper = new ObjectMapper();
@@ -291,39 +346,53 @@ public class BackpressureDetector implements Runnable {
 		try {
 			fw = new FileWriter("backpressure.csv", true);
 			fwLatency = new FileWriter("oplatency.csv", true);
+			// read executionPlan from a json file
+			// best would be to use Flinks API to get it, but who has time for that?^^
 			flinkExecutionPlan = mapper.readValue(new File("exeplan.json"), FlinkExecutionPlan.class);
 			while (true) {
 				try {
+					// sleepy time
+					// we wouldn't need this if we used a signal from the
+					// FileFlinkReporter telling us when it is finished sending
+					// data.
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
 					System.out.println("BackpressureDector: Error count not sleep.");
 				}
+				// Update Backpressure in ExecutionPlan
 				for (Entry<String, Double> entry : MetricServer.backpressureData.getBufferPoolUsageMap().entrySet()) {
 					markBackpressureInExectuionPlan(entry.getKey(), entry.getValue());
 				}
+				// Update how long latency keys are not updated
+				// we wouldn't need this, if we would use the the
+				// notifyOfRemovedMetric() method from the file Flink reporter
 				for (Entry<String, Long> entry : MetricServer.backpressureData.getLatencyMapTime().entrySet()) {
 					long currTime = System.currentTimeMillis();
-					if(currTime - entry.getValue() > 2000 ) {
+					// remove old keys (there might be keys not used anymore
+					// after a job restart)
+					if (currTime - entry.getValue() > 2000) {
 						MetricServer.backpressureData.getLatencyMap().remove(entry.getKey());
 					}
 				}
+				// update operator latencies in the ExecutionPlan
 				for (Entry<String, Double> entry : MetricServer.backpressureData.getLatencyMap().entrySet()) {
 					markLatencyInExectuionPlan(entry.getKey(), entry.getValue());
 				}
+				// only update Backpressure ratio if we have a slow node or link
+				// (slow link is still missing)
+				// we should do this for all nodes input and output buffer
 				if (backpressureNode != null) {
 					updateBackpressureRatio(backpressureNode);
 				}
+				// latency signal
 				fwLatency.write(System.currentTimeMillis() + " " + maxPipeLatency() + "\n");
 				fwLatency.flush();
-				if(backpressureNode != null && maxPipeLatency() > slaMaxLatency && reScaleAttempds == 0 && MetricServer.mitigate) {
-					reScaleAttempds++;
-					System.out.println("SLA violation! Latency is  " + maxPipeLatency() + "Attempding to rescale. Time: " + System.currentTimeMillis() );
-					Runtime.getRuntime().exec("python3 cancelJob2.py canceled 30000");
-					System.out.println("Rescaled.");
-				}
-				
+
+				mitigateOrNot();
+
 				detectBackpressureInExecutionGraph();
 				if (slowTaskID.equals("-1")) {
+					// signal
 					fw.write(System.currentTimeMillis() + ";NoBackpressure;" + "0;" + "0;" + "0;0" + "\n");
 					// generateParallelismIncremtSuggestion();
 					fw.flush();
