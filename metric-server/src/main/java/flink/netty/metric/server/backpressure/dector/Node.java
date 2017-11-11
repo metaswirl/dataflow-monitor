@@ -1,6 +1,5 @@
 package flink.netty.metric.server.backpressure.dector;
 
-import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,14 +16,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 public class Node {
 
 	private boolean backpressure = false;
-	
+
 	public void setBackpressure(boolean value) {
 		this.backpressure = value;
 	}
-	
-	public boolean getBackpressure () {
+
+	public boolean getBackpressure() {
 		return backpressure;
 	}
+
 	@JsonProperty("id")
 	private Integer id;
 	@JsonProperty("type")
@@ -41,46 +41,53 @@ public class Node {
 	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
 	private Map<String, Tuple> tasksAndBufferUsage = new HashMap<String, Tuple>();
+
 	private Map<String, Double> taskAndLatency = new HashMap<String, Double>();
 	private Map<String, Long> taskAndLatencyTime = new HashMap<String, Long>();
+
 	public Map<String, Double> getTaskAndLatency() {
 		return taskAndLatency;
 	}
+
 	public double getMaxLatency() {
 		long currTime = System.currentTimeMillis();
-		for (Map.Entry<String, Long> entry:  taskAndLatencyTime.entrySet()) {
-			if(currTime - entry.getValue() > 2000 ) {
+		for (Map.Entry<String, Long> entry : taskAndLatencyTime.entrySet()) {
+			// delete latency keys if they haven't been updated for 2 seconds
+			// (we don't know when the restart is finished)
+			if (currTime - entry.getValue() > 2000) {
 				taskAndLatency.remove(entry.getKey());
 			}
 		}
 		double max = 0;
-		for(double d : taskAndLatency.values()) {
-			if (d > max){
+		for (double d : taskAndLatency.values()) {
+			if (d > max) {
 				max = d;
 			}
 		}
 		return max;
 	}
+
 	public void updateTaskAndLatency(String key, double value) {
 		taskAndLatency.put(key, value);
 		taskAndLatencyTime.put(key, System.currentTimeMillis());
 	}
-	public Map<String, Tuple> getTaskAndBufferUsage () {
+
+	public Map<String, Tuple> getTaskAndBufferUsage() {
 		return tasksAndBufferUsage;
 	}
-	
+
 	public void updateTaskAndBufferUsage(String key, double inputBufferValue, double outputBufferValue) {
-		if(tasksAndBufferUsage.containsKey(key)) {
+		if (tasksAndBufferUsage.containsKey(key)) {
 			tasksAndBufferUsage.get(key).setInputBufferPoolusage(inputBufferValue);
 			tasksAndBufferUsage.get(key).setOutputBufferPoolusage(outputBufferValue);
 		} else {
 			Tuple tuple = new Tuple(inputBufferValue, outputBufferValue);
 			tasksAndBufferUsage.put(key, tuple);
 		}
-
 	}
+
 	public void updateTaskAndInputBufferUsage(String key, double inputBufferValue) {
-		if(tasksAndBufferUsage.containsKey(key)) {
+		if (tasksAndBufferUsage.containsKey(key)) {
 			tasksAndBufferUsage.get(key).setInputBufferPoolusage(inputBufferValue);
 		} else {
 			Tuple tuple = new Tuple(inputBufferValue, -1);
@@ -88,8 +95,9 @@ public class Node {
 		}
 
 	}
+
 	public void updateTaskAndOutputBufferUsage(String key, double outputBufferValue) {
-		if(tasksAndBufferUsage.containsKey(key)) {
+		if (tasksAndBufferUsage.containsKey(key)) {
 			tasksAndBufferUsage.get(key).setOutputBufferPoolusage(outputBufferValue);
 		} else {
 			Tuple tuple = new Tuple(-1, outputBufferValue);
@@ -97,6 +105,7 @@ public class Node {
 		}
 
 	}
+
 	@JsonProperty("id")
 	public Integer getId() {
 		return id;
@@ -166,6 +175,5 @@ public class Node {
 	public void setAdditionalProperty(String name, Object value) {
 		this.additionalProperties.put(name, value);
 	}
-	
 
 }

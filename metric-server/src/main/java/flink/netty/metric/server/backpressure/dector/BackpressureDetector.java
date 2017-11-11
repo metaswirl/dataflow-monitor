@@ -21,9 +21,8 @@ public class BackpressureDetector implements Runnable {
 	private FlinkExecutionPlan flinkExecutionPlan;
 	private List<Node> currentSuggestionForIncrementList = new ArrayList<Node>();
 	private String slowTaskID = "-1";
-	private int timeWindow = 8;
+	public static final int timeWindow = 8;
 	private ArrayList<Boolean> backpressureList = new ArrayList<Boolean>();
-	private double backpressureRatio = -1;
 	private Node backpressureNode = null;
 	private double slaMaxLatency = 1000.0;
 	private int reScaleAttempds = 0;
@@ -84,47 +83,6 @@ public class BackpressureDetector implements Runnable {
 		return -1;
 	}
 
-	public void updateBackpressureRatio(Node node) {
-		for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-			if (entry.getValue().inputBufferPoolusage >= 0.99) {
-
-				if (slowTaskID.equals(node.getId().toString() + entry.getKey())) {
-					if (backpressureList.size() >= timeWindow) {
-						backpressureList.remove(0);
-					}
-					backpressureList.add(true);
-
-				}
-				int countTrue = 0;
-
-				for (Boolean b : backpressureList) {
-					if (b) {
-						countTrue++;
-					}
-				}
-				backpressureRatio = countTrue / (double) backpressureList.size();
-				return;
-
-			} else {
-				if (slowTaskID.equals(node.getId().toString() + entry.getKey())) {
-					if (backpressureList.size() >= timeWindow) {
-						backpressureList.remove(0);
-					}
-					backpressureList.add(false);
-
-					int countTrue = 0;
-					for (Boolean b : backpressureList) {
-						if (b) {
-							countTrue++;
-						}
-					}
-					backpressureRatio = countTrue / (double) backpressureList.size();
-
-				}
-				return;
-			}
-		}
-	}
 
 	public void detectSlowTask() {
 		for (Node node : flinkExecutionPlan.getNodes()) {
@@ -142,8 +100,9 @@ public class BackpressureDetector implements Runnable {
 						}
 						int affectedNodes = checkBackpressureExpansion(node.getId()) + 1; //including itself
 						// signal: we should have an extra method for this
+						
 						fw.write(System.currentTimeMillis() + ";slowTask;" + node.getType() + ";" + entry.getKey() + ";"
-								+ affectedNodes + ";" + backpressureRatio + "\n");
+								+ affectedNodes + ";" + entry.getValue().calculateOutputBMA() + "\n");
 						fw.flush();
 						System.out.print("*");
 						return;
@@ -381,9 +340,7 @@ public class BackpressureDetector implements Runnable {
 				// only update Backpressure ratio if we have a slow node or link
 				// (slow link is still missing)
 				// we should do this for all nodes input and output buffer
-				if (backpressureNode != null) {
-					updateBackpressureRatio(backpressureNode);
-				}
+
 				// latency signal
 				fwLatency.write(System.currentTimeMillis() + " " + maxPipeLatency() + "\n");
 				fwLatency.flush();
