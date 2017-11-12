@@ -39,6 +39,10 @@ public class Node {
 	private List<Predecessor> predecessors = null;
 	@JsonIgnore
 	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+	
+	private Node successor = null;
+
+
 
 	private Map<String, Tuple> tasksAndBufferUsage = new HashMap<String, Tuple>();
 
@@ -104,6 +108,14 @@ public class Node {
 			tasksAndBufferUsage.put(key, tuple);
 		}
 
+	}
+	
+	public Node getSuccessor() {
+		return successor;
+	}
+
+	public void setSuccessor(Node successor) {
+		this.successor = successor;
 	}
 
 	@JsonProperty("id")

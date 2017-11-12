@@ -30,7 +30,11 @@ public class BackpressureDetector implements Runnable {
 	private Node slowLinkNode = null;
 	private Map<String, Node> nodeAndTypes;
 	private Map<Integer, Node> nodeIDtoNodeMap;
-
+	private double slowLinkoutBufferUsageThreshold = 0.99;
+	private double slowLinkFreeOfBPThreashold = 0.99;
+	private double outputBPbackpressureThreshold = 0.99;
+	private double slowTaskinputBPThreshold = 0.99;
+	private double slowTaskoutputBPThreshold = 0.30;
 	/**
 	 * BufferPoolUsage over 50 % -> Backpressure
 	 * 
@@ -103,7 +107,7 @@ public class BackpressureDetector implements Runnable {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
 				// slow task found
-				if (entry.getValue().inputBufferPoolusage >= 0.99 && entry.getValue().outputBufferPoolusage <= 0.30) {
+				if (entry.getValue().inputBufferPoolusage >= slowTaskinputBPThreshold && entry.getValue().outputBufferPoolusage <= slowTaskoutputBPThreshold) {
 
 					try {
 						// we only consider one slow task
@@ -127,24 +131,28 @@ public class BackpressureDetector implements Runnable {
 					}
 				} else {
 					// is this our previous slow task?
-					if (slowTaskID.equals(node.getId().toString() + entry.getKey())) {
-						boolean noPredecessorHasBackpressure = true;
-						// has some of its predecessors still backpressure?
-						for (Predecessor predecessor : node.getPredecessors()) {
-							Node currPredecessor = nodeIDtoNodeMap.get(predecessor.getId());
-							for (Map.Entry<String, Tuple> preEntry : currPredecessor.getTaskAndBufferUsage()
-									.entrySet()) {
-								if (preEntry.getValue().outputBufferPoolusage >= 0.90) {
-									noPredecessorHasBackpressure = false;
-								}
-							}
-						}
-						if (noPredecessorHasBackpressure) {
-							slowTaskID = "-1";
-							backpressureNode = null;
-						}
+					isThisOurPreviousSlowTask(node, entry.getKey());
+
+				}
+			}
+		}
+	}
+	private void isThisOurPreviousSlowTask(Node node, String entryKey) {
+		if (slowTaskID.equals(node.getId().toString() + entryKey)) {
+			boolean noPredecessorHasBackpressure = true;
+			// has some of its predecessors still backpressure?
+			for (Predecessor predecessor : node.getPredecessors()) {
+				Node currPredecessor = nodeIDtoNodeMap.get(predecessor.getId());
+				for (Map.Entry<String, Tuple> preEntry : currPredecessor.getTaskAndBufferUsage()
+						.entrySet()) {
+					if (preEntry.getValue().outputBufferPoolusage >= slowLinkoutBufferUsageThreshold) {
+						noPredecessorHasBackpressure = false;
 					}
 				}
+			}
+			if (noPredecessorHasBackpressure) {
+				slowTaskID = "-1";
+				backpressureNode = null;
 			}
 		}
 	}
@@ -152,35 +160,36 @@ public class BackpressureDetector implements Runnable {
 	public void detectSlowLink() {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage > 0.99) {
+				if (entry.getValue().outputBufferPoolusage > slowLinkoutBufferUsageThreshold) {
 					int succesor = findSuccessor(node.getId());
 					if (succesor == -1) {
 						if (!node.getId().equals(slowTaskID)) {
 
-							System.out.print("l" + node.getType());
+							//System.out.print("l" + node.getType());
 							slowLinkNode = node;
 						}
 
 					} else {
 						// is successor our backpressure node?
 						if (!nodeIDtoNodeMap.get(succesor).equals(backpressureNode)) {
+							//declaration can't be outside loop, beceause we individually check each node.
 							boolean foundSuccesorWithBackpressure = false;
 							// are all nodes in front of this suspected slow
 							// link
 							// free of backpressure?
 							for (Map.Entry<String, Tuple> sucEn : nodeIDtoNodeMap.get(succesor).getTaskAndBufferUsage()
 									.entrySet()) {
-								if (sucEn.getValue().inputBufferPoolusage > 0.9) {
+								if (sucEn.getValue().inputBufferPoolusage > slowLinkFreeOfBPThreashold) {
 									foundSuccesorWithBackpressure = true;
 								}
 							}
 							if (!foundSuccesorWithBackpressure) {
-								System.out.print("x" + node.getType());
+								//System.out.print("x" + node.getType());
 								slowLinkNode = node;
 								for (Map.Entry<String, Tuple> sucEn : nodeIDtoNodeMap.get(succesor).getTaskAndBufferUsage()
 										.entrySet()) {
 									System.out.println(sucEn.getValue().inputBufferPoolusage);
-									if (sucEn.getValue().inputBufferPoolusage > 0.9) {
+									if (sucEn.getValue().inputBufferPoolusage > slowLinkFreeOfBPThreashold) {
 										System.out.println(sucEn.getValue().inputBufferPoolusage);
 									}
 								}
@@ -209,14 +218,14 @@ public class BackpressureDetector implements Runnable {
 				countAffectNodes += checkBackpressureExpansion(prepredecessor.getId());
 			}
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage >= 0.99) {
+				if (entry.getValue().outputBufferPoolusage >= outputBPbackpressureThreshold) {
 					countAffectNodes++;
 				}
 			}
 			return countAffectNodes;
 		} else {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage >= 0.99) {
+				if (entry.getValue().outputBufferPoolusage >= outputBPbackpressureThreshold) {
 					countAffectNodes++;
 				}
 			}
@@ -335,6 +344,16 @@ public class BackpressureDetector implements Runnable {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			nodeIDtoNodeMap.put(node.getId(), node);
 		}
+		
+		for (Node node : flinkExecutionPlan.getNodes()) {
+			if (node.getPredecessors() != null && !node.getPredecessors().isEmpty()) {
+				for (Predecessor predecessor : node.getPredecessors()) {
+					Node predecessorNode = nodeIDtoNodeMap.get(predecessor);
+					predecessorNode.setSuccessor(node);
+				}
+			}
+		}
+		
 	}
 
 	@Override
@@ -377,10 +396,9 @@ public class BackpressureDetector implements Runnable {
 				// latency signal
 				fwLatency.write(System.currentTimeMillis() + " " + maxPipeLatency() + "\n");
 				fwLatency.flush();
-
-				mitigateOrNot();
-
 				detectBackpressureInExecutionGraph();
+				
+				mitigateOrNot();
 				if (slowTaskID.equals("-1")) {
 					// signal
 					fw.write(System.currentTimeMillis() + ";NoBackpressure;" + "0;" + "0;" + "0;0" + "\n");
