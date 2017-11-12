@@ -1,6 +1,5 @@
 package flink.netty.metric.server;
 
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BackpressureData {
@@ -63,8 +62,6 @@ public class BackpressureData {
 					LatencyMapTime.put(key, System.currentTimeMillis());
 				}
 			}
-			
-		
 
 	}
 }

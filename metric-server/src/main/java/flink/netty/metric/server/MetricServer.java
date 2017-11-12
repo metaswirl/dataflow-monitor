@@ -33,6 +33,7 @@ public class MetricServer {
 		if (line.contains("#")) {
 			if(line.contains("numBytesOutPerSecond") || line.contains("numRecordsOutPerSecond")) {
 				try {
+					//won't become bottle neck, because "write" is buffered, so not forced to write every line immediately. 
 					fwMeter.write(sanitizeLine(line.replaceAll("#", System.currentTimeMillis() + "")));
 				} catch (IOException e) {
 					System.out.println("Error writing line to File: " + e.getMessage());

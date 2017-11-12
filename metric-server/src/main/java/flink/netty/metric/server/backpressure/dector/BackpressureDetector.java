@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,44 +26,59 @@ public class BackpressureDetector implements Runnable {
 	private ArrayList<Boolean> backpressureList = new ArrayList<Boolean>();
 	private Node backpressureNode = null;
 	private double slaMaxLatency = 1000.0;
-	private int reScaleAttempds = 0;
+	private boolean reScaleAttempted = false;
 	private Node slowLinkNode = null;
+	private Map<String, Node> nodeAndTypes;
+	private Map<Integer, Node> nodeIDtoNodeMap;
 
 	/**
 	 * BufferPoolUsage over 50 % -> Backpressure
 	 * 
 	 * @param id
 	 */
-	private void markBackpressureInExectuionPlan(String id, Double bufferPoolUsage) {
+	private void markBackpressureInExectuionPlan() {
 		// example id: "loadgen113.Flat Map.1.in"
 		// example id: "loadgen113.Flat Map.1.out"
-		String idSplitbyPoint[] = id.split("\\.");
-		String machine = idSplitbyPoint[0];
-		String type = id.split("\\.")[1];
-		String inOrOut = id.split("\\.")[3];
-		for (Node node : flinkExecutionPlan.getNodes()) {
+		for (Entry<String, Double> entry : MetricServer.backpressureData.getBufferPoolUsageMap().entrySet()) {
+			String id = entry.getKey();
+			Double bufferPoolUsage = entry.getValue();
+			String idSplitbyPoint[] = id.split("\\.");
+			String machine = idSplitbyPoint[0];
+			String type = id.split("\\.")[1];
+			String inOrOut = id.split("\\.")[3];
+			Node node = nodeAndTypes.get(type);
+
 			if (node.getType().contains(type)) {
 				if (inOrOut.equals("in")) {
 					node.updateTaskAndInputBufferUsage(machine, bufferPoolUsage);
 				} else {
 					node.updateTaskAndOutputBufferUsage(machine, bufferPoolUsage);
 				}
+			} else {
+				System.out.println("Type not found");
 			}
+
 		}
 	}
 
-	private void markLatencyInExectuionPlan(String id, Double bufferPoolUsage) {
+	private void markLatencyInExectuionPlan() {
 		// example id:
 		// "Ma.taskmanager.a4e452faf111a732a7fed998bcb296b9.SocketWordCountParallelism.Keyed
 		// Reduce.0.latency"
-		String type = id.split("\\.")[4];
-		for (Node node : flinkExecutionPlan.getNodes()) {
+		for (Entry<String, Double> entry : MetricServer.backpressureData.getLatencyMap().entrySet()) {
+			String id = entry.getKey();
+			Double bufferPoolUsage = entry.getValue();
+			String type = id.split("\\.")[4];
+			Node node = nodeAndTypes.get(type);
+
 			if (node.getType().contains(type)) {
 				node.updateTaskAndLatency(id, bufferPoolUsage);
 				return;
 			}
+
 		}
-		System.out.println("type not found: " + type);
+
+		// System.out.println("type not found: " );
 	}
 
 	public void detectBackpressureInExecutionGraph() {
@@ -83,7 +99,6 @@ public class BackpressureDetector implements Runnable {
 		return -1;
 	}
 
-
 	public void detectSlowTask() {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
@@ -98,9 +113,10 @@ public class BackpressureDetector implements Runnable {
 						if (backpressureNode == null) {
 							backpressureNode = node;
 						}
-						int affectedNodes = checkBackpressureExpansion(node.getId()) + 1; //including itself
+						int affectedNodes = checkBackpressureExpansion(node.getId()) + 1; // including
+																							// itself
 						// signal: we should have an extra method for this
-						
+
 						fw.write(System.currentTimeMillis() + ";slowTask;" + node.getType() + ";" + entry.getKey() + ";"
 								+ affectedNodes + ";" + entry.getValue().calculateOutputBMA() + "\n");
 						fw.flush();
@@ -115,7 +131,7 @@ public class BackpressureDetector implements Runnable {
 						boolean noPredecessorHasBackpressure = true;
 						// has some of its predecessors still backpressure?
 						for (Predecessor predecessor : node.getPredecessors()) {
-							Node currPredecessor = findNodebyID(predecessor.getId());
+							Node currPredecessor = nodeIDtoNodeMap.get(predecessor.getId());
 							for (Map.Entry<String, Tuple> preEntry : currPredecessor.getTaskAndBufferUsage()
 									.entrySet()) {
 								if (preEntry.getValue().outputBufferPoolusage >= 0.90) {
@@ -147,11 +163,12 @@ public class BackpressureDetector implements Runnable {
 
 					} else {
 						// is successor our backpressure node?
-						if (!findNodebyID(succesor).equals(backpressureNode)) {
+						if (!nodeIDtoNodeMap.get(succesor).equals(backpressureNode)) {
 							boolean foundSuccesorWithBackpressure = false;
-							// are all nodes in front of this suspected slow link
+							// are all nodes in front of this suspected slow
+							// link
 							// free of backpressure?
-							for (Map.Entry<String, Tuple> sucEn : findNodebyID(succesor).getTaskAndBufferUsage()
+							for (Map.Entry<String, Tuple> sucEn : nodeIDtoNodeMap.get(succesor).getTaskAndBufferUsage()
 									.entrySet()) {
 								if (sucEn.getValue().inputBufferPoolusage > 0.9) {
 									foundSuccesorWithBackpressure = true;
@@ -160,7 +177,7 @@ public class BackpressureDetector implements Runnable {
 							if (!foundSuccesorWithBackpressure) {
 								System.out.print("x" + node.getType());
 								slowLinkNode = node;
-								for (Map.Entry<String, Tuple> sucEn : findNodebyID(succesor).getTaskAndBufferUsage()
+								for (Map.Entry<String, Tuple> sucEn : nodeIDtoNodeMap.get(succesor).getTaskAndBufferUsage()
 										.entrySet()) {
 									System.out.println(sucEn.getValue().inputBufferPoolusage);
 									if (sucEn.getValue().inputBufferPoolusage > 0.9) {
@@ -185,7 +202,7 @@ public class BackpressureDetector implements Runnable {
 	 * @return number of effected tasks by backpressure
 	 */
 	public int checkBackpressureExpansion(int nodeID) {
-		Node node = findNodebyID(nodeID);
+		Node node = nodeIDtoNodeMap.get(nodeID);
 		int countAffectNodes = 0;
 		if (node.getPredecessors() != null && !node.getPredecessors().isEmpty()) {
 			for (Predecessor prepredecessor : node.getPredecessors()) {
@@ -281,11 +298,11 @@ public class BackpressureDetector implements Runnable {
 	private void mitigateOrNot() {
 		try {
 			// we can only scale UP
-			if (backpressureNode != null && maxPipeLatency() > slaMaxLatency && reScaleAttempds == 0
+			if (backpressureNode != null && maxPipeLatency() > slaMaxLatency && !reScaleAttempted 
 					&& MetricServer.mitigate) {
 				// we don't know how long rescaling actually takes, so it is
 				// only allowed to do it once.
-				reScaleAttempds++;
+				reScaleAttempted = true;
 				System.out.println("SLA violation! Latency is  " + maxPipeLatency() + "Attempding to rescale. Time: "
 						+ System.currentTimeMillis());
 				Runtime.getRuntime().exec("python3 cancelJob2.py canceled 30000");
@@ -293,6 +310,30 @@ public class BackpressureDetector implements Runnable {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private void removeOldLatencies() {
+		for (Entry<String, Long> entry : MetricServer.backpressureData.getLatencyMapTime().entrySet()) {
+			long currTime = System.currentTimeMillis();
+			// remove old keys (there might be keys not used anymore
+			// after a job restart)
+			if (currTime - entry.getValue() > 2000) {
+				MetricServer.backpressureData.getLatencyMap().remove(entry.getKey());
+			}
+		}
+	}
+
+	private void init() {
+		
+		nodeAndTypes = new HashMap<String, Node>();
+		for (Node node : flinkExecutionPlan.getNodes()) {
+			nodeAndTypes.put(node.getType(), node);
+		}
+		
+		nodeIDtoNodeMap = new HashMap<Integer, Node>();
+		for (Node node : flinkExecutionPlan.getNodes()) {
+			nodeIDtoNodeMap.put(node.getId(), node);
 		}
 	}
 
@@ -306,8 +347,10 @@ public class BackpressureDetector implements Runnable {
 			fw = new FileWriter("backpressure.csv", true);
 			fwLatency = new FileWriter("oplatency.csv", true);
 			// read executionPlan from a json file
-			// best would be to use Flinks API to get it, but who has time for that?^^
+			// best would be to use Flinks API to get it, but who has time for
+			// that?^^
 			flinkExecutionPlan = mapper.readValue(new File("exeplan.json"), FlinkExecutionPlan.class);
+			init();
 			while (true) {
 				try {
 					// sleepy time
@@ -319,24 +362,14 @@ public class BackpressureDetector implements Runnable {
 					System.out.println("BackpressureDector: Error count not sleep.");
 				}
 				// Update Backpressure in ExecutionPlan
-				for (Entry<String, Double> entry : MetricServer.backpressureData.getBufferPoolUsageMap().entrySet()) {
-					markBackpressureInExectuionPlan(entry.getKey(), entry.getValue());
-				}
+				markBackpressureInExectuionPlan();
 				// Update how long latency keys are not updated
 				// we wouldn't need this, if we would use the the
 				// notifyOfRemovedMetric() method from the file Flink reporter
-				for (Entry<String, Long> entry : MetricServer.backpressureData.getLatencyMapTime().entrySet()) {
-					long currTime = System.currentTimeMillis();
-					// remove old keys (there might be keys not used anymore
-					// after a job restart)
-					if (currTime - entry.getValue() > 2000) {
-						MetricServer.backpressureData.getLatencyMap().remove(entry.getKey());
-					}
-				}
+				removeOldLatencies();
 				// update operator latencies in the ExecutionPlan
-				for (Entry<String, Double> entry : MetricServer.backpressureData.getLatencyMap().entrySet()) {
-					markLatencyInExectuionPlan(entry.getKey(), entry.getValue());
-				}
+				markLatencyInExectuionPlan();
+
 				// only update Backpressure ratio if we have a slow node or link
 				// (slow link is still missing)
 				// we should do this for all nodes input and output buffer
