@@ -187,13 +187,6 @@ public class BackpressureDetector implements Runnable {
 							if (!foundSuccesorWithBackpressure) {
 								// System.out.print("x" + node.getType());
 								slowLinkNode = node;
-								for (Map.Entry<String, Tuple> sucEn : successorNode.getTaskAndBufferUsage()
-										.entrySet()) {
-									System.out.println(sucEn.getValue().inputBufferPoolusage);
-									if (sucEn.getValue().inputBufferPoolusage > slowLinkFreeOfBPThreashold) {
-										System.out.println(sucEn.getValue().inputBufferPoolusage);
-									}
-								}
 							}
 						}
 
