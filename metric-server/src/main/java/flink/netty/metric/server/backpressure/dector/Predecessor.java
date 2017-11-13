@@ -32,7 +32,7 @@ public class Predecessor {
 	public void setId(Integer id) {
 		this.id = id;
 	}
-
+	
 	@JsonProperty("ship_strategy")
 	public String getShipStrategy() {
 		return shipStrategy;
@@ -60,6 +60,7 @@ public class Predecessor {
 
 	@JsonAnySetter
 	public void setAdditionalProperty(String name, Object value) {
+		System.out.println(name + value.toString());
 		this.additionalProperties.put(name, value);
 	}
 }
