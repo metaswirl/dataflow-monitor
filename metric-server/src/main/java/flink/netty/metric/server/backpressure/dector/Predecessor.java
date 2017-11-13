@@ -60,7 +60,6 @@ public class Predecessor {
 
 	@JsonAnySetter
 	public void setAdditionalProperty(String name, Object value) {
-		System.out.println(name + value.toString());
 		this.additionalProperties.put(name, value);
 	}
 }

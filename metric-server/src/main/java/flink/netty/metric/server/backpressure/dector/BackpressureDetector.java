@@ -38,6 +38,7 @@ public class BackpressureDetector implements Runnable {
 	private double outputBPbackpressureThreshold = 0.99;
 	private double slowTaskinputBPThreshold = 0.99;
 	private double slowTaskoutputBPThreshold = 0.30;
+	private double mBAThreshold = 0.5;
 	// Does not account for different pipelines.
 	private double maxPipeLineDelay = 0;
 	private String jobDescription = "SocketWordCountParallelism";
@@ -102,8 +103,8 @@ public class BackpressureDetector implements Runnable {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
 				// slow task found
-				if (entry.getValue().inputBufferPoolusage >= slowTaskinputBPThreshold
-						&& entry.getValue().outputBufferPoolusage <= slowTaskoutputBPThreshold) {
+				if ((entry.getValue().inputBufferPoolusage >= slowTaskinputBPThreshold || entry.getValue().calculateInputBMA() > mBAThreshold)
+						&& entry.getValue().outputBufferPoolusage <= slowTaskoutputBPThreshold ) {
 
 					try {
 						// we only consider one slow task
@@ -160,7 +161,7 @@ public class BackpressureDetector implements Runnable {
 			// compute max pipeline delay
 			maxPipeLatency += node.getMaxLatency();
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage > slowLinkoutBufferUsageThreshold) {
+				if (entry.getValue().outputBufferPoolusage > slowLinkoutBufferUsageThreshold || entry.getValue().calculateOutputBMA() > mBAThreshold) {
 					Node successorNode = node.getSuccessor();
 					if (successorNode == null) {
 						if (!node.getId().equals(slowTaskID)) {
