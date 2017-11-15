@@ -28,7 +28,7 @@ public class BackpressureDetector implements Runnable {
 	public static final int timeWindow = 8;
 	private ArrayList<Boolean> backpressureList = new ArrayList<Boolean>();
 	private Node slowOperatorNode = null;
-	private double slaMaxLatency = 1000.0;
+	private double slaMaxLatency = 100.0;
 	private boolean reScaleAttempted = false;
 	private Node slowLinkNode = null;
 	private Map<String, Node> nodeAndTypes;
@@ -42,8 +42,8 @@ public class BackpressureDetector implements Runnable {
 	// Does not account for different pipelines.
 	private double maxPipeLineDelay = 0;
 	private String jobDescription = "SocketWordCountParallelism";
-	private String jobCommand = " -n examples/streaming/SocketWordCountParallelism2.jar --port 9001 --sleep 30000 --para 3 --parareduce 3 --ip loadgen112 --node 172.16.0.114 --sleep2 0 --timewindow 0 --timeout 100 --path test";
-
+	private String jobCommand = " -n examples/streaming/SocketWordCountParallelism2.jar --port 9001 --sleep 30000 --para 3 --parareduce 4 --ip loadgen112 --node 172.16.0.114 --sleep2 0 --timewindow 0 --timeout 100 --path test";
+	private int intervalCheck = 100;
 	/**
 	 * BufferPoolUsage over 50 % -> Backpressure
 	 * 
@@ -281,75 +281,6 @@ public class BackpressureDetector implements Runnable {
 		currentSuggestionForIncrementList = nodesWithBackpressure;
 	}
 
-	private void scaleUP() {
-		try {
-			String jobID = obtainJobID(jobDescription);
-			String savePoint = cancelJobWithSavepoint(jobID);
-			String restartCommand = "./bin/flink run -s " + savePoint + jobCommand;
-			System.out.println("###############Metric-Command-Restart-JobCommand###############");
-			System.out.println(restartCommand);
-			System.out.println("###############################################################");
-			Process process = Runtime.getRuntime().exec(restartCommand);
-			BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line = null;
-			while ((line = input.readLine()) != null) {
-				System.out.println(line);
-			}
-		} catch (IOException | InterruptedException | ExecutionException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private String obtainJobID(String jobDescription) throws IOException, InterruptedException {
-		String jobID = null;
-		Process process = Runtime.getRuntime().exec("./bin/flink list -r");
-		process.waitFor();
-		BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
-		String line = null;
-		while ((line = input.readLine()) != null) {
-			// exampleLine:
-			// 12.11.2017 21:14:48 : 2513e7cf8e301e1c60e741cc02ce167d :
-			// SocketWordCountParallelism (RUNNING)
-			if (line.contains(jobDescription)) {
-				String splitLine[] = line.split(":");
-				if (splitLine.length > 3) {
-					jobID = splitLine[3].trim();
-					return jobID;
-				} else {
-					System.out.println("Flink list -r: missmatch. Didn't find job: " + jobDescription);
-				}
-
-			}
-			System.out.println(line);
-		}
-		System.out.println("No Job found with description: " + jobDescription);
-		return null;
-	}
-
-	private String cancelJobWithSavepoint(String jobID) throws ExecutionException, IOException, InterruptedException {
-		String cancelJobCommand = "./bin/flink cancel -s /tmp/ " + jobID;
-		Process process = Runtime.getRuntime().exec(cancelJobCommand);
-		process.waitFor();
-		BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
-		String line = null;
-		String savePointPath = null;
-		while ((line = input.readLine()) != null) {
-			System.out.println(line);
-
-			// exampleLine:
-			// Cancelled job b7577b03070629cbfa677b6c507194b9. Savepoint stored
-			// in /tmp/savepoint-82a54b372b0f.
-			if (line.contains("Savepoint stored in")) {
-				String splitLine[] = line.split(" ");
-				if (splitLine.length > 6) {
-					savePointPath = splitLine[6].trim();
-					// remove dot at the end of string
-					savePointPath = savePointPath.substring(0, savePointPath.length() - 1);
-				}
-			}
-		}
-		return savePointPath;
-	}
 
 	private void mitigateOrNot() {
 		// we can only scale UP
@@ -363,8 +294,7 @@ public class BackpressureDetector implements Runnable {
 				reScaleAttempted = true;
 				System.out.println("SLA violation! Latency is  " + maxPipeLineDelay + "Attempding to rescale. Time: "
 						+ System.currentTimeMillis());
-				scaleUP();
-				System.out.println("Rescaled.");
+				new Thread(new MitigateThread(jobDescription, jobCommand)).start();
 			}
 		}
 	}
@@ -448,7 +378,7 @@ public class BackpressureDetector implements Runnable {
 					// we wouldn't need this if we used a signal from the
 					// FileFlinkReporter telling us when it is finished sending
 					// data.
-					Thread.sleep(500);
+					Thread.sleep(intervalCheck);
 				} catch (InterruptedException e) {
 					System.out.println("BackpressureDector: Error count not sleep.");
 				}
