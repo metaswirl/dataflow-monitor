@@ -57,10 +57,11 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 	private FileWriter fwMeters;
 	private Socket metricServerSocket = null;
 	private DataOutputStream outputStream = null;
+
 	private enum Protocol {
 		TCP, UDP
 	}
-	
+
 	public void restartConnection() {
 		LOG.info("Trying to reconnect with MetricServer.");
 		try {
@@ -76,29 +77,34 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 			LOG.info("Failed to reconnect with MetricServer: " + e.getMessage());
 		} catch (IOException e) {
 			LOG.info("Failed to reconnect with MetricServer: " + e.getMessage());
-		} 
+		}
 	}
+
 	/***
 	 * Constructor
 	 */
 	public FileFlinkReporter() {
-//		Path gaugePath = FileSystems.getDefault().getPath("/tmp/metrics/", "Gauge.csv");
-//		Path histoPath = FileSystems.getDefault().getPath("/tmp/metrics/", "Histogram.csv");
-//		Path CounterPath = FileSystems.getDefault().getPath("/tmp/metrics/", "Counters.csv");
-//		Path meterPath = FileSystems.getDefault().getPath("/tmp/metrics/", "Meters.csv");
-//		try {
-//			Files.deleteIfExists(gaugePath);
-//			Files.deleteIfExists(histoPath);
-//			Files.deleteIfExists(CounterPath);
-//			Files.deleteIfExists(meterPath);
-//		} catch (IOException e1) {
-//			LOG.info("Metrics: Error attempting to delete old metric files.");
-//			e1.printStackTrace();
-//		}
-//		fwGauge = null;
-//		fwHistogram = null;
-//		fwCounters = null;
-//		fwMeters = null;
+		// Path gaugePath = FileSystems.getDefault().getPath("/tmp/metrics/",
+		// "Gauge.csv");
+		// Path histoPath = FileSystems.getDefault().getPath("/tmp/metrics/",
+		// "Histogram.csv");
+		// Path CounterPath = FileSystems.getDefault().getPath("/tmp/metrics/",
+		// "Counters.csv");
+		// Path meterPath = FileSystems.getDefault().getPath("/tmp/metrics/",
+		// "Meters.csv");
+		// try {
+		// Files.deleteIfExists(gaugePath);
+		// Files.deleteIfExists(histoPath);
+		// Files.deleteIfExists(CounterPath);
+		// Files.deleteIfExists(meterPath);
+		// } catch (IOException e1) {
+		// LOG.info("Metrics: Error attempting to delete old metric files.");
+		// e1.printStackTrace();
+		// }
+		// fwGauge = null;
+		// fwHistogram = null;
+		// fwCounters = null;
+		// fwMeters = null;
 		try {
 			fwGauge = new FileWriter("/tmp/metrics/Gauge.csv", true);
 			fwHistogram = new FileWriter("/tmp/metrics/Histogram.csv", true);
@@ -109,20 +115,14 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 			e.printStackTrace();
 		}
 		registry = new MetricRegistry();
-		
-		Configuration config = GlobalConfiguration.loadConfiguration();
 
 		try {
-			LOG.info("Trying to connect to MetricServer: " + config.getString(ConfigConstants.SOURCE_IP, "No IP") + ":"
-					+ config.getString(ConfigConstants.SOURCE_PORT, "No Port"));
-			System.out.println(
-					"Trying to connect to MetricServer: " + config.getString(ConfigConstants.SOURCE_IP, "No IP") + ":"
-							+ config.getString(ConfigConstants.SOURCE_PORT, "No Port"));
-			
+
+			System.out.println("Trying to connect to MetricServer: loadgen112:9888");
 			metricServerSocket = new Socket("loadgen112", 9888);
 		} catch (Exception e) {
 			LOG.info("Exception: " + e.getMessage());
-			LOG.info("Using default source IP:Port loadgen112:9091");
+			LOG.info("Using default source IP:Port loadgen112:9888");
 
 		}
 		try {
@@ -149,7 +149,7 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 	 * Start reporter
 	 */
 	public void open(MetricConfig metricConfig) {
-		//String filePath = metricConfig.getString("path", "/tmp/metrics.db");
+		// String filePath = metricConfig.getString("path", "/tmp/metrics.db");
 		LOG.info("INET - MetricReporter started");
 	}
 
@@ -160,34 +160,36 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 		gauges.clear();
 		histograms.clear();
 		counters.clear();
-//		try {
-//			fwGauge.close();
-//			fwHistogram.close();
-//			fwCounters.close();
-//			fwMeters.close();
-//		} catch (IOException e) {
-//			Log.info("Metrics: Error closing files.");
-//			e.printStackTrace();
-//		}
+		// try {
+		// fwGauge.close();
+		// fwHistogram.close();
+		// fwCounters.close();
+		// fwMeters.close();
+		// } catch (IOException e) {
+		// Log.info("Metrics: Error closing files.");
+		// e.printStackTrace();
+		// }
 		try {
 			outputStream.writeBytes("disconnect \n");
 			outputStream.close();
 		} catch (IOException e) {
 			Log.info("Metrics: Closing outPutStream failed: " + e.getMessage());
-		} 
+		}
 	}
 
 	@Override
 	public void notifyOfAddedMetric(Metric metric, String s, MetricGroup metricGroup) {
 		// Metric full name - namespace
-		// loadgen112.taskmanager.c7c9e536681dfa49a685712420394b75.SocketWordCountParallelism.Flat Map.0.buffers.inPoolUsage-gauge:0.0
-		//loadgen112.taskmanager.7641f1a77466868ea34277d05a3670e0.SocketWordCountParallelism.Keyed Reduce.0.numRecordsOutPerSecond
-		LOG.info("INET - notify: " +  metricGroup.getMetricIdentifier(s, this));
-		
+		// loadgen112.taskmanager.c7c9e536681dfa49a685712420394b75.SocketWordCountParallelism.Flat
+		// Map.0.buffers.inPoolUsage-gauge:0.0
+		// loadgen112.taskmanager.7641f1a77466868ea34277d05a3670e0.SocketWordCountParallelism.Keyed
+		// Reduce.0.numRecordsOutPerSecond
+		LOG.info("INET - notify: " + metricGroup.getMetricIdentifier(s, this));
+
 		String fullName = metricGroup.getMetricIdentifier(s, this);
 		if (fullName.split("\\.").length > 7) {
-			String editedFullName = fullName.split("\\.")[0]+"." + fullName.split("\\.")[4] + "." + fullName.split("\\.")[5]
-					+"."+ fullName.split("\\.")[7];
+			String editedFullName = fullName.split("\\.")[0] + "." + fullName.split("\\.")[4] + "."
+					+ fullName.split("\\.")[5] + "." + fullName.split("\\.")[7];
 			fullName = editedFullName;
 		}
 
@@ -199,7 +201,7 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 			// registry.register(fullName, new FlinkCounterWrapper((Counter)
 			// metric));
 		} else if (metric instanceof Gauge) {
-			key = fullName ;
+			key = fullName;
 			gauges.put(key, (Gauge<?>) metric);
 			LOG.info("INET - Gauge - added: {} as {}", fullName, key);
 			// registry.register(fullName,
@@ -282,11 +284,14 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 
 		for (Map.Entry<String, Gauge<?>> entry : gauges.entrySet()) {
 			try {
-//				fwGauge.write(entry.getKey() + "|" + entry.getValue().getValue().toString() + "\n"); 
-				if(entry.getKey().contains("Pool") || entry.getKey().contains("latency") || entry.getKey().contains("Length")) {
-					
+				// fwGauge.write(entry.getKey() + "|" +
+				// entry.getValue().getValue().toString() + "\n");
+				if (entry.getKey().contains("Pool") || entry.getKey().contains("latency")
+						|| entry.getKey().contains("Length")) {
+
 					try {
-						outputStream.writeBytes("#|" +entry.getKey() + "|" + entry.getValue().getValue().toString() + "\n");
+						outputStream.writeBytes(
+								"#|" + entry.getKey() + "|" + entry.getValue().getValue().toString() + "\n");
 					} catch (Exception e) {
 						LOG.error("Failed to connection to MetricServer: " + e.getMessage());
 						restartConnection();
@@ -298,27 +303,31 @@ public class FileFlinkReporter implements MetricReporter, Scheduled, Reporter, C
 		}
 		for (Map.Entry<String, Counter> entry : counters.entrySet()) {
 			try {
-//				fwCounters.write(entry.getKey() + ":" + System.currentTimeMillis() + ":"
-//						+ String.valueOf(entry.getValue().getCount()) + "\n");
+				// fwCounters.write(entry.getKey() + ":" +
+				// System.currentTimeMillis() + ":"
+				// + String.valueOf(entry.getValue().getCount()) + "\n");
 			} catch (Exception e) {
 				LOG.error("Failed to access counter: " + entry.getKey());
 			}
 		}
 		for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
 			try {
-//				fwHistogram.write(entry.getKey() + ":" + System.currentTimeMillis() + ":"
-//						+ String.valueOf(entry.getValue().getCount()) + "\n");
+				// fwHistogram.write(entry.getKey() + ":" +
+				// System.currentTimeMillis() + ":"
+				// + String.valueOf(entry.getValue().getCount()) + "\n");
 			} catch (Exception e) {
 				LOG.error("Failed to access histogram: " + entry.getKey());
 			}
 		}
 		for (Map.Entry<String, Meter> entry : meters.entrySet()) {
 			try {
-//				fwCounters.write(entry.getKey() + ":" + System.currentTimeMillis() + ":"
-//						+ String.valueOf(entry.getValue().getRate()) + "\n");
-				if(entry.getKey().contains("numBytesOutPerSecond") || entry.getKey().contains("numRecordsOutPerSecond")) {
+				// fwCounters.write(entry.getKey() + ":" +
+				// System.currentTimeMillis() + ":"
+				// + String.valueOf(entry.getValue().getRate()) + "\n");
+				if (entry.getKey().contains("numBytesOutPerSecond")
+						|| entry.getKey().contains("numRecordsOutPerSecond")) {
 					try {
-						outputStream.writeBytes("#|" +entry.getKey() + "|" + entry.getValue().getRate() + "\n");
+						outputStream.writeBytes("#|" + entry.getKey() + "|" + entry.getValue().getRate() + "\n");
 					} catch (Exception e) {
 						LOG.error("Failed to connection to MetricServer: " + e.getMessage());
 						restartConnection();
