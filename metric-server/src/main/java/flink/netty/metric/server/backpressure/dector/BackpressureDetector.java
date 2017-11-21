@@ -1,16 +1,13 @@
 package flink.netty.metric.server.backpressure.dector;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -28,17 +25,19 @@ public class BackpressureDetector implements Runnable {
 	public static final int timeWindow = 8;
 	private ArrayList<Boolean> backpressureList = new ArrayList<Boolean>();
 	private Node slowOperatorNode = null;
-	private double slaMaxLatency = 100.0;
+	//is zero for testing
+	private double slaMaxLatency = 0.0;
 	private boolean reScaleAttempted = false;
 	private Node slowLinkNode = null;
+	private String slowLinkID;
 	private Map<String, Node> nodeAndTypes;
 	private Map<Integer, Node> nodeIDtoNodeMap;
-	private double slowLinkoutBufferUsageThreshold = 0.99;
-	private double slowLinkFreeOfBPThreashold = 0.99;
-	private double outputBPbackpressureThreshold = 0.99;
-	private double slowTaskinputBPThreshold = 0.99;
-	private double slowTaskoutputBPThreshold = 0.30;
-	private double mBAThreshold = 0.5;
+	private static final double SLOWLINK_OUT_BP_USAGE = 0.99;
+	private static final double SLOWLINK_FREE_OF_PRESSURE = 0.99;
+	private static final double OUTPUT_BACKPRESSURE_THRESHOLD = 0.99;
+	private static final double SLOWTASK_INPUT_BP_THRESHOLD = 0.99;
+	private static final double SLOWTASK_OUTPUT_BP_THRESHOLD = 0.30;
+	private static final double MBA_THRESHOLD = 0.5;
 	// Does not account for different pipelines.
 	private double maxPipeLineDelay = 0;
 	private String jobDescription = "SocketWordCountParallelism";
@@ -60,7 +59,7 @@ public class BackpressureDetector implements Runnable {
 			String type = id.split("\\.")[1];
 			String inOrOut = id.split("\\.")[3];
 			Node node = nodeAndTypes.get(type);
-
+			
 			if (node.getType().contains(type)) {
 				if (inOrOut.equals("in")) {
 					node.updateTaskAndInputBufferUsage(machine, bufferPoolUsage);
@@ -103,8 +102,8 @@ public class BackpressureDetector implements Runnable {
 		for (Node node : flinkExecutionPlan.getNodes()) {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
 				// slow task found
-				if ((entry.getValue().inputBufferPoolusage >= slowTaskinputBPThreshold || entry.getValue().calculateInputBMA() > mBAThreshold)
-						&& entry.getValue().outputBufferPoolusage <= slowTaskoutputBPThreshold ) {
+				if ((entry.getValue().inputBufferPoolusage >= SLOWTASK_INPUT_BP_THRESHOLD || entry.getValue().calculateInputBMA() > MBA_THRESHOLD)
+						&& entry.getValue().outputBufferPoolusage <= SLOWTASK_OUTPUT_BP_THRESHOLD ) {
 
 					try {
 						// we only consider one slow task
@@ -142,7 +141,7 @@ public class BackpressureDetector implements Runnable {
 			for (Predecessor predecessor : node.getPredecessors()) {
 				Node currPredecessor = nodeIDtoNodeMap.get(predecessor.getId());
 				for (Map.Entry<String, Tuple> preEntry : currPredecessor.getTaskAndBufferUsage().entrySet()) {
-					if (preEntry.getValue().outputBufferPoolusage >= slowLinkoutBufferUsageThreshold) {
+					if (preEntry.getValue().outputBufferPoolusage >= SLOWLINK_OUT_BP_USAGE) {
 						noPredecessorHasBackpressure = false;
 					}
 				}
@@ -161,15 +160,15 @@ public class BackpressureDetector implements Runnable {
 			// compute max pipeline delay
 			maxPipeLatency += node.getMaxLatency();
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage > slowLinkoutBufferUsageThreshold || entry.getValue().calculateOutputBMA() > mBAThreshold) {
+				if (entry.getValue().outputBufferPoolusage > SLOWLINK_OUT_BP_USAGE || entry.getValue().calculateOutputBMA() > MBA_THRESHOLD) {
 					Node successorNode = node.getSuccessor();
 					if (successorNode == null) {
-						if (!node.getId().equals(slowTaskID)) {
-
+						if (!slowTaskID.contains(node.getId().toString())) {
 							// System.out.print("l" + node.getType());
+							slowLinkID  = entry.getKey();
 							slowLinkNode = node;
+							return;
 						}
-
 					} else {
 						// is successor our backpressure node?
 						if (!successorNode.equals(slowOperatorNode)) {
@@ -180,19 +179,22 @@ public class BackpressureDetector implements Runnable {
 							// link
 							// free of backpressure?
 							for (Map.Entry<String, Tuple> sucEn : successorNode.getTaskAndBufferUsage().entrySet()) {
-								if (sucEn.getValue().inputBufferPoolusage > slowLinkFreeOfBPThreashold) {
+								if (sucEn.getValue().inputBufferPoolusage > SLOWLINK_FREE_OF_PRESSURE) {
 									foundSuccesorWithBackpressure = true;
 								}
 							}
 							if (!foundSuccesorWithBackpressure) {
 								// System.out.print("x" + node.getType());
+								slowLinkID  = entry.getKey();
 								slowLinkNode = node;
+								return;
 							}
 						}
 
 					}
 				}
 			}
+			slowLinkID  = "";
 			slowLinkNode = null;
 		}
 		maxPipeLineDelay = maxPipeLatency;
@@ -213,14 +215,14 @@ public class BackpressureDetector implements Runnable {
 				countAffectNodes += checkBackpressureExpansion(prepredecessor.getId());
 			}
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage >= outputBPbackpressureThreshold) {
+				if (entry.getValue().outputBufferPoolusage >= OUTPUT_BACKPRESSURE_THRESHOLD) {
 					countAffectNodes++;
 				}
 			}
 			return countAffectNodes;
 		} else {
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
-				if (entry.getValue().outputBufferPoolusage >= outputBPbackpressureThreshold) {
+				if (entry.getValue().outputBufferPoolusage >= OUTPUT_BACKPRESSURE_THRESHOLD) {
 					countAffectNodes++;
 				}
 			}
@@ -241,62 +243,50 @@ public class BackpressureDetector implements Runnable {
 		return false;
 	}
 
-	private void generateParallelismIncremtSuggestion() {
-		List<Node> nodesWithBackpressure = new ArrayList<Node>();
-		List<Node> nodesToIgnore = new ArrayList<Node>();
-		for (Node node : flinkExecutionPlan.getNodes()) {
-			if (node.getBackpressure()) {
-				nodesWithBackpressure.add(node);
-			}
-		}
-
-		for (Node node : nodesWithBackpressure) {
-			// remove Predecessors with backpressure from nodesWithBackpressure
-			// list
-			if (node.getPredecessors() != null) {
-				for (Predecessor predecessor : node.getPredecessors()) {
-					int predecessorID = predecessor.getId();
-					if (hasPredecessorBackpressure(predecessorID)) {
-						// find Node by ID and add to ignor list.
-						for (Node ignoreNode : nodesWithBackpressure) {
-							if (ignoreNode.getId() == predecessorID) {
-								nodesToIgnore.add(ignoreNode);
-							}
-						}
-
-					}
-				}
-			}
-
-		}
-		nodesWithBackpressure.removeAll(nodesToIgnore);
-		for (Node node : nodesWithBackpressure) {
-			if (!currentSuggestionForIncrementList.contains(node)) {
-				System.out.println(
-						"Suggestion Increment: " + node.getType() + " current Parallelism: " + node.getParallelism());
-			}
-
-		}
-
-		currentSuggestionForIncrementList = nodesWithBackpressure;
-	}
-
-
 	private void mitigateOrNot() {
 		// we can only scale UP
-		if (slowOperatorNode != null && maxPipeLineDelay > slaMaxLatency && !reScaleAttempted
-				&& MetricServer.mitigate) {
+		if (slowOperatorNode != null && maxPipeLineDelay > slaMaxLatency && !reScaleAttempted) {
 			Pattern pattern = detectPattern(slowOperatorNode);
-			System.out.println("Pattern detected: " +  pattern);
+			reScaleAttempted = true;
+			userSystemOutput(pattern, "Slow Task", slowOperatorNode);
+			
 			if(pattern.equals(Pattern.NtoMkeyed)) {
 				// we don't know how long rescaling actually takes, so it is
 				// only allowed to do it once.
-				reScaleAttempted = true;
-				System.out.println("SLA violation! Latency is  " + maxPipeLineDelay + "Attempding to rescale. Time: "
-						+ System.currentTimeMillis());
-				new Thread(new MitigateThread(jobDescription, jobCommand)).start();
+
+				if(MetricServer.mitigate) {
+					System.out.println("SLA violation! Latency is  " + maxPipeLineDelay + "Attempding to rescale. Time: " + System.currentTimeMillis());
+					new Thread(new MitigateThread(jobDescription, jobCommand)).start();
+				}
+
 			}
 		}
+		if (slowLinkNode != null && maxPipeLineDelay > slaMaxLatency && !reScaleAttempted
+				) {
+			Pattern pattern = detectPattern(slowLinkNode);
+			reScaleAttempted = true;
+			userSystemOutput(pattern, "Slow Link", slowLinkNode);
+
+		}
+	}
+	
+	private void userSystemOutput(Pattern pattern, String slowTaskoLink, Node node) {
+		System.out.println("###########################################################");
+		System.out.println("Pattern: " +  pattern);
+		System.out.println("Operator: " + node.getType());
+		System.out.println("Cause: " + slowTaskoLink);
+		if(slowTaskoLink.contains("Link")) {
+			System.out.println("Location: "+ slowLinkID);
+		} else {
+			System.out.println("Location: "+ slowTaskID.replace(node.getId().toString(), ""));
+		}
+		System.out.print("Recomended Mitigation Techniques: " );
+		for(MitigationTechnique mt : getMitigationTechnique(pattern, true)) {
+			System.out.print(mt + " ");
+		}
+		System.out.println();
+		System.out.println("Timestamp: " + System.currentTimeMillis());
+		System.out.println("###########################################################");
 	}
 
 	private void removeOldLatencies() {
@@ -348,14 +338,39 @@ public class BackpressureDetector implements Runnable {
 			if (firstPredecessor.getAdditionalProperties().get("ship_strategy").toString().equals("HASH")) {
 				return Pattern.NtoMkeyed;
 			}
-			if (parallelismNode < parallelismPredecessor) {
+			
+			if (parallelismNode > parallelismPredecessor) {
+				//M smaller N
 				return Pattern.MbiggerN;
 			} else {
-				return Pattern.NsmallerOrEqualM;
+				return Pattern.NbiggerOrEqualM;
 			}
 		}
 		System.out.println("Pattern couldn't be identified. ");
 		return null;
+	}
+	private List<MitigationTechnique> getMitigationTechnique(Pattern pattern, boolean slowNodeLink) {
+		if(slowNodeLink) {
+			if(pattern.equals(Pattern.NtoMkeyed)) {
+				List<MitigationTechnique> result = new ArrayList<MitigationTechnique>();
+				result.add(MitigationTechnique.PARTITIONING);
+				result.add(MitigationTechnique.SCALING);
+				return result;
+			} else if (pattern.equals(Pattern.MbiggerN)) {
+				List<MitigationTechnique> result = new ArrayList<MitigationTechnique>();
+				result.add(MitigationTechnique.BALANCING);
+				result.add(MitigationTechnique.SCALING);
+				return result;
+			} else {
+				List<MitigationTechnique> result = new ArrayList<MitigationTechnique>();
+				result.add(MitigationTechnique.SCALING);
+				return result;
+			}
+		} else {
+			//We don't know about Data Skew.
+			return null;
+		}
+
 	}
 
 	@Override
