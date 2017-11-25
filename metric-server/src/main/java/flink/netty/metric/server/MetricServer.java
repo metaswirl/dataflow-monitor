@@ -2,7 +2,6 @@ package flink.netty.metric.server;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 
 import flink.netty.metric.server.backpressure.dector.BackpressureDetector;
 import io.netty.bootstrap.ServerBootstrap;
@@ -89,20 +88,14 @@ public class MetricServer {
 			bossGroup.shutdownGracefully();
 		}
 	}
+	void init(String[] args) {
 
+	}
 	public static void main(String[] args) throws Exception {
-		int port = 9888;
-		if (args.length > 0) {
-			//port = Integer.parseInt(args[0]);
-			if(args[0].equals("mitigate")) {
-				mitigate = true;
-				System.out.println("Mitigation active");
-			} else {
-				mitigate = false;
-			}
-		} else {
-			mitigate = false;
-		}
+		
+		ConfigOptions configOptions = new ConfigOptions(args);
+		int port = configOptions.PORT;
+		mitigate = configOptions.MITIGATE;
 		try {
 			fw = new FileWriter("metrics.csv", true);
 			fwMeter = new FileWriter("meter-metrics.csv", true);
@@ -110,7 +103,7 @@ public class MetricServer {
 			System.out.println("Error while setting up FileWriter.");
 		}
 		System.out.println("BackpressuerDector started.");
-		new Thread(new BackpressureDetector()).start();
+		new Thread(new BackpressureDetector(configOptions)).start();
 		System.out.println("FlinkNettyMetricServer started.");
 		new MetricServer(port).run();
 	}

@@ -35,14 +35,14 @@ public class Tuple {
 	}
 	
 	private void updateInputBPusageList(double inputBPusage) {
-		if (inputBPusageList.size() >= BackpressureDetector.timeWindow) {
+		if (inputBPusageList.size() >= BackpressureDetector.TIME_WINDOW) {
 			inputBPusageList.remove(0);
 		}
 		inputBPusageList.add(inputBPusage);
 	}
 
 	private void updateOutputBPusageList(double outputBPusage) {
-		if (outBPusageList.size() >= BackpressureDetector.timeWindow) {
+		if (outBPusageList.size() >= BackpressureDetector.TIME_WINDOW) {
 			outBPusageList.remove(0);
 		}
 		outBPusageList.add(outputBPusage);

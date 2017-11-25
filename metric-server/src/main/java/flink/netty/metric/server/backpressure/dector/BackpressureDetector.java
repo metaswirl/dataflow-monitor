@@ -3,6 +3,8 @@ package flink.netty.metric.server.backpressure.dector;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +15,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import flink.netty.metric.server.ConfigOptions;
 import flink.netty.metric.server.MetricServer;
 
 public class BackpressureDetector implements Runnable {
@@ -20,13 +23,13 @@ public class BackpressureDetector implements Runnable {
 	FileWriter fw;
 	FileWriter fwLatency;
 	private FlinkExecutionPlan flinkExecutionPlan;
-	private String slowTaskID = "-1";
-	public static final int timeWindow = 8;
+
 	// is zero for testing
 	private double slaMaxLatency = 0.0;
 	private boolean reScaleAttempted = false;
 	private Map<String, Node> nodeAndTypes;
 	private Map<Integer, Node> nodeIDtoNodeMap;
+	public static final int TIME_WINDOW = 8;
 	private static final double SLOWLINK_OUT_BP_USAGE = 0.99;
 	private static final double SLOWLINK_FREE_OF_PRESSURE = 0.99;
 	private static final double OUTPUT_BACKPRESSURE_THRESHOLD = 0.99;
@@ -37,7 +40,12 @@ public class BackpressureDetector implements Runnable {
 	private double maxPipeLineDelay = 0;
 	private String jobDescription = "SocketWordCountParallelism";
 	private String jobCommand = " -n examples/streaming/SocketWordCountParallelism2.jar --port 9001 --sleep 30000 --para 3 --parareduce 4 --ip loadgen112 --node 172.16.0.114 --sleep2 0 --timewindow 0 --timeout 100 --path test";
-	private int intervalCheck = 100;
+	ConfigOptions configOptions;
+	public BackpressureDetector(ConfigOptions configOptions) {
+		this.configOptions = configOptions;
+		this.slaMaxLatency = configOptions.SLA_MAX_LATENCY;
+		this.jobDescription = configOptions.JOB_DESC;
+	}
 
 	/**
 	 * BufferPoolUsage over 50 % -> Backpressure
@@ -259,7 +267,7 @@ public class BackpressureDetector implements Runnable {
 					// we don't know how long rescaling actually takes, so it is
 					// only allowed to do it once.
 
-					if (MetricServer.mitigate) {
+					if (configOptions.MITIGATE) {
 						System.out.println("SLA violation! Latency is  " + maxPipeLineDelay
 								+ "Attempding to rescale. Time: " + System.currentTimeMillis());
 						new Thread(new MitigateThread(jobDescription, jobCommand)).start();
@@ -386,6 +394,7 @@ public class BackpressureDetector implements Runnable {
 	@Override
 	public void run() {
 		ObjectMapper mapper = new ObjectMapper();
+		int interval = configOptions.INTERVAL;
 		try {
 			fw = new FileWriter("backpressure.csv", true);
 			fwLatency = new FileWriter("oplatency.csv", true);
@@ -393,6 +402,14 @@ public class BackpressureDetector implements Runnable {
 			// best would be to use Flinks API to get it, but who has time for
 			// that?^^
 			flinkExecutionPlan = mapper.readValue(new File("exeplan.json"), FlinkExecutionPlan.class);
+			try {
+				String content = new String(Files.readAllBytes(Paths.get("jobcommand.txt")));
+				jobCommand = content;
+			} catch (Exception e1) {
+				System.out.println("Error reading JobCommand from file jobcommand.txt");
+				System.out.println("Using default JobCommand.");
+				jobCommand = configOptions.JOB_COMMAND_DEFAULT;
+			}
 			init();
 			Task slowTaskorLink = null;
 			while (true) {
@@ -401,7 +418,7 @@ public class BackpressureDetector implements Runnable {
 					// we wouldn't need this if we used a signal from the
 					// FileFlinkReporter telling us when it is finished sending
 					// data.
-					Thread.sleep(intervalCheck);
+					Thread.sleep(interval);
 				} catch (InterruptedException e) {
 					System.out.println("BackpressureDector: Error count not sleep.");
 				}
@@ -424,15 +441,12 @@ public class BackpressureDetector implements Runnable {
 				slowTaskorLink = detectBackpressureInExecutionGraph(slowTaskorLink);
 
 				mitigateOrNot(slowTaskorLink);
-				if (slowTaskID.equals("-1")) {
-					// signal
+				// signal
+				if (slowTaskorLink == null) {
 					fw.write(System.currentTimeMillis() + ";NoBackpressure;" + "0;" + "0;" + "0;0" + "\n");
 					// generateParallelismIncremtSuggestion();
 					fw.flush();
-				} else {
-
-				}
-
+				} 
 			}
 		} catch (JsonParseException e) {
 			e.printStackTrace();

@@ -53,7 +53,6 @@ public class BackpressureData {
 			if (metricData.contains("latency") &&  metricData.contains("p99")) {
 				String[] splitByPipe = metricData.split("\\|");
 				if (splitByPipe.length == 3 ) {
-					String operator = splitByPipe[1].split("\\.")[4];
 					String value = splitByPipe[2].split("\\}\\=\\{")[1].replaceAll("\\}\\}", "").replaceAll("p99=", "").replaceAll("p50=", "").replaceAll("min=", "").replaceAll("max=", "").replaceAll("p95=", "").replaceAll("mean=", "").replaceAll(" ", "");
 					double max = Double.valueOf(value.split(",")[3]);
 					String key = splitByPipe[1];
