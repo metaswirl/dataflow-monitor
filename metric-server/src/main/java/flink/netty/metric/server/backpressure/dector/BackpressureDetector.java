@@ -37,7 +37,6 @@ public class BackpressureDetector implements Runnable {
 	private static final double SLOWTASK_OUTPUT_BP_THRESHOLD = 0.30;
 	private static final double MBA_THRESHOLD = 0.5;
 	// Does not account for different pipelines.
-	private double maxPipeLineDelay = 0;
 	private String jobDescription = "SocketWordCountParallelism";
 	private String jobCommand = " -n examples/streaming/SocketWordCountParallelism2.jar --port 9001 --sleep 30000 --para 3 --parareduce 4 --ip loadgen112 --node 172.16.0.114 --sleep2 0 --timewindow 0 --timeout 100 --path test";
 	ConfigOptions configOptions;
@@ -175,13 +174,17 @@ public class BackpressureDetector implements Runnable {
 			}
 		}
 	}
-
-	public SlowLink detectSlowLink(SlowLink slowlink) {
-
+	public double maxPipeLatency() {
 		double maxPipeLatency = 0;
 		for (Node node : flinkExecutionPlan.getNodes()) {
-			// compute max pipeline delay
 			maxPipeLatency += node.getMaxLatency();
+		}
+		return maxPipeLatency;
+	}
+	public SlowLink detectSlowLink(SlowLink slowlink) {
+
+		for (Node node : flinkExecutionPlan.getNodes()) {
+			// compute max pipeline delay
 			for (Map.Entry<String, Tuple> entry : node.getTaskAndBufferUsage().entrySet()) {
 				if (entry.getValue().outputBufferPoolusage > SLOWLINK_OUT_BP_USAGE
 						|| entry.getValue().calculateOutputBMA() > MBA_THRESHOLD) {
@@ -219,7 +222,6 @@ public class BackpressureDetector implements Runnable {
 				}
 			}
 		}
-		maxPipeLineDelay = maxPipeLatency;
 		return null;
 
 	}
@@ -257,7 +259,7 @@ public class BackpressureDetector implements Runnable {
 	private void mitigateOrNot(Task task) {
 		// we can only scale UP
 		if(task != null ) {
-
+			double maxPipeLineDelay = maxPipeLatency();
 			if (task instanceof SlowTask && maxPipeLineDelay > slaMaxLatency && !reScaleAttempted) {
 				Pattern pattern = detectPattern(task.getNode());
 				reScaleAttempted = true;
@@ -436,7 +438,7 @@ public class BackpressureDetector implements Runnable {
 				// we should do this for all nodes input and output buffer
 
 				// latency signal
-				fwLatency.write(System.currentTimeMillis() + " " + maxPipeLineDelay + "\n");
+				fwLatency.write(System.currentTimeMillis() + " " + maxPipeLatency() + "\n");
 				fwLatency.flush();
 				slowTaskorLink = detectBackpressureInExecutionGraph(slowTaskorLink);
 
