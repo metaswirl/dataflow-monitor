@@ -23,7 +23,7 @@ public class ConfigOptions {
 	final int PORT_DEFAULT = 9888;
 	public final int PORT;
 
-	public static final String JOB_COMMAND_DEFAULT = " -n examples/streaming/SocketWordCountParallelism2.jar --port 9001 --sleep 30000 --para 3 --parareduce 4 --ip loadgen112 --node 172.16.0.114 --sleep2 0 --timewindow 0 --timeout 100 --path test";
+	public final String JOB_COMMAND_DEFAULT = " -n examples/streaming/SocketWordCountParallelism2.jar --port 9001 --sleep 30000 --para 3 --parareduce 4 --ip loadgen112 --node 172.16.0.114 --sleep2 0 --timewindow 0 --timeout 100 --path test";
 
 	public ConfigOptions(final String[] args) throws ParseException {
 		Options options = new Options();

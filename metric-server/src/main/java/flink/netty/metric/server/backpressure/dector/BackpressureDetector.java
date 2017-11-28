@@ -125,20 +125,13 @@ public class BackpressureDetector implements Runnable {
 
 					try {
 						// we only consider one slow task
-						// if (slowTaskID.equals("-1")) {
-						// slowTaskID = node.getId().toString() +
-						// entry.getKey();
-						// }
-						// if (slowOperatorNode == null) {
-						// slowOperatorNode = node;
-						// }
 						if (task == null) {
-
+							
 							int affectedNodes = checkBackpressureExpansion(node.getId()) + 1;
 							fw.write(System.currentTimeMillis() + ";slowTask;" + node.getType() + ";" + entry.getKey()
 									+ ";" + affectedNodes + ";" + entry.getValue().calculateOutputBMA() + "\n");
 							fw.flush();
-							System.out.print("*");
+							//System.out.println("*" + System.currentTimeMillis());
 							return new SlowTask(node, entry.getKey());
 						} else {
 							return task;
@@ -191,9 +184,6 @@ public class BackpressureDetector implements Runnable {
 					Node successorNode = node.getSuccessor();
 					if (successorNode == null) {
 						if (slowlink == null || !slowlink.getNode().getId().equals(node.getId())) {
-							// System.out.print("l" + node.getType());
-							// slowLinkID = entry.getKey();
-							// slowLinkNode = node;
 							return new SlowLink(node, entry.getKey());
 						}
 					} else {
@@ -211,9 +201,6 @@ public class BackpressureDetector implements Runnable {
 								}
 							}
 							if (!foundSuccesorWithBackpressure) {
-								// System.out.print("x" + node.getType());
-								// slowLinkID = entry.getKey();
-								// slowLinkNode = node;
 								return new SlowLink(node, entry.getKey());
 							}
 						}
@@ -297,7 +284,7 @@ public class BackpressureDetector implements Runnable {
 		} else {
 			System.out.println("Location: " + task.getId());
 		}
-		System.out.print("Recomended Mitigation Techniques: ");
+		System.out.print("Recomended Mitigation: ");
 		for (MitigationTechnique mt : getMitigationTechnique(pattern, true)) {
 			System.out.print(mt + " ");
 		}
