@@ -17,7 +17,11 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import flink.netty.metric.server.ConfigOptions;
 import flink.netty.metric.server.MetricServer;
-
+/**
+ * 
+ * @author David Herzog
+ *
+ */
 public class BackpressureDetector implements Runnable {
 
 	FileWriter fw;
@@ -275,6 +279,9 @@ public class BackpressureDetector implements Runnable {
 	}
 
 	private void userSystemOutput(Pattern pattern, String slowTaskoLink, Task task) {
+		if(pattern == null) {
+			return;
+		}
 		System.out.println("###########################################################");
 		System.out.println("Pattern: " + pattern);
 		System.out.println("Operator: " + task.getNode().getType());

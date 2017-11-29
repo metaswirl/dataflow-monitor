@@ -16,6 +16,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 /**
  * Discards any incoming data.
+ * @author David Herzog
  */
 public class MetricServer {
 
@@ -93,7 +94,13 @@ public class MetricServer {
 	}
 	public static void main(String[] args) throws Exception {
 		
-		ConfigOptions configOptions = new ConfigOptions(args);
+		ConfigOptions configOptions = null;
+		try {
+			configOptions = new ConfigOptions(args);
+		} catch (Exception e1) {
+			System.out.println("Argument Parsing Error. Try the -h option for help.");
+			System.exit(-1);
+		}
 		int port = configOptions.PORT;
 		mitigate = configOptions.MITIGATE;
 		try {
