@@ -26,9 +26,10 @@ scalaVersion := "2.11.12"
 
 // WARNING: Intellij throws a fit, sbt from console works fine!
 
+// %% - means add scala version to end of name
 libraryDependencies ++= Seq(
-  "org.slf4j" % "slf4j-api" % "1.7.25",
-  "org.slf4j" % "slf4j-log4j12" % "1.7.25",
+  //"org.slf4j" % "slf4j-api" % "1.7.25",
+  //"org.slf4j" % "slf4j-log4j12" % "1.7.25",
   "io.dropwizard.metrics" % "metrics-core" % "3.1.0",
   "org.apache.flink" % "flink-scala_2.11" % flinkVersion, // different scala version not sure if this is a problem
   "org.apache.flink" % "flink-streaming-scala_2.11" % flinkVersion,
@@ -36,4 +37,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" % "akka-actor_2.11" % "2.4.20"
 )
 
-// %% - means add scala version to end of name
+// Niklas: So I have conflicts because both flink and this codebase use Akka, but
+// different versions of Akka.
+assemblyMergeStrategy in assembly := {
+    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+    case PathList("akka", xs @ _*) => MergeStrategy.first
+    case PathList("reference.conf", xs @ _*) => MergeStrategy.first
+    case PathList("rootdoc.txt", xs @ _*) => MergeStrategy.first
+    // Default strategy
+    case x => MergeStrategy.deduplicate
+}
+

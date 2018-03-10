@@ -2,15 +2,30 @@ package berlin.bbdc.inet.flinkReporterScala
 
 import org.apache.flink.metrics._
 
-class MockGauge[T] extends Gauge[T] {
-  override def getValue = ???
+class MockGauge[T](value : T) extends Gauge[T] {
+  override def getValue = value
 }
-class MockHistogram extends Histogram {
-  override def getStatistics = ???
+class MockHistStats(min: Long, max: Long, mean: Double) extends HistogramStatistics {
+  override def getValues: Array[Long] = ???
+
+  override def getMax: Long = max
+
+  override def getStdDev: Double = ???
+
+  override def size(): Int = ???
+
+  override def getMin: Long = min
+
+  override def getQuantile(quantile: Double): Double = ???
+
+  override def getMean: Double = mean
+}
+class MockHistogram(count: Long, stats: MockHistStats) extends Histogram {
+  override def getStatistics = stats
 
   override def update(value: Long) = ???
 
-  override def getCount = ???
+  override def getCount = count
 }
 class MockMeter extends Meter {
   override def getRate = ???
@@ -51,7 +66,7 @@ class MockMetricGroup extends MetricGroup {
 
   override def meter[M <: Meter](name: Int, meter: M) = ???
 
-  override def getMetricIdentifier(metricName: String) = ???
+  override def getMetricIdentifier(metricName: String) = metricName
 
   override def getMetricIdentifier(metricName: String, filter: CharacterFilter) = ???
 
@@ -83,6 +98,10 @@ object TestFlinkReporter {
     val x = new FlinkMetricPusher
     x.notifyOfAddedMetric(new MockCounter(), "fubar", new MockMetricGroup)
     x.notifyOfAddedMetric(new MockCounter(10), "fubarx", new MockMetricGroup)
+    x.notifyOfAddedMetric(new MockGauge[Long](10000L), "buddy-long", new MockMetricGroup)
+    x.notifyOfAddedMetric(new MockGauge[Int](1010), "buddy-int", new MockMetricGroup)
+    x.notifyOfAddedMetric(new MockGauge[Short](13), "buddy-short", new MockMetricGroup)
+    x.notifyOfAddedMetric(new MockHistogram(10L, new MockHistStats(0L, 101L, 100.0)), "friend", new MockMetricGroup)
     x.report()
     x.notifyOfAddedMetric(new MockCounter(12), "asd", new MockMetricGroup)
     x.report()
