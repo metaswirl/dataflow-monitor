@@ -11,6 +11,6 @@ class ScalatraBootstrap extends LifeCycle {
     context.mount(new CollectorRestServlet, "/*")
   }
 
-  FlinkConnector.interval = 5
-  FlinkConnector.scheduleFlinkPeriodicRequest()
+  val interval = 5
+  FlinkConnector.scheduleFlinkPeriodicRequest(interval)
 }

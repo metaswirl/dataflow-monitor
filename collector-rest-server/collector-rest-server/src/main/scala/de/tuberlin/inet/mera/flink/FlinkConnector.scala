@@ -17,8 +17,6 @@ import scala.io.Source
 object FlinkConnector {
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  var interval: Long = 10L
-
   var jobsMap = new mutable.HashMap[String, List[String]]
 
   var flinkPort: Integer = 8081
@@ -34,27 +32,29 @@ object FlinkConnector {
     map
   }
 
-  def scheduleFlinkPeriodicRequest(): Unit = {
+  def scheduleFlinkPeriodicRequest(interval: Long): Unit = {
     val ex = new ScheduledThreadPoolExecutor(1)
     val task = new Runnable {
-      def run() = {
+      def run(): Unit = {
+        //get current jobs from Flink
         val jobs = getRestContent(flinkUrl + flinkPort + flinkJobs)
+        //map to intermediate object
         val job: Jobs = objectMapper.readValue[Jobs](jobs)
+        //sum all of them to a list
         val allCurrentJobs: List[String] = job.jobsRunning ::: job.jobsFinished :::
           job.jobsCancelled ::: job.jobsFailed
+        //iterate through the list and add/update them in the jobsMap
         for (job <- allCurrentJobs) {
           val jobProperties: String = getRestContent(flinkUrl + flinkPort + flinkJobs + job)
-          val list: Option[List[String]] = jobsMap.get(job)
-          if (list.isEmpty)
-            jobsMap += (job -> List(jobProperties))
-          else {
-            val add: List[String] = list.get ::: List(jobProperties)
-            jobsMap += (job -> add)
+
+          jobsMap.get(job) match {
+            case Some(list) => jobsMap += (job -> (list ::: List(jobProperties)))
+            case None => jobsMap += (job -> List(jobProperties))
           }
         }
       }
     }
-    val f = ex.scheduleAtFixedRate(task, 1, interval, TimeUnit.SECONDS)
+    ex.scheduleAtFixedRate(task, 1, interval, TimeUnit.SECONDS)
     //    f.cancel(false)
   }
 
@@ -63,14 +63,16 @@ object FlinkConnector {
     val request = new HttpGet(url)
 
     val response = client.execute(request)
-    val entity = response.getEntity
-    var content = ""
-    if (entity != null) {
-      val inputStream = entity.getContent
-      content = Source.fromInputStream(inputStream).getLines.mkString
-      inputStream.close()
+    Option(response.getEntity)
+      .map(x => x.getContent)
+      .map(y => {
+        val res = Source.fromInputStream(y).getLines.mkString
+        y.close()
+        client.close()
+        res
+      }) match {
+      case Some(s) => s
+      case None => ""
     }
-    client.close()
-    content
   }
 }
