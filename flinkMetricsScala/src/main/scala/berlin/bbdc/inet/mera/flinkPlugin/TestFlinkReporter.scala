@@ -1,9 +1,12 @@
-package berlin.bbdc.inet.flinkReporterScala
+package berlin.bbdc.inet.mera.flinkPlugin
 
 import org.apache.flink.metrics._
+import scala.io.Source
+import scala.collection.mutable.Set
 
-class MockGauge[T](value : T) extends Gauge[T] {
+class MockGauge[T](var value : T) extends Gauge[T] {
   override def getValue = value
+  def setValue(newValue : T) = { value = newValue }
 }
 class MockHistStats(min: Long, max: Long, mean: Double) extends HistogramStatistics {
   override def getValues: Array[Long] = ???
@@ -96,14 +99,41 @@ object TestFlinkReporter {
     val a = """{"type":"counter", "key":"fubar", "value":1}"""
     println("Client")
     val x = new FlinkMetricPusher
-    x.notifyOfAddedMetric(new MockCounter(), "fubar", new MockMetricGroup)
-    x.notifyOfAddedMetric(new MockCounter(10), "fubarx", new MockMetricGroup)
-    x.notifyOfAddedMetric(new MockGauge[Long](10000L), "buddy-long", new MockMetricGroup)
-    x.notifyOfAddedMetric(new MockGauge[Int](1010), "buddy-int", new MockMetricGroup)
-    x.notifyOfAddedMetric(new MockGauge[Short](13), "buddy-short", new MockMetricGroup)
-    x.notifyOfAddedMetric(new MockHistogram(10L, new MockHistStats(0L, 101L, 100.0)), "friend", new MockMetricGroup)
+    // TODO: This does not handle updates well
+
+    var set : Set[String] = Set()
+    var gauges : Map[String, MockGauge[Long]] = Map()
+    var count = 0
+    for (line <- Source.fromFile(getClass.getClassLoader.getResource("testData/testMetrics.txt").getFile).getLines) {
+      val l = line.stripLineEnd
+      if (l.length > 1) {
+        val lParts: Array[String] = line.split(",")
+        val key: String = lParts(0)
+        val value: Long = lParts(1).toLong
+        if (gauges.contains(key)) {
+            gauges(key).setValue(value)
+        } else {
+          val gauge = new MockGauge[Long](value)
+          gauges += key -> gauge
+          x.notifyOfAddedMetric(gauge, key, new MockMetricGroup)
+        }
+        if (set.contains(key)) {
+          count += 1
+          x.report()
+          set = Set()
+        }
+        set += key
+      }
+    }
     x.report()
-    x.notifyOfAddedMetric(new MockCounter(12), "asd", new MockMetricGroup)
-    x.report()
+    println("Reported " + count+1)
+    x.printRemote()
+
+    //x.notifyOfAddedMetric(new MockCounter(), "fubar", new MockMetricGroup)
+    //x.notifyOfAddedMetric(new MockCounter(10), "fubarx", new MockMetricGroup)
+    //x.notifyOfAddedMetric(new MockGauge[Long](10000L), "buddy-long", new MockMetricGroup)
+    //x.notifyOfAddedMetric(new MockGauge[Int](1010), "buddy-int", new MockMetricGroup)
+    //x.notifyOfAddedMetric(new MockGauge[Short](13), "buddy-short", new MockMetricGroup)
+    //x.notifyOfAddedMetric(new MockHistogram(10L, new MockHistStats(0L, 101L, 100.0)), "friend", new MockMetricGroup)
   }
 }

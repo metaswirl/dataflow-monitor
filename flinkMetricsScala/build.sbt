@@ -2,11 +2,11 @@ resolvers in ThisBuild ++= Seq("Typesafe Repository" at "http://repo.typesafe.co
   "Apache Development Snapshot Repository" at "https://repository.apache.org/content/repositories/snapshots/",
   Resolver.mavenLocal, Resolver.bintrayRepo("commercetools", "maven"))
 
-name := "flinkMetricsScala"
+name := "mera"
 
-version := "0.1"
+version := "0.2"
 
-organization := "berlin.bbdc.inet.flinkReporterScala"
+organization := "berlin.bbdc.inet"
 
 val flinkVersion = "1.3.2"
 

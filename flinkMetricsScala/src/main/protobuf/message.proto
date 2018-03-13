@@ -1,8 +1,8 @@
 syntax = "proto2";
 
-package berlin.bbdc.inet;
+package berlin.bbdc.inet.mera;
 
-message Data {
+message MetricUpdate {
   required int64 timestamp = 1;
 
   message CounterItem {
@@ -23,7 +23,7 @@ message Data {
   }
   message GaugeItem {
     required string key = 1;
-    required int64 value = 2;
+    required double value = 2;
   }
 
   repeated CounterItem counters = 2;
