@@ -9,89 +9,89 @@ class MockGauge[T](var value : T) extends Gauge[T] {
   def setValue(newValue : T) = { value = newValue }
 }
 class MockHistStats(min: Long, max: Long, mean: Double) extends HistogramStatistics {
-  override def getValues: Array[Long] = ???
+  def getValues: Array[Long] = ???
 
-  override def getMax: Long = max
+  def getMax: Long = max
 
-  override def getStdDev: Double = ???
+  def getStdDev: Double = ???
 
-  override def size(): Int = ???
+  def size(): Int = ???
 
-  override def getMin: Long = min
+  def getMin: Long = min
 
-  override def getQuantile(quantile: Double): Double = ???
+  def getQuantile(quantile: Double): Double = ???
 
-  override def getMean: Double = mean
+  def getMean: Double = mean
 }
 class MockHistogram(count: Long, stats: MockHistStats) extends Histogram {
-  override def getStatistics = stats
+  def getStatistics = stats
 
-  override def update(value: Long) = ???
+  def update(value: Long) = ???
 
-  override def getCount = count
+  def getCount: Long = count
 }
 class MockMeter extends Meter {
-  override def getRate = ???
+  def getRate: Double = ???
 
-  override def markEvent() = ???
+  def markEvent() = ???
 
-  override def markEvent(n: Long) = ???
+  def markEvent(n: Long) = ???
 
-  override def getCount = ???
+  def getCount: Long = ???
 }
 
 class MockCounter(var count : Long = 0) extends Counter {
-  override def dec() = {
+  def dec(): Unit = {
     count = count - 1
   }
 
-  override def dec(n: Long) = {
+  def dec(n: Long): Unit = {
     count = count - n
   }
 
-  override def getCount = count
+  def getCount : Long = count
 
-  override def inc() = {
+  def inc(): Unit = {
     count = count + 1
   }
 
-  override def inc(n: Long) = {
+  def inc(n: Long) : Unit = {
     count = count + n
   }
 }
 
 class MockMetricGroup extends MetricGroup {
-  override def gauge[T, G <: Gauge[T]](name: Int, gauge: G) = ???
+  def gauge[T, G <: Gauge[T]](name: Int, gauge: G) = ???
 
-  override def gauge[T, G <: Gauge[T]](name: String, gauge: G) = ???
+  def gauge[T, G <: Gauge[T]](name: String, gauge: G) = ???
 
-  override def meter[M <: Meter](name: String, meter: M) = ???
+  def meter[M <: Meter](name: String, meter: M) = ???
 
-  override def meter[M <: Meter](name: Int, meter: M) = ???
+  def meter[M <: Meter](name: Int, meter: M) = ???
 
-  override def getMetricIdentifier(metricName: String) = metricName
+  def getMetricIdentifier(metricName: String) = metricName
 
-  override def getMetricIdentifier(metricName: String, filter: CharacterFilter) = ???
+  def getMetricIdentifier(metricName: String, filter: CharacterFilter) = ???
 
-  override def counter(name: Int) = ???
+  def counter(name: Int) = ???
 
-  override def counter(name: String) = ???
+  def counter(name: String) = ???
 
-  override def counter[C <: Counter](name: Int, counter: C) = ???
+  def counter[C <: Counter](name: Int, counter: C) = ???
 
-  override def counter[C <: Counter](name: String, counter: C) = ???
+  def counter[C <: Counter](name: String, counter: C) = ???
 
-  override def getAllVariables = ???
+  def getAllVariables = ???
 
-  override def histogram[H <: Histogram](name: String, histogram: H) = ???
+  def histogram[H <: Histogram](name: String, histogram: H) = ???
 
-  override def histogram[H <: Histogram](name: Int, histogram: H) = ???
+  def histogram[H <: Histogram](name: Int, histogram: H) = ???
 
-  override def getScopeComponents = ???
+  def getScopeComponents = ???
 
-  override def addGroup(name: Int) = ???
+  def addGroup(name: Int) = ???
 
-  override def addGroup(name: String) = ???
+  def addGroup(name: String) = ???
 }
 
 object TestFlinkReporter {
@@ -117,6 +117,7 @@ object TestFlinkReporter {
           gauges += key -> gauge
           x.notifyOfAddedMetric(gauge, key, new MockMetricGroup)
         }
+        // only report if all keys have been seen exactly once
         if (set.contains(key)) {
           count += 1
           x.report()
@@ -126,14 +127,5 @@ object TestFlinkReporter {
       }
     }
     x.report()
-    println("Reported " + count+1)
-    x.printRemote()
-
-    //x.notifyOfAddedMetric(new MockCounter(), "fubar", new MockMetricGroup)
-    //x.notifyOfAddedMetric(new MockCounter(10), "fubarx", new MockMetricGroup)
-    //x.notifyOfAddedMetric(new MockGauge[Long](10000L), "buddy-long", new MockMetricGroup)
-    //x.notifyOfAddedMetric(new MockGauge[Int](1010), "buddy-int", new MockMetricGroup)
-    //x.notifyOfAddedMetric(new MockGauge[Short](13), "buddy-short", new MockMetricGroup)
-    //x.notifyOfAddedMetric(new MockHistogram(10L, new MockHistStats(0L, 101L, 100.0)), "friend", new MockMetricGroup)
   }
 }
