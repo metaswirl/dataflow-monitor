@@ -1,5 +1,6 @@
-package berlin.bbdc.inet.mera.metricServer
+package berlin.bbdc.inet.mera.server.metrics
 
+case class MetricNotFoundException(msg:String) extends Exception
 abstract class Metric[+N] {
   def value: N
 }
@@ -72,14 +73,14 @@ class MeterSummary(override val n: Int) extends MetricSummary[Meter](n) {
   }
 }
 
-sealed trait MetricKey
-case class UnknownMetricKey(metric: String) extends MetricKey
-case class JobManagerMetricKey(host: String, metric: String) extends MetricKey
-abstract class TaskManagerMetricKey(host: String, tmId: String) extends MetricKey
-abstract class TaskManagerStatusMetricKey(host: String, tmId: String) extends TaskManagerMetricKey(host, tmId)
-case class TaskManagerJvmMetricKey(host: String, tmId: String, metric: String) extends TaskManagerStatusMetricKey(host, tmId)
-case class TaskManagerNetworkMetricKey(host: String, tmId: String, metric: String) extends TaskManagerStatusMetricKey(host, tmId)
-case class TaskManagerTaskMetricKey(host: String, tmId: String, jobId: String, opId: String, taskId: Int, metric: String) extends TaskManagerMetricKey(host, tmId)
+abstract class MetricKey(val rawKey: String)
+case class UnknownMetricKey(override val rawKey: String) extends MetricKey(rawKey)
+case class JobManagerMetricKey(override val rawKey: String, host: String, metric: String) extends MetricKey(rawKey)
+abstract class TaskManagerMetricKey(rawKey: String, host: String, tmId: String) extends MetricKey(rawKey)
+abstract class TaskManagerStatusMetricKey(rawKey: String, host: String, tmId: String) extends TaskManagerMetricKey(rawKey, host, tmId)
+case class TaskManagerJvmMetricKey(override val rawKey: String, host: String, tmId: String, metric: String) extends TaskManagerStatusMetricKey(rawKey, host, tmId)
+case class TaskManagerNetworkMetricKey(override val rawKey: String, host: String, tmId: String, metric: String) extends TaskManagerStatusMetricKey(rawKey, host, tmId)
+case class TaskManagerTaskMetricKey(override val rawKey: String, host: String, tmId: String, jobId: String, opId: String, taskId: Int, metric: String) extends TaskManagerMetricKey(rawKey, host, tmId)
 
 object MetricKey {
   var allKeys: Set[String] = Set()
@@ -89,17 +90,17 @@ object MetricKey {
     val splitKey: Array[String] = rawKey.split('.')
     if (splitKey.length > 1 && splitKey(1) == "jobmanager") {
       val host = splitKey(0)
-      return JobManagerMetricKey(host, splitKey.drop(2).mkString("."))
+      return JobManagerMetricKey(rawKey, host, splitKey.drop(2).mkString("."))
     } else if (splitKey.length > 1 && splitKey(1) == "taskmanager") {
       val host = splitKey(0)
       if (splitKey.length > 2 && splitKey(3) == "Status") {
         if (splitKey.length > 4 && splitKey(4) == "JVM") {
-          return TaskManagerJvmMetricKey(host, splitKey(2), splitKey.drop(4).mkString("."))
+          return TaskManagerJvmMetricKey(rawKey, host, splitKey(2), splitKey.drop(4).mkString("."))
         } else if (splitKey.length > 4 && splitKey(4) == "Network") {
-          return TaskManagerNetworkMetricKey(host, splitKey(2), splitKey.drop(4).mkString("."))
+          return TaskManagerNetworkMetricKey(rawKey, host, splitKey(2), splitKey.drop(4).mkString("."))
         }
       } else if (splitKey.length > 6) {
-        return TaskManagerTaskMetricKey(host, splitKey(2), splitKey(3), splitKey(4), splitKey(5).toInt, splitKey.drop(6).mkString("."))
+        return TaskManagerTaskMetricKey(rawKey, host, splitKey(2), splitKey(3), splitKey(4), splitKey(5).toInt, splitKey.drop(6).mkString("."))
       }
     }
     UnknownMetricKey(rawKey)
