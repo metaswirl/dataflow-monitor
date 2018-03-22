@@ -9,7 +9,7 @@ version := "0.2"
 organization := "berlin.bbdc.inet"
 
 val flinkVersion = "1.3.2"
-
+val AkkaVersion = "2.4.20"
 
 // -------- https://scalapb.github.io/index.html ---- BEGIN
 PB.targets in Compile := Seq(
@@ -35,19 +35,21 @@ libraryDependencies ++= Seq(
   "org.apache.flink" % "flink-scala_2.11" % flinkVersion, // different scala version not sure if this is a problem
   "org.apache.flink" % "flink-streaming-scala_2.11" % flinkVersion,
   "org.apache.flink" % "flink-metrics-core" % flinkVersion,
-  "com.typesafe.akka" % "akka-actor_2.11" % "2.4.20",
+  "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0"
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
+  "com.typesafe.akka" %% "akka-http" % "10.1.0",
+  "com.typesafe.akka" %% "akka-stream" % AkkaVersion
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
 // different versions of Akka.
 assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-    case PathList("akka", xs @ _*) => MergeStrategy.first
-    case PathList("reference.conf", xs @ _*) => MergeStrategy.first
-    case PathList("rootdoc.txt", xs @ _*) => MergeStrategy.first
-    // Default strategy
-    case x => MergeStrategy.deduplicate
+  case PathList("META-INF", xs@_*) => MergeStrategy.discard
+  case PathList("akka", xs@_*) => MergeStrategy.first
+  case PathList("reference.conf", xs@_*) => MergeStrategy.first
+  case PathList("rootdoc.txt", xs@_*) => MergeStrategy.first
+  // Default strategy
+  case x => MergeStrategy.deduplicate
 }
 

@@ -1,18 +1,16 @@
 package berlin.bbdc.inet.mera.server.webservice
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.model._
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Sink
 import berlin.bbdc.inet.mera.server.model.Model
 
-class WebService(model : Model) {
-  // This should implement a web server to access metrics and topology
-  // TODO: Kajetan: Integrate web server
-  // TODO: Kajetan: Add JSON support
+import scala.concurrent.Future
 
-  def entryPoint(url : String) : String = {
-    if (url.contains("/operators")) return "fubar"
-    ""
-  }
-
-  /* Calls to webserver defined in the following
+/*Calls to webserver defined in the following
 
      URL
       GET /data/operators
@@ -59,5 +57,40 @@ class WebService(model : Model) {
      Description
       return static content
    */
+
+class WebService(model : Model) {
+
+  // Sample server from Akka's website
+  implicit val system = ActorSystem()
+  implicit val materializer = ActorMaterializer()
+  implicit val executionContext = system.dispatcher
+
+  val serverSource = Http().bind(interface = "localhost", port = 12345)
+
+  val requestHandler: HttpRequest => HttpResponse = {
+    case HttpRequest(GET, Uri.Path("/"), _, _, _) =>
+      HttpResponse(entity = HttpEntity(
+        ContentTypes.`text/html(UTF-8)`,
+        "<html><body>Hello world!</body></html>"))
+
+    case HttpRequest(GET, Uri.Path("/ping"), _, _, _) =>
+      HttpResponse(entity = "PONG!")
+
+    case HttpRequest(GET, Uri.Path("/crash"), _, _, _) =>
+      sys.error("BOOM!")
+
+    case r: HttpRequest =>
+      r.discardEntityBytes() // important to drain incoming HTTP Entity stream
+      HttpResponse(404, entity = "Unknown resource!")
+  }
+
+  val bindingFuture: Future[Http.ServerBinding] =
+    serverSource.to(Sink.foreach { connection =>
+      println("Accepted new connection from " + connection.remoteAddress)
+
+      connection handleWithSyncHandler requestHandler
+      // this is equivalent to
+      // connection handleWith { Flow[HttpRequest] map requestHandler }
+    }).run()
 
 }
