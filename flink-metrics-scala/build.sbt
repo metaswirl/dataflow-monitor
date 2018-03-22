@@ -8,8 +8,8 @@ version := "0.2"
 
 organization := "berlin.bbdc.inet"
 
-val flinkVersion = "1.3.2"
-val AkkaVersion = "2.4.20"
+val flinkVersion = "1.4.2"
+val AkkaVersion = "2.5.11"
 
 // -------- https://scalapb.github.io/index.html ---- BEGIN
 PB.targets in Compile := Seq(

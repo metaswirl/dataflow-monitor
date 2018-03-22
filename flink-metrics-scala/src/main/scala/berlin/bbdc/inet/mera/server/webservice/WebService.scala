@@ -1,5 +1,6 @@
 package berlin.bbdc.inet.mera.server.webservice
 
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods._
@@ -59,7 +60,6 @@ import scala.concurrent.Future
    */
 
 class WebService(model : Model) {
-
   // Sample server from Akka's website
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
