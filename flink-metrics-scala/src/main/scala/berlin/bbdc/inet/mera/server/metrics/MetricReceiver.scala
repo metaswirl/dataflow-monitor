@@ -31,7 +31,7 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
         // Start tra
         val modelTraversal = new ModelTraversal(model, mfw)
         val schd : ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-        val traversalFuture = schd.scheduleAtFixedRate(modelTraversal, 0, 5, TimeUnit.SECONDS)
+        val traversalFuture = schd.scheduleAtFixedRate(modelTraversal, 5, 5, TimeUnit.SECONDS)
       }
     }
   }
