@@ -8,9 +8,10 @@ import berlin.bbdc.inet.mera.server.model.CommType.CommType
 /* TODO: Separate data from traversal
  */
 
-class Task(val parent: Operator, val subtask: Int, val host: String) {
+class Task(val parent: Operator, val number: Int, val host: String) {
 
-  val writer = new PrintWriter(new File(f"/tmp/job_${parent.id}%s-$subtask%d.log"))
+  val id = s"${parent.id}.${number}"
+
   var input : List[Task] = List()
   var output : List[Task] = List()
 
@@ -18,8 +19,28 @@ class Task(val parent: Operator, val subtask: Int, val host: String) {
   var gauges: Map[String, GaugeSummary] = Map()
   var counters: Map[String, CounterSummary] = Map()
   var meters: Map[String, MeterSummary] = Map()
+  def getGaugeSummary(key : String) : GaugeSummary = {
+    if (!gauges.contains(key))
+      throw MetricNotFoundException(s"Could not find $key for $id")
+    gauges(key)
+  }
+  def getCounterSummary(key : String) : CounterSummary = {
+    if (!counters.contains(key))
+      throw MetricNotFoundException(s"Could not find $key for $id")
+    counters(key)
+  }
+  def getMeterSummary(key : String) : MeterSummary = {
+    if (!meters.contains(key))
+      throw MetricNotFoundException(s"Could not find $key for $id")
+    meters(key)
+  }
+  // TODO: Ask Carlo
+  // def getMetric[M <: Metric](key : String) : Option[MetricSummary[M]] = {
+  //   if (gauges.contains(key)) { return Some(gauges(key)) }
+  //   else if (counters.contains(key)) { return Some(counters(key)) }
+  //   else if (meters.contains(key)) { return Some(meters(key)) }
+  // }
 
-  // TODO: group together
   var inDist: Map[Int, Double] = Map()
   var outDist: Map[Int, Double] = Map()
   var inQueueSaturation: Double = 0.0
@@ -33,27 +54,20 @@ class Task(val parent: Operator, val subtask: Int, val host: String) {
 
   var inDistCtr: Int = -1
 
-
-  // TODO: Ask Carlo
-  // def getMetric[M <: Metric](key : String) : Option[MetricSummary[M]] = {
-  //   if (gauges.contains(key)) { return Some(gauges(key)) }
-  //   else if (counters.contains(key)) { return Some(counters(key)) }
-  //   else if (meters.contains(key)) { return Some(meters(key)) }
-  // }
   def addOutput(n: Task): Unit = {
     n.input = { this :: n.input }
     output = n :: output
   }
   override def toString: String = {
-    val p = input.map(x => {x.parent.id + "-" + x.subtask}).foldRight("")(_ + "," + _)
-    val n = output.map(x => {x.parent.id + "-" + x.subtask}).foldRight("")(_ + "," + _)
-    f"Task-$subtask%s (In: $p%s Out: $n%s)"
+    val p = input.map(_.id).foldRight("")(_ + "," + _)
+    val n = output.map(_.id).foldRight("")(_ + "," + _)
+    f"Task-$number%s (In: $p%s Out: $n%s)"
   }
 }
 
 object CommType extends Enumeration {
     type CommType = Value
-    val Grouped, RecordByRecord = Value
+    val Grouped, Ungrouped = Value
 }
 
 class Operator(val id: String, val parallelism: Int, val commType : CommType) {
@@ -106,10 +120,10 @@ class Operator(val id: String, val parallelism: Int, val commType : CommType) {
 
 class Model(val n :Int, val operators : Map[String, Operator]) {
   // Assuming single sink
+  // TODO: start when job starts, end when job ends.
   val sink: Operator = operators.values.filter(_.successor.isEmpty).head
   val src: Operator = operators.values.filter(_.predecessor.isEmpty).head
   val tasks: Iterable[Task] = operators.values.flatMap(_.tasks)
-  // TODO: start when job starts, end when job ends.
 
   override def toString: String = {
     val op = operators.values.map("\n" + _.toString)

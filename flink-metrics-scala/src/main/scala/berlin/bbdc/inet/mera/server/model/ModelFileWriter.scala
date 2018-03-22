@@ -25,13 +25,13 @@ class ModelFileWriter(val folder: String) {
   }
   def updateInferredMetrics(model : Model): Unit = {
     for (task <- model.tasks) {
-      inferredMetricWriter.write(f"${System.currentTimeMillis()};${task.parent.id}%s.${task.subtask}%d;${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation};${task.inDist};${task.outDist}\n")
+      inferredMetricWriter.write(f"${System.currentTimeMillis()};${task.id};${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation};${task.inDist};${task.outDist}\n")
     }
     inferredMetricWriter.flush()
   }
   def updateTargetMetrics(model:Model): Unit = {
     for (task <- model.tasks) {
-      targetMetricWriter.write(f"${System.currentTimeMillis()};${task.parent.id}%s.${task.subtask}%d;${task.targetInRate};${task.targetOutRate};${task.targetPartialOutRate}\n")
+      targetMetricWriter.write(f"${System.currentTimeMillis()};${task.id};${task.targetInRate};${task.targetOutRate};${task.targetPartialOutRate}\n")
     }
     targetMetricWriter.flush()
   }

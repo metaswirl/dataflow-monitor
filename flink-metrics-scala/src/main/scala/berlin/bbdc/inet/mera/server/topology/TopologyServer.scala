@@ -8,13 +8,13 @@ class TopologyServer() {
 
   def createModelBuilder(): ModelBuilder = {
     val modelBuilder = new ModelBuilder()
-    modelBuilder.addSuccessor("Source: Socket Stream", 1, CommType.RecordByRecord)
-    modelBuilder.addSuccessor("Flat Map", 3, CommType.RecordByRecord)
-    modelBuilder.addSuccessor("Filter", 2, CommType.RecordByRecord)
+    modelBuilder.addSuccessor("Source: Socket Stream", 1, CommType.Ungrouped)
+    modelBuilder.addSuccessor("Flat Map", 3, CommType.Ungrouped)
+    modelBuilder.addSuccessor("Filter", 2, CommType.Ungrouped)
     modelBuilder.addSuccessor("Map", 2, CommType.Grouped)
-    modelBuilder.addSuccessor("aggregation", 2, CommType.RecordByRecord)
-    modelBuilder.addSuccessor("bottleneck", 1, CommType.RecordByRecord)
-    modelBuilder.addSuccessor("Sink: Unnamed", 2, CommType.RecordByRecord)
+    modelBuilder.addSuccessor("aggregation", 2, CommType.Ungrouped)
+    modelBuilder.addSuccessor("bottleneck", 1, CommType.Ungrouped)
+    modelBuilder.addSuccessor("Sink: Unnamed", 2, CommType.Ungrouped)
     return modelBuilder
   }
 }

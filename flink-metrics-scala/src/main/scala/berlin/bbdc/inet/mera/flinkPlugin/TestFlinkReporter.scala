@@ -94,38 +94,36 @@ class MockMetricGroup extends MetricGroup {
   def addGroup(name: String) = ???
 }
 
-object TestFlinkReporter {
-  def main(args: Array[String]): Unit = {
-    val a = """{"type":"counter", "key":"fubar", "value":1}"""
-    println("Client")
-    val x = new FlinkMetricPusher
-    // TODO: This does not handle updates well
+object TestFlinkReporter extends App {
+  val a = """{"type":"counter", "key":"fubar", "value":1}"""
+  println("Client")
+  val x = new FlinkMetricPusher
+  // TODO: This does not handle updates well
 
-    var set : Set[String] = Set()
-    var gauges : Map[String, MockGauge[Long]] = Map()
-    var count = 0
-    for (line <- Source.fromFile(getClass.getClassLoader.getResource("testData/testMetrics.txt").getFile).getLines) {
-      val l = line.stripLineEnd
-      if (l.length > 1) {
-        val lParts: Array[String] = line.split(",")
-        val key: String = lParts(0)
-        val value: Long = lParts(1).toLong
-        if (gauges.contains(key)) {
-            gauges(key).setValue(value)
-        } else {
-          val gauge = new MockGauge[Long](value)
-          gauges += key -> gauge
-          x.notifyOfAddedMetric(gauge, key, new MockMetricGroup)
-        }
-        // only report if all keys have been seen exactly once
-        if (set.contains(key)) {
-          count += 1
-          x.report()
-          set = Set()
-        }
-        set += key
+  var set : Set[String] = Set()
+  var gauges : Map[String, MockGauge[Long]] = Map()
+  var count = 0
+  for (line <- Source.fromFile(getClass.getClassLoader.getResource("testData/testMetrics.txt").getFile).getLines) {
+    val l = line.stripLineEnd
+    if (l.length > 1) {
+      val lParts: Array[String] = line.split(",")
+      val key: String = lParts(0)
+      val value: Long = lParts(1).toLong
+      if (gauges.contains(key)) {
+          gauges(key).setValue(value)
+      } else {
+        val gauge = new MockGauge[Long](value)
+        gauges += key -> gauge
+        x.notifyOfAddedMetric(gauge, key, new MockMetricGroup)
       }
+      // only report if all keys have been seen exactly once
+      if (set.contains(key)) {
+        count += 1
+        x.report()
+        set = Set()
+      }
+      set += key
     }
-    x.report()
   }
+  x.report()
 }
