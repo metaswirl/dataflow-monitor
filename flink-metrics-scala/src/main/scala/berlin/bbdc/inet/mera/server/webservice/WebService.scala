@@ -3,12 +3,14 @@ package berlin.bbdc.inet.mera.server.webservice
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.server.model.Model
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import org.slf4j.{Logger, LoggerFactory}
-import spray.json._
 
 
 /*Calls to webserver defined in the following
@@ -58,13 +60,7 @@ import spray.json._
      Description
       return static content
    */
-trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  //add formats for your classes here
-
-  //  implicit val personFormat = jsonFormat2(class)
-}
-
-class WebService(model: Model, host: String, port: Integer) extends Directives with JsonSupport {
+class WebService(model: Model, host: String, port: Integer) extends Directives {
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
@@ -72,10 +68,13 @@ class WebService(model: Model, host: String, port: Integer) extends Directives w
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
+  val mapper = new ObjectMapper() with ScalaObjectMapper
+  mapper.registerModule(DefaultScalaModule)
+
   val route = {
     path("data" / "operators") {
       get {
-        complete(model.operators.keys)
+        completeJson(model.operators.keys)
       }
     } ~
       pathPrefix("data" / "metric") {
@@ -85,7 +84,8 @@ class WebService(model: Model, host: String, port: Integer) extends Directives w
       } ~
       pathPrefix("data" / "tasksOfOperator") {
         path(Remaining) { id =>
-          complete("Return tasks of operator " + id)
+          completeJson(model.operators(id).tasks)
+
         }
       } ~
       path("data" / "metrics") {
@@ -110,4 +110,5 @@ class WebService(model: Model, host: String, port: Integer) extends Directives w
 
   val bindingFuture = Http().bindAndHandle(route, this.host, this.port)
 
+  def completeJson(obj: Any) = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(obj))))
 }

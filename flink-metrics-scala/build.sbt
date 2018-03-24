@@ -39,8 +39,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
   "com.typesafe.akka" %% "akka-http" % "10.1.0",
-  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.0",
-  "com.typesafe.akka" %% "akka-stream" % AkkaVersion
+  "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.4"
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
