@@ -39,6 +39,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
   "com.typesafe.akka" %% "akka-http" % "10.1.0",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.0",
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion
 )
 
@@ -52,4 +53,3 @@ assemblyMergeStrategy in assembly := {
   // Default strategy
   case x => MergeStrategy.deduplicate
 }
-
