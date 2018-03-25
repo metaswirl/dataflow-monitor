@@ -10,6 +10,9 @@ organization := "berlin.bbdc.inet"
 
 val flinkVersion = "1.4.2"
 val AkkaVersion = "2.5.11"
+val HttpClientVersion = "4.5.5"
+val JacksonScalaVersion = "2.9.4"
+
 
 // -------- https://scalapb.github.io/index.html ---- BEGIN
 PB.targets in Compile := Seq(
@@ -40,7 +43,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
   "com.typesafe.akka" %% "akka-http" % "10.1.0",
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.4"
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonScalaVersion,
+  "org.apache.httpcomponents" % "httpclient" % HttpClientVersion
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but

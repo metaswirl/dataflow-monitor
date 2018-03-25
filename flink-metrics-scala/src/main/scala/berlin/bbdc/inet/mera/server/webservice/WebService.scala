@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.server.topology.TopologyServer
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
@@ -60,7 +61,7 @@ import org.slf4j.{Logger, LoggerFactory}
      Description
       return static content
    */
-class WebService(model: Model, host: String, port: Integer) extends Directives {
+class WebService(model: Model, host: String, port: Integer, topoServer: TopologyServer) extends Directives {
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
@@ -95,10 +96,15 @@ class WebService(model: Model, host: String, port: Integer) extends Directives {
       } ~
       pathPrefix("data" / "initMetric") {
         path(Remaining) { id =>
-          parameters('resolution.as[Int]) { resolution =>
+          parameters('resolution.as[Int]) { resolution => {
+            topoServer.scheduleFlinkPeriodicRequest(resolution)
             complete(s"Init metric $id, resolution $resolution seconds")
           }
+          }
         }
+      } ~
+      path("jobList") {
+        completeJson(topoServer.getJobsList)
       } ~
       pathEndOrSingleSlash {
         get {

@@ -9,12 +9,28 @@ import org.slf4j.{Logger, LoggerFactory}
 object Starter extends App {
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
+  // default values
+  var webServiceHost = "localhost"
+  var webServicePort = 12345
+  var flinkHost = "localhost"
+  var flinkPort = 8081
+
+  // sample program arguments: "--webHost localhost --webPort 12345 --flinkHost localhost --flinkPort 8081"
+  args.sliding(2, 2).toList.collect {
+    case Array("--webHost", argWH: String) => webServiceHost = argWH
+    case Array("--webPort", argWP: String) => webServicePort = argWP.toInt
+    case Array("--flinkHost", argFH: String) => flinkHost = argFH
+    case Array("--flinkPort", argFP: String) => flinkPort = argFP.toInt
+  }
+
+  LOG.info(s"WebService: $webServiceHost:$webServicePort, Flink: $flinkHost:$flinkPort")
+
   var folder: String = f"/tmp/mera_${System.currentTimeMillis()}"
   LOG.info("Writing info to " + folder)
-  val topoServer = new TopologyServer()
+  val topoServer = new TopologyServer(flinkHost, flinkPort)
   val model : Model = topoServer.createModelBuilder().createModel(1000)
   val mfw : ModelFileWriter = new ModelFileWriter(folder)
   mfw.writeGraph(model)
-  val webService = new WebService(model, "localhost", 12345)
+  val webService = new WebService(model, webServiceHost, webServicePort, topoServer)
   MetricReceiver.start(model, mfw)
 }
