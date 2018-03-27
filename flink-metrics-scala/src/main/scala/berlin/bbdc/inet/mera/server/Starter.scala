@@ -13,9 +13,9 @@ object Starter extends App {
 
   var folder: String = f"/tmp/mera_${System.currentTimeMillis()}"
   LOG.info("Writing info to " + folder)
+  val mfw : ModelFileWriter = new ModelFileWriter(folder)
   val topoServer = new TopologyServer()
   val model : Model = topoServer.createModelBuilder().createModel(1000)
-  val mfw : ModelFileWriter = new ModelFileWriter(folder)
   mfw.writeGraph(model)
   val webService = new WebService(model)
   MetricReceiver.start(model, mfw)

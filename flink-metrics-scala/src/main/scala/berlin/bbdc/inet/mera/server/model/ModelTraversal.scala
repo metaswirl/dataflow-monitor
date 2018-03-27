@@ -10,40 +10,47 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
   private val queueFull : Double = 1.0
 
   def computeInfMetrics(task: Task): Boolean = {
-    task.outDist = {
+    def computeOutDist() {
       var sum : Double = 0
       var outDistRaw : Map[Int, Double] = Map()
       for ((out, i) <- task.output.zipWithIndex) {
         val value = task.getGaugeSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
-        outDistRaw += out.number -> value
+        outDistRaw += out.target.number -> value
         sum += value
       }
-      outDistRaw.map{case (k, v) => k -> v/sum}
+      for (te <- task.output) {
+        te.outF = outDistRaw(te.target.number)/sum
+      }
     }
-
-    task.inDist = {
+    def computeInDist(): Unit = {
       var sum : Double = 0
       var inDistRaw : Map[Int, Double] = Map()
       for (in <- task.input) {
-        val key = if (in.parent.commType == CommType.Grouped) {
+        val key = if (in.source.parent.commType == CommType.Grouped) {
           f"Network.Output.0.${task.number}%d.buffersByChannel"
         } else {
-          in.inDistCtr += 1
-          f"Network.Output.0.${in.inDistCtr}%d.buffersByChannel"
+          in.source.inDistCtr += 1
+          f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
         }
-        val value = in.getGaugeSummary(key).getMean
-        inDistRaw += in.number -> value
+        val value = in.source.getGaugeSummary(key).getMean
+        inDistRaw += in.source.number -> value
         sum += value
       }
-      inDistRaw.map{case (k, v) => k -> v/sum }
+      for (in <- task.input) {
+        in.inF = inDistRaw(in.source.number)/sum
+      }
     }
+
+    computeOutDist()
+    computeInDist()
 
     task.outQueueSaturation = task.getGaugeSummary("buffers.outPoolUsage").getMean
 
     // when the input queue is colocated with the output queue, the input queue equals the output queue.
     task.inQueueSaturation = {
       val iQS = task.getGaugeSummary("buffers.inPoolUsage").getMean
-      val iQSlist = task.input.filter(_.host == task.host).map(_.gauges("buffers.outPoolUsage").getMean)
+      val iQSlist = for ( in <- task.input if in.source.host == task.host )
+        yield in.source.gauges("buffers.outPoolUsage").getMean
       (iQS::iQSlist).max
     }
 
@@ -58,23 +65,23 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     }
     true
   }
-  def computeTargets(task: Task) : Boolean = {
-    // targetInputRate
-    task.targetInRate = if (task.output.isEmpty) {
-      task.capacity
-    } else {
-      task.targetOutRate = task.targetPartialOutRate.map(x => {
-        x._2 * task.outDist(x._1)
-      }).min
-      Math.min(task.targetOutRate/task.selectivity, task.capacity)
-    }
-
-    // targetPartialOutRate of inputs
-    for (i <- task.input) {
-      i.targetPartialOutRate += task.number -> task.inDist(i.number) * task.targetInRate
-    }
-    true
-  }
+//  def computeTargets(task: Task) : Boolean = {
+//    // targetInputRate
+//    task.targetInRate = if (task.output.isEmpty) {
+//      task.capacity
+//    } else {
+//      task.targetOutRate = task.targetPartialOutRate.map(x => {
+//        x._2 * task.outDist(x._1)
+//      }).min
+//      Math.min(task.targetOutRate/task.selectivity, task.capacity)
+//    }
+//
+//    // targetPartialOutRate of inputs
+//    for (in <- task.input) {
+//      in.source.targetPartialOutRate += task.number -> task.inDist(in.source.number) * task.targetInRate
+//    }
+//    true
+//  }
   def traverseModel() {
     LOG.info("Traversing model")
     model.tasks.foreach(_.inDistCtr = -1)
@@ -85,16 +92,19 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
         LOG.error(ex.msg)
         return
       }
+      case ex: Exception =>
+        LOG.error(ex.getMessage)
+        return
     }
     mfw.updateInferredMetrics(model)
 
-    def traverseOp(op: Operator) : Unit = {
-      op.tasks.foreach(computeTargets)
-      if (op.predecessor.isEmpty) return
-      traverseOp(op.predecessor.head)
-    }
-    traverseOp(model.sink)
-    mfw.updateTargetMetrics(model)
+//    def traverseOp(op: Operator) : Unit = {
+//      op.tasks.foreach(computeTargets)
+//      if (op.predecessor.isEmpty) return
+//      traverseOp(op.predecessor.head)
+//    }
+//    traverseOp(model.sink)
+//    mfw.updateTargetMetrics(model)
   }
 
   override def run(): Unit = {
