@@ -3,20 +3,20 @@ package berlin.bbdc.inet.mera.server.metrics
 import java.io.File
 import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import akka.actor.{Actor, ActorSystem, Props}
 import berlin.bbdc.inet.mera.message.MetricUpdate
 import berlin.bbdc.inet.mera.server.model._
 import com.typesafe.config.ConfigFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
+  mfw.writeGraph(model)
   val modelUpdater = new ModelUpdater(model)
   val LOG: Logger = LoggerFactory.getLogger("MetricReceiver")
   var first = true
 
-  override def receive = {
-    case d: MetricUpdate => {
+  override def receive: PartialFunction[Any, Unit] = {
+    case d: MetricUpdate =>
       mfw.updateMetrics(d.timestamp, d.counters.map(t => (t.key, t.count.toDouble)) ++
         d.meters.map(t => (t.key, t.rate)) ++ d.gauges.map(t => (t.key, t.value)))
       modelUpdater.update(d.timestamp,
@@ -33,7 +33,6 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
         val schd : ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
         val traversalFuture = schd.scheduleAtFixedRate(modelTraversal, 5, 5, TimeUnit.SECONDS)
       }
-    }
   }
 
   override def postStop(): Unit = {

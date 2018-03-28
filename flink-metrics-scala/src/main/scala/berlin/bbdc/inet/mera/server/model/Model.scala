@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
  */
 
 class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) {
-  val id = s"${parent.id}.${number}"
+  val id = s"${parent.id}.$number"
 
   @JsonIgnore
   var input: List[TaskEdge] = List()
@@ -80,7 +80,8 @@ class TaskEdge(val source: Task, val target: Task) {
 
 object CommType extends Enumeration {
   type CommType = Value
-  val Grouped, Ungrouped = Value
+  val REBALANCE, HASH, RANGE, FORWARD, UNKNOWN = Value
+//  val GROUPED, UNGROUPED = Value
 }
 
 class Operator(val id: String, val parallelism: Int, val commType: CommType) {

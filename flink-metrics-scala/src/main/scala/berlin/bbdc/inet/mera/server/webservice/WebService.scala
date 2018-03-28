@@ -4,7 +4,7 @@ package berlin.bbdc.inet.mera.server.webservice
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
-import akka.http.scaladsl.server.{Directives, StandardRoute}
+import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.Model
@@ -69,15 +69,16 @@ class WebService(model: Model, host: String, port: Integer, topoServer: Topology
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-  val route = {
+  val route: Route = {
     path("data" / "operators") {
       get {
         completeJson(model.operators.keys)
       }
     } ~
       pathPrefix("data" / "metric") {
-        path(IntNumber) { num =>
-          complete(s"Return metric $num")
+        path(Remaining) { id =>
+          complete(s"Return metric $id")
+          //TODO: return counters(id), meters(id), gauge(id)
         }
       } ~
       pathPrefix("data" / "tasksOfOperator") {
@@ -96,6 +97,7 @@ class WebService(model: Model, host: String, port: Integer, topoServer: Topology
           parameters('resolution.as[Int]) { resolution => {
             topoServer.scheduleFlinkPeriodicRequest(resolution)
             complete(s"Init metric $id, resolution $resolution seconds")
+            //TODO: think about the resolution -> has to return history of a metric with the given resolution
           }
           }
         }

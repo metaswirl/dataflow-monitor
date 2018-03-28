@@ -18,11 +18,11 @@ class ModelBuilder {
   }
 
   def createModel(n: Int): Model = {
-    return new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
+    new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
   }
 
   def connectOperator(op1: Operator, op2: Operator): Unit = {
-    if (op1.commType == CommType.Grouped) {
+    if (op1.commType == CommType.HASH || op1.commType == CommType.RANGE) {
       for (t <- op1.tasks) {
         for (t2 <- op2.tasks) {
           val te = new TaskEdge(t, t2)
