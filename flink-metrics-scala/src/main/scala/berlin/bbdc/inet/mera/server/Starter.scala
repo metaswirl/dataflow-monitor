@@ -37,5 +37,4 @@ object Starter extends App {
 //  models foreach { case (_, v) => println(v.toString) }
   val webService = new WebService(model, webServiceHost, webServicePort, topoServer)
   MetricReceiver.start(model, mfw)
-
 }

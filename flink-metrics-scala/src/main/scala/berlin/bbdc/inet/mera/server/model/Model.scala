@@ -1,5 +1,7 @@
 package berlin.bbdc.inet.mera.server.model
 
+import java.io._
+
 import berlin.bbdc.inet.mera.server.metrics._
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -46,31 +48,34 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   //   else if (meters.contains(key)) { return Some(meters(key)) }
   // }
 
-  var inDist: Map[Int, Double] = Map()
-  var outDist: Map[Int, Double] = Map()
-  var inQueueSaturation: Double = 0.0
-  var outQueueSaturation: Double = 0.0
-  var selectivity: Double = 0.0
-  var inRate: Double = 0.0
-  var capacity: Double = 0.0
+  var inQueueSaturation: Double = _
+  var outQueueSaturation: Double = _
+  var selectivity: Double = _
+  var inRate: Double = _
+  var capacity: Double = _
   var targetPartialOutRate: Map[Int, Double] = Map()
-  var targetInRate: Double = 0.0
-  var targetOutRate: Double = 0.0
+  var targetInRate: Double = _
+  var targetOutRate: Double = _
 
   var inDistCtr: Int = -1
 
-  def addOutput(n: Task): Unit = {
-    n.input = {
-      this :: n.input
-    }
-    output = n :: output
+  def addOutput(te: TaskEdge): Unit = {
+    output :+= te
+  }
+  def addInput(te: TaskEdge): Unit = {
+    input :+= te
   }
 
   override def toString: String = {
-    val p = input.map(_.id).foldRight("")(_ + "," + _)
-    val n = output.map(_.id).foldRight("")(_ + "," + _)
+    val p = input.map(_.source.id).foldRight("")(_ + "," + _)
+    val n = output.map(_.target.id).foldRight("")(_ + "," + _)
     f"Task-$number%s (In: $p%s Out: $n%s)"
   }
+}
+
+class TaskEdge(val source: Task, val target: Task) {
+  var inF: Double = _
+  var outF: Double = _
 }
 
 object CommType extends Enumeration {
@@ -88,38 +93,8 @@ class Operator(val id: String, val parallelism: Int, val commType: CommType) {
   var successor: List[Operator] = List()
 
   def addSucc(op: Operator): Unit = {
-    op.predecessor = {
-      this :: op.predecessor
-    }
+    op.predecessor = { this :: op.predecessor }
     successor = op :: successor
-    if (commType == CommType.Grouped) {
-      for (t <- tasks) {
-        for (t2 <- op.tasks)
-          t.addOutput(t2)
-      }
-    } else {
-      // TODO: This is not correct, I only assume this wiring!
-      var n = tasks.length
-      var m = op.tasks.length
-      var count = 0
-      if (n < m) {
-        for (i <- 0 until n) {
-          for (j <- 0 until Math.ceil(m * 1.0 / (n - i)).toInt) {
-            tasks(i).addOutput(op.tasks(count))
-            m -= 1
-            count += 1
-          }
-        }
-      } else {
-        for (i <- 0 until m) {
-          for (j <- 0 until Math.ceil(n * 1.0 / (m - i)).toInt) {
-            tasks(count).addOutput(op.tasks(i))
-            n -= 1
-            count += 1
-          }
-        }
-      }
-    }
   }
 
   def apply(subtask: Int): Task = tasks(subtask)
@@ -133,7 +108,7 @@ class Operator(val id: String, val parallelism: Int, val commType: CommType) {
 }
 
 //TODO: operators cannot be a map since the keys will overlap
-class Model(val n: Int, val operators: Map[String, Operator]) {
+class Model(val n :Int, val operators : Map[String, Operator], val taskEdges : List[TaskEdge]) {
   // Assuming single sink
   // TODO: start when job starts, end when job ends.
   // TODO: sink and src should be Iterable[Operator]
