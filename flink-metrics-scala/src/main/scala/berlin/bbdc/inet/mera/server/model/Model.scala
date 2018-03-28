@@ -13,10 +13,10 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   val id = s"${parent.id}.${number}"
 
   @JsonIgnore
-  var input: List[Task] = List()
+  var input: List[TaskEdge] = List()
 
   @JsonIgnore
-  var output: List[Task] = List()
+  var output: List[TaskEdge] = List()
 
   // TODO: combine into one data structure
   var gauges: Map[String, GaugeSummary] = Map()
@@ -119,22 +119,5 @@ class Model(val n :Int, val operators : Map[String, Operator], val taskEdges : L
   override def toString: String = {
     val op = operators.values.map("\n" + _.toString)
     f"Model(\n$op%s\n)"
-  }
-}
-
-class ModelBuilder {
-  var operators: List[Operator] = List()
-
-  def addSuccessor(name: String, parallelism: Int, commType: CommType): Unit = {
-    val op = new Operator(name, parallelism, commType)
-    operators match {
-      case h :: t => h.addSucc(op)
-        operators = op :: h :: t
-      case Nil => operators = op :: Nil
-    }
-  }
-
-  def createModel(n: Int): Model = {
-    return new Model(n, operators.map(x => x.id -> x).toMap)
   }
 }
