@@ -132,9 +132,11 @@ class Operator(val id: String, val parallelism: Int, val commType: CommType) {
   }
 }
 
+//TODO: operators cannot be a map since the keys will overlap
 class Model(val n: Int, val operators: Map[String, Operator]) {
   // Assuming single sink
   // TODO: start when job starts, end when job ends.
+  // TODO: sink and src should be Iterable[Operator]
   val sink: Operator = operators.values.filter(_.successor.isEmpty).head
   val src: Operator = operators.values.filter(_.predecessor.isEmpty).head
   val tasks: Iterable[Task] = operators.values.flatMap(_.tasks)

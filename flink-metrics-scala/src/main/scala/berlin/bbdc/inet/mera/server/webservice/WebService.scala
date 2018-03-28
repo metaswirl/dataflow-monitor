@@ -4,14 +4,14 @@ package berlin.bbdc.inet.mera.server.webservice
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
-import akka.http.scaladsl.server.Directives
+import akka.http.scaladsl.server.{Directives, StandardRoute}
 import akka.stream.ActorMaterializer
+import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.Model
 import berlin.bbdc.inet.mera.server.topology.TopologyServer
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
 
 /*Calls to webserver defined in the following
@@ -65,12 +65,9 @@ class WebService(model: Model, host: String, port: Integer, topoServer: Topology
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
-  implicit val executionContext = system.dispatcher
-
-  val mapper = new ObjectMapper() with ScalaObjectMapper
-  mapper.registerModule(DefaultScalaModule)
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   val route = {
     path("data" / "operators") {
@@ -104,7 +101,7 @@ class WebService(model: Model, host: String, port: Integer, topoServer: Topology
         }
       } ~
       path("jobList") {
-        completeJson(topoServer.getJobsList)
+        completeJson(topoServer.getJobsMap)
       } ~
       pathEndOrSingleSlash {
         get {
@@ -114,7 +111,7 @@ class WebService(model: Model, host: String, port: Integer, topoServer: Topology
 
   }
 
-  val bindingFuture = Http().bindAndHandle(route, this.host, this.port)
+  val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(route, this.host, this.port)
 
-  def completeJson(obj: Any) = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, mapper.writeValueAsString(obj))))
+  def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 }

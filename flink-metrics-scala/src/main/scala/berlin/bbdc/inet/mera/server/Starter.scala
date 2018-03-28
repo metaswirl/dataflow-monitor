@@ -28,9 +28,14 @@ object Starter extends App {
   var folder: String = f"/tmp/mera_${System.currentTimeMillis()}"
   LOG.info("Writing info to " + folder)
   val topoServer = new TopologyServer(flinkHost, flinkPort)
-  val model : Model = topoServer.createModelBuilder().createModel(1000)
-  val mfw : ModelFileWriter = new ModelFileWriter(folder)
+  val model: Model = topoServer.createModelBuilder().createModel(1000)
+  val mfw: ModelFileWriter = new ModelFileWriter(folder)
   mfw.writeGraph(model)
+  // this line actually builds the models dynamically
+  val models = topoServer.buildModels()
+//  models foreach { case (_, v) => mfw.writeGraph(v) }
+//  models foreach { case (_, v) => println(v.toString) }
   val webService = new WebService(model, webServiceHost, webServicePort, topoServer)
   MetricReceiver.start(model, mfw)
+
 }
