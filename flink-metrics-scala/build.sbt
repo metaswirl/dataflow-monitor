@@ -49,7 +49,9 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
   "org.specs2" %% "specs2-mock" % Specs2Version % "test",
-  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test"
+  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test",
+  "org.scalactic" %% "scalactic" % "3.0.5",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
