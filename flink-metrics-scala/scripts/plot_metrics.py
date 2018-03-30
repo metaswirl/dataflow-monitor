@@ -13,6 +13,8 @@ import sys
 import re
 import networkx as nx
 import pydot
+import shutil
+import subprocess
 
 figsize=(20, 10)
 # https://stackoverflow.com/questions/8389636/creating-over-20-unique-legend-colors-using-matplotlib
@@ -20,6 +22,16 @@ cmap="jet"
 dpi=900
 plot_format="pdf"
 debug=False
+
+pjoin = os.path.join
+
+fname_inf_nodes = "plot_inf_nodes." + plot_format
+fname_inf_nodes_bar = "plot_inf_nodes_bar." + plot_format
+fname_inf_edges = "plot_inf_edges." + plot_format
+fname_raw_metrics = "plot_raw_metrics." + plot_format
+fname_raw_metrics_bar = "plot_raw_metrics_bar." + plot_format
+fname_graph = "graph." + plot_format
+
 
 def plot_inferred_metrics_nodes(folder):
     print("- plotting inferred metrics for vertices")
@@ -52,7 +64,7 @@ def plot_inferred_metrics_nodes(folder):
             print(nd.describe())
         res = nd.plot(ax=axes[count], legend=False, colormap=cmap)
 
-        bar_data = pd.concat({"min":nd.min(), "mean":nd.mean(), "max":nd.max()}, axis=1)
+        bar_data = pd.concat({"min":nd.min(), "q0.25":nd.quantile(0.25), "mean":nd.mean(), "q0.75":nd.quantile(0.75), "max":nd.max()}, axis=1)
         bar_data.plot.bar(ax=axes2[count])
 
         lines, labels = res.get_legend_handles_labels()
@@ -67,8 +79,8 @@ def plot_inferred_metrics_nodes(folder):
             #    comparison = "\n".join(["{}\t\tVS\t\t{}".format(i[0], i[1]) for i in zip(label_list, first_label_list)])
             #    raise Exception("Different labels for different keys. Discovered on key '{}'\n{}".format(el, comparison))
         count += 1
-        fig.savefig(folder + "/plot_inf_nodes.{}".format(plot_format), bbox_inches='tight', format=plot_format, dpi=dpi)
-        fig2.savefig(folder + "/plot_inf_nodes_bar.{}".format(plot_format), bbox_inches='tight', format=plot_format, dpi=dpi)
+        fig.savefig(pjoin(folder, fname_inf_nodes), bbox_inches='tight', format=plot_format, dpi=dpi)
+        fig2.savefig(pjoin(folder, fname_inf_nodes_bar), bbox_inches='tight', format=plot_format, dpi=dpi)
 
 def plot_inferred_metrics_edges(folder):
     print("- plotting inferred metrics for edges")
@@ -107,7 +119,7 @@ def plot_inferred_metrics_edges(folder):
                 comparison = "\n".join(["{}\t\tVS\t\t{}".format(i[0], i[1]) for i in zip(label_list, first_label_list)])
                 raise Exception("Different labels for different keys. Discovered on key '{}'\n{}".format(el, comparison))
         count += 1
-    plt.savefig(folder + "/plot_inf_edges.{}".format(plot_format), bbox_inches='tight', format=plot_format, dpi=dpi)
+    plt.savefig(pjoin(folder, fname_inf_edges), bbox_inches='tight', format=plot_format, dpi=dpi)
 
 def plot_raw_metrics(folder, keys):
     print("- plotting raw metrics")
@@ -127,7 +139,7 @@ def plot_raw_metrics(folder, keys):
         metrics = metrics.rename(columns=cols)
         nd = metrics[list(cols.values())].rolling(roll, center=False).mean()
 
-        bar_data = pd.concat({"min":nd.min(), "mean":nd.mean(), "max":nd.max()}, axis=1)
+        bar_data = pd.concat({"min":nd.min(), "q0.25":nd.quantile(0.25), "mean":nd.mean(), "q0.75":nd.quantile(0.75), "max":nd.max()}, axis=1)
         bar_data.plot.bar(ax=ax2)
 
         if debug:
@@ -139,7 +151,7 @@ def plot_raw_metrics(folder, keys):
     fig, axes = plt.subplots(len(keys), 1, sharex=True, figsize=figsize)
     fig2, axes2 = plt.subplots(len(keys), 1, sharex=True, figsize=figsize)
     fig.suptitle("raw metrics")
-    fig2.suptitle("inferred vertex metrics")
+    fig2.suptitle("raw metrics")
     first = True
     first_label_list = None
     i = 0
@@ -157,8 +169,8 @@ def plot_raw_metrics(folder, keys):
                 raise Exception("Different labels for different keys. Discovered on key '{}'\n{}".format(el, comparison))
 
         i += 1
-    fig.savefig(folder + "/plot_raw_metrics.{}".format(plot_format), bbox_inches='tight', format=plot_format, dpi=dpi)
-    fig2.savefig(folder + "/plot_raw_metrics_bar.{}".format(plot_format), bbox_inches='tight', format=plot_format, dpi=dpi)
+    fig.savefig(pjoin(folder, fname_raw_metrics), bbox_inches='tight', format=plot_format, dpi=dpi)
+    fig2.savefig(pjoin(folder, fname_raw_metrics_bar), bbox_inches='tight', format=plot_format, dpi=dpi)
 
 
 def draw_graph(folder):
@@ -172,10 +184,10 @@ def draw_graph(folder):
     edge_data.apply(add_edge, 1)
     #nx.draw_networkx(g)
     gpd = nx.nx_pydot.to_pydot(g)
-    gpd.write_pdf(folder + "/graph.pdf")
+    gpd.write_pdf(pjoin(folder, fname_graph))
 
 
-def main(folder=None):
+def main(folder=None, viewer=True):
     if not folder:
         folder = "/tmp/" + sorted(filter(lambda x: "mera" in x, os.listdir("/tmp")))[-1]
 
@@ -188,12 +200,28 @@ def main(folder=None):
         "buffers.outPoolUsage", "buffers.inPoolUsage", "numRecordsOut",
         "numRecordsIn"])
 
+    pdfunite = shutil.which("pdfunite")
+    if pdfunite:
+        print("- creating summary")
+        fname_summary = pjoin("summary.pdf")
+        cmd = [pdfunite, fname_graph, fname_inf_nodes, fname_inf_nodes_bar,
+                fname_inf_edges, fname_raw_metrics, fname_raw_metrics_bar,
+                fname_summary]
+        cmd = [pjoin(folder, c) for c in cmd]
+        subprocess.check_output(cmd)
+    if viewer:
+        subprocess.Popen(["zathura", pjoin(folder, "summary.pdf")])
+
+
+
 if __name__ == "__main__":
+    folder = None
     if (len(sys.argv) > 1):
         if os.path.exists(sys.argv[1]) and os.path.isdir(sys.argv[1]):
-            main(sys.argv[1])
-        print("{} <folder>".format(sys.argv[0]))
-    else:
-        main()
+            folder = sys.argv[1]
+        else:
+            print("{} <folder>".format(sys.argv[0]))
+            sys.exit(1)
+    main(folder=folder)
 
 
