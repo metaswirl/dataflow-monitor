@@ -7,7 +7,7 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
   val folderFile = new File(folder)
   folderFile.mkdirs()
 
-  val graphWriter: PrintWriter = new PrintWriter(folder + "/graph")
+  val graphWriter: PrintWriter = new PrintWriter(folder + "/graph.csv")
   val metricWriter: PrintWriter = new PrintWriter(folder + "/metrics.csv")
   val inferredMetricNodeWriter: PrintWriter = new PrintWriter(folder + "/inferred_metrics_nodes.csv")
   val inferredMetricEdgeWriter: PrintWriter = new PrintWriter(folder + "/inferred_metrics_edges.csv")
@@ -19,7 +19,7 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
 
   def writeGraph(model : Model): Unit = {
     graphWriter.write("source;target\n")
-    graphWriter.write(model.taskEdges.map(te => "${te.source.id};${te.target.id}").mkString)
+    graphWriter.write(model.taskEdges.map(te => s"${te.source.id};${te.target.id}\n").mkString)
     graphWriter.flush()
   }
   def updateMetrics(ts:Long, metrics: Iterable[(String, Double)]): Unit = {
