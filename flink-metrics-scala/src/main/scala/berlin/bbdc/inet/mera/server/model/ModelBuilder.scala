@@ -21,44 +21,53 @@ class ModelBuilder {
     new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
   }
 
-  def connectOperator(op1: Operator, op2: Operator): Unit = {
-    if (op1.commType == CommType.HASH || op1.commType == CommType.RANGE) {
-      for (t <- op1.tasks) {
-        for (t2 <- op2.tasks) {
-          val te = new TaskEdge(t, t2)
-          t.addOutput(te)
-          t2.addInput(te)
+  def connectGrouped(sourceOp: Operator, targetOp: Operator) = {
+    for (t <- sourceOp.tasks) {
+      for (t2 <- targetOp.tasks) {
+        val te = new TaskEdge(t, t2)
+        t.addOutput(te)
+        t2.addInput(te)
+        taskEdges :+= te
+      }
+    }
+  }
+
+  def connectUngrouped(sourceOp: Operator, targetOp: Operator): Unit = {
+    // Reference: connectPointwise in ExecutionVertex in Flink code
+    val sourceNum = sourceOp.tasks.length
+    val targetNum = targetOp.tasks.length
+
+    if (sourceNum < targetNum) {
+      // earlier source tasks get connected with more target tasks
+      val factor : Double = targetNum * 1.0 / sourceNum
+      for (targetIndex <- 0 until targetNum) {
+        val sourceIndex = (targetIndex / factor).toInt
+        val te = new TaskEdge(sourceOp.tasks(sourceIndex), targetOp.tasks(targetIndex))
+        sourceOp.tasks(sourceIndex).addOutput(te)
+        targetOp.tasks(targetIndex).addInput(te)
+        taskEdges :+= te
+      }
+    } else {
+      val factor : Double = sourceNum * 1.0 / targetNum
+
+      for (targetIndex <- 0 until targetNum) {
+        val start : Int = (targetIndex * factor).toInt
+        val end : Int = ((targetIndex + 1) * factor).toInt
+        for (sourceIndex <- start until end) {
+          val te = new TaskEdge(sourceOp.tasks(sourceIndex), targetOp.tasks(targetIndex))
+          sourceOp.tasks(sourceIndex).addOutput(te)
+          targetOp.tasks(targetIndex).addInput(te)
           taskEdges :+= te
         }
       }
+    }
+  }
+
+  def connectOperator(sourceOp: Operator, targetOp: Operator): Unit = {
+    if (sourceOp.commType == CommType.HASH || sourceOp.commType == CommType.RANGE) {
+      connectGrouped(sourceOp, targetOp)
     } else {
-      // TODO: This is not correct, I only assume this wiring!
-      var n = op1.tasks.length
-      var m = op2.tasks.length
-      var count = 0
-      if (n < m) {
-        for (i <- 0 until n) {
-          for (j <- 0 until Math.ceil(m * 1.0 / (n - i)).toInt) {
-            val te = new TaskEdge(op1.tasks(i), op2.tasks(count))
-            op1.tasks(i).addOutput(te)
-            op2.tasks(count).addInput(te)
-            taskEdges :+= te
-            m -= 1
-            count += 1
-          }
-        }
-      } else {
-        for (i <- 0 until m) {
-          for (j <- 0 until Math.ceil(n * 1.0 / (m - i)).toInt) {
-            val te = new TaskEdge(op1.tasks(count), op2.tasks(i))
-            op1.tasks(count).addOutput(te)
-            op2.tasks(i).addInput(te)
-            taskEdges :+= te
-            n -= 1
-            count += 1
-          }
-        }
-      }
+      connectUngrouped(sourceOp, targetOp)
     }
   }
 }
