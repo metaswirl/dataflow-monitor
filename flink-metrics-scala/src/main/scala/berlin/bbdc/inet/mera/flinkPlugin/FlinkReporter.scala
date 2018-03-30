@@ -66,7 +66,7 @@ trait FlinkMetricManager extends MetricReporter {
       case x: Meter => meters -= fullName
       case _ => LOG.warn("Could not remove metric " + fullName)
     }
-    LOG.warn("Removed " + fullName)
+    LOG.info("Removed " + fullName)
   }
 }
 
