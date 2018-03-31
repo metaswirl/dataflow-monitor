@@ -18,9 +18,9 @@ object JsonUtils {
     mapper.writeValueAsString(value)
   }
 
-  def toMap[V](json:String)(implicit m: Manifest[V]): Map[String, V] = fromJson[Map[String,V]](json)
+  def toMap[V](json:String)(implicit m: reflect.ClassTag[V]): Map[String, V] = fromJson[Map[String,V]](json)
 
-  def fromJson[T](json: String)(implicit m : Manifest[T]): T = {
+  def fromJson[T](json: String)(implicit m : reflect.ClassTag[T]): T = {
     mapper.readValue[T](json)
   }
 
