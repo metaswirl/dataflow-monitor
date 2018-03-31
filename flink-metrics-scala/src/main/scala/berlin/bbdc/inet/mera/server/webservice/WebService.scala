@@ -8,7 +8,6 @@ import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.Model
-import berlin.bbdc.inet.mera.server.topology.TopologyServer
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -61,7 +60,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
      Description
       return static content
    */
-class WebService(model: Model, host: String, port: Integer, topoServer: TopologyServer) extends Directives {
+class WebService(model: Model, host: String, port: Integer) extends Directives {
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
@@ -95,15 +94,11 @@ class WebService(model: Model, host: String, port: Integer, topoServer: Topology
       pathPrefix("data" / "initMetric") {
         path(Remaining) { id =>
           parameters('resolution.as[Int]) { resolution => {
-            topoServer.scheduleFlinkPeriodicRequest(resolution)
             complete(s"Init metric $id, resolution $resolution seconds")
             //TODO: think about the resolution -> has to return history of a metric with the given resolution
           }
           }
         }
-      } ~
-      path("jobList") {
-        completeJson(topoServer.getJobsMap)
       } ~
       pathEndOrSingleSlash {
         get {

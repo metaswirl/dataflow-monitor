@@ -28,7 +28,7 @@ object Starter extends App {
 //  models.values foreach(m => println(m.toString))
   //Currently work on a single model - extend to multiple in the future
   val mfw: ModelFileWriter = new ModelFileWriter(folder)
-  val webService = new WebService(models.head._2, webServiceHost, webServicePort, topoServer)
+  val webService = new WebService(models.head._2, webServiceHost, webServicePort)
   MetricReceiver.start(models.head._2, mfw)
 
   private def parseArguments = {
