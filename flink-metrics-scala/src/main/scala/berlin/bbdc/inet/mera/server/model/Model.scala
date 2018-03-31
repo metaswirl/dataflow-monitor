@@ -80,8 +80,7 @@ class TaskEdge(val source: Task, val target: Task) {
 
 object CommType extends Enumeration {
   type CommType = Value
-  val REBALANCE, HASH, RANGE, FORWARD, UNKNOWN = Value
-//  val GROUPED, UNGROUPED = Value
+  val POINTWISE, ALL_TO_ALL, UNCONNECTED = Value
 }
 
 class Operator(val id: String, val parallelism: Int, val commType: CommType) {

@@ -26,7 +26,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       var sum : Double = 0
       var inDistRaw : Map[Int, Double] = Map()
       for (in <- task.input) {
-        val key = if (in.source.parent.commType == CommType.HASH || in.source.parent.commType == CommType.RANGE) {
+        val key = if (in.source.parent.commType == CommType.POINTWISE) {
           f"Network.Output.0.${task.number}%d.buffersByChannel"
         } else {
           in.source.inDistCtr += 1

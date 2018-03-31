@@ -28,10 +28,15 @@ class TopologyServer(hostname: String, port: Integer) {
   def findCommTypeById(id: String, plan: Plan): CommType = {
     plan.nodes.foreach(n => {
       if (n.id.equals(id) && n.inputs != null) {
-        return CommType.withName(n.inputs.head.shipStrategy)
+        n.inputs.head.shipStrategy match {
+          case "HASH" || "RANGE" =>
+            return CommType.POINTWISE
+          case "REBALANCE" || "FORWARD" =>
+            return CommType.ALL_TO_ALL
+        }
       }
     })
-    CommType.UNKNOWN
+    CommType.UNCONNECTED
   }
 
   def buildModels(): Map[String, Model] = {

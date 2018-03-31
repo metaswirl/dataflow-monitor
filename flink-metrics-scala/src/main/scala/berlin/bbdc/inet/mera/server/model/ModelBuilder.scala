@@ -64,7 +64,7 @@ class ModelBuilder {
   }
 
   def connectOperator(sourceOp: Operator, targetOp: Operator): Unit = {
-    if (sourceOp.commType == CommType.HASH || sourceOp.commType == CommType.RANGE) {
+    if (sourceOp.commType == CommType.POINTWISE) {
       connectGrouped(sourceOp, targetOp)
     } else {
       connectUngrouped(sourceOp, targetOp)
