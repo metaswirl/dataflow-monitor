@@ -31,9 +31,9 @@ class TopologyServer(hostname: String, port: Integer) {
         n.inputs.foreach(i => {
           if (i.id.equals(id)) {
             i.shipStrategy match {
-              case "HASH" || "RANGE" =>
+              case "HASH" | "RANGE" =>
                 return CommType.POINTWISE
-              case "REBALANCE" || "FORWARD" =>
+              case "REBALANCE" | "FORWARD" =>
                 return CommType.ALL_TO_ALL
               case t =>
                 throw new IllegalStateException("Unknown CommType " + t)
@@ -52,7 +52,6 @@ class TopologyServer(hostname: String, port: Integer) {
       val jobJson: String = getRestContent(JOBS + "/" + jid + VERTICES)
       val job = JsonUtils.fromJson[Job](jobJson)
       val modelBuilder = new ModelBuilder
-      //TODO: ship_strategy -> commType REBALANCE=ungrouped HASH=grouped RANGE=grouped FORWARD=ungrouped
       //iterate over vertices and for each add a new operator to the model
       job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, findCommTypeById(v.id, job.plan)))
       models += (jid -> modelBuilder.createModel(1000))
