@@ -27,15 +27,19 @@ class TopologyServer(hostname: String, port: Integer) {
 
   def findCommTypeById(id: String, plan: Plan): CommType = {
     plan.nodes.foreach(n => {
-      if (n.id.equals(id) && n.inputs != null) {
-        n.inputs.head.shipStrategy match {
-          case "HASH" || "RANGE" =>
-            return CommType.POINTWISE
-          case "REBALANCE" || "FORWARD" =>
-            return CommType.ALL_TO_ALL
-          case t =>
-            throw new IllegalStateException("Unknown CommType " + t)
-        }
+      if (n.inputs != null) {
+        n.inputs.foreach(i => {
+          if (i.id.equals(id)) {
+            i.shipStrategy match {
+              case "HASH" || "RANGE" =>
+                return CommType.POINTWISE
+              case "REBALANCE" || "FORWARD" =>
+                return CommType.ALL_TO_ALL
+              case t =>
+                throw new IllegalStateException("Unknown CommType " + t)
+            }
+          }
+        })
       }
     })
     CommType.UNCONNECTED
