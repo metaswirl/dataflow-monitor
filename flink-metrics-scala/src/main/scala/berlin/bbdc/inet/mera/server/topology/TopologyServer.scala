@@ -33,6 +33,8 @@ class TopologyServer(hostname: String, port: Integer) {
             return CommType.POINTWISE
           case "REBALANCE" || "FORWARD" =>
             return CommType.ALL_TO_ALL
+          case t =>
+            throw new IllegalStateException("Unknown CommType " + t)
         }
       }
     })
