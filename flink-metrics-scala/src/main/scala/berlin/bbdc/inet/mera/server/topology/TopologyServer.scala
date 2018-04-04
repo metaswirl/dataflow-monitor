@@ -1,10 +1,8 @@
 package berlin.bbdc.inet.mera.server.topology
 
-import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit}
-
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
-import berlin.bbdc.inet.mera.server.model.{CommType, Model, ModelBuilder, Operator}
+import berlin.bbdc.inet.mera.server.model.{CommType, Model, ModelBuilder}
 import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
@@ -22,8 +20,6 @@ class TopologyServer(hostname: String, port: Integer) {
   private val VERTICES = "/vertices"
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
-
-  var jobsMap = new mutable.HashMap[String, List[String]]
 
   def findCommTypeById(id: String, plan: Plan): CommType = {
     plan.nodes.foreach(n => {
@@ -64,33 +60,6 @@ class TopologyServer(hostname: String, port: Integer) {
     models.toMap
   }
 
-
-  def getJobsMap: mutable.HashMap[String, List[String]] = {
-    val temp = mutable.HashMap[String, List[String]]() ++= jobsMap
-    jobsMap = new mutable.HashMap[String, List[String]]
-    temp
-  }
-
-  def scheduleFlinkPeriodicRequest(interval: Long): Unit = {
-    val ex = new ScheduledThreadPoolExecutor(1)
-    val task = new Runnable {
-
-      def run(): Unit = {
-        //iterate through the list and add/update them in the jobsMap
-        for (job <- getJobList) {
-          val jobProperties: String = getRestContent(JOBS + "/" + job)
-
-          jobsMap.get(job) match {
-            case Some(list) => jobsMap += (job -> (list ::: List(jobProperties)))
-            case None => jobsMap += (job -> List(jobProperties))
-          }
-        }
-      }
-    }
-    ex.scheduleAtFixedRate(task, 1, interval, TimeUnit.SECONDS)
-    //    f.cancel(false)
-  }
-
   private def getJobList: List[String] = {
     //get current jobs from Flink
     val allJobsJson = getRestContent(JOBS)
@@ -118,8 +87,6 @@ class TopologyServer(hostname: String, port: Integer) {
       case None => ""
     }
   }
-
-
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
