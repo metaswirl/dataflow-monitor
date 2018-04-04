@@ -1,7 +1,5 @@
 package berlin.bbdc.inet.mera.server.model
 
-import java.io._
-
 import berlin.bbdc.inet.mera.server.metrics._
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -39,6 +37,21 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
     if (!meters.contains(key))
       throw MetricNotFoundException(s"Could not find $key for $id")
     meters(key)
+  }
+
+  def hasMetricWithId(key: String): Boolean = gauges.contains(key) || counters.contains(key) || meters.contains(key)
+
+  def getMetricById(key: String): MetricSummary[_] = {
+    if (gauges.contains(key)) {
+      gauges(key)
+    } else if (counters.contains(key)) {
+      counters(key)
+    } else if (meters.contains(key)) {
+      meters(key)
+    } else {
+      throw MetricNotFoundException(s"Could not find $key for $id")
+    }
+
   }
 
   // TODO: Ask Carlo
