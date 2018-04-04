@@ -18,7 +18,7 @@ class ModelBuilder {
   }
 
   def createModel(n: Int): Model = {
-    return new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
+    new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
   }
 
   def connectGrouped(sourceOp: Operator, targetOp: Operator) = {
@@ -64,7 +64,7 @@ class ModelBuilder {
   }
 
   def connectOperator(sourceOp: Operator, targetOp: Operator): Unit = {
-    if (sourceOp.commType == CommType.Grouped) {
+    if (sourceOp.commType == CommType.POINTWISE) {
       connectGrouped(sourceOp, targetOp)
     } else {
       connectUngrouped(sourceOp, targetOp)

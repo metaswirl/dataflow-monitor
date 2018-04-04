@@ -3,13 +3,15 @@ package berlin.bbdc.inet.mera.server.webservice
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
+import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Sink
+import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.Model
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContextExecutor, Future}
+
 
 /*Calls to webserver defined in the following
 
@@ -58,39 +60,55 @@ import scala.concurrent.Future
      Description
       return static content
    */
+class WebService(model: Model, host: String, port: Integer) extends Directives {
 
-class WebService(model : Model) {
-  // Sample server from Akka's website
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
-  implicit val executionContext = system.dispatcher
+  private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
-  val serverSource = Http().bind(interface = "localhost", port = 12345)
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-  val requestHandler: HttpRequest => HttpResponse = {
-    case HttpRequest(GET, Uri.Path("/"), _, _, _) =>
-      HttpResponse(entity = HttpEntity(
-        ContentTypes.`text/html(UTF-8)`,
-        "<html><body>Hello world!</body></html>"))
+  val route: Route = {
+    path("data" / "operators") {
+      get {
+        completeJson(model.operators.keys)
+      }
+    } ~
+      pathPrefix("data" / "metric") {
+        path(Remaining) { id =>
+          complete(s"Return metric $id")
+          //TODO: return counters(id), meters(id), gauge(id)
+        }
+      } ~
+      pathPrefix("data" / "tasksOfOperator") {
+        path(Remaining) { id =>
+          completeJson(model.operators(id).tasks)
 
-    case HttpRequest(GET, Uri.Path("/ping"), _, _, _) =>
-      HttpResponse(entity = "PONG!")
+        }
+      } ~
+      path("data" / "metrics") {
+        get {
+          complete("Return metrics")
+        }
+      } ~
+      pathPrefix("data" / "initMetric") {
+        path(Remaining) { id =>
+          parameters('resolution.as[Int]) { resolution => {
+            complete(s"Init metric $id, resolution $resolution seconds")
+            //TODO: think about the resolution -> has to return history of a metric with the given resolution
+          }
+          }
+        }
+      } ~
+      pathEndOrSingleSlash {
+        get {
+          getFromResource("static/index.html")
+        }
+      }
 
-    case HttpRequest(GET, Uri.Path("/crash"), _, _, _) =>
-      sys.error("BOOM!")
-
-    case r: HttpRequest =>
-      r.discardEntityBytes() // important to drain incoming HTTP Entity stream
-      HttpResponse(404, entity = "Unknown resource!")
   }
 
-  val bindingFuture: Future[Http.ServerBinding] =
-    serverSource.to(Sink.foreach { connection =>
-      println("Accepted new connection from " + connection.remoteAddress)
+  val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(route, this.host, this.port)
 
-      connection handleWithSyncHandler requestHandler
-      // this is equivalent to
-      // connection handleWith { Flow[HttpRequest] map requestHandler }
-    }).run()
-
+  def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 }

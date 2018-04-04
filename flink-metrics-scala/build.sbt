@@ -8,8 +8,12 @@ version := "0.2"
 
 organization := "berlin.bbdc.inet"
 
-val flinkVersion = "1.4.2"
+val FlinkVersion = "1.4.2"
 val AkkaVersion = "2.5.11"
+val HttpClientVersion = "4.5.5"
+val JacksonScalaVersion = "2.9.4"
+val Specs2Version = "4.0.2"
+
 
 // -------- https://scalapb.github.io/index.html ---- BEGIN
 PB.targets in Compile := Seq(
@@ -32,14 +36,17 @@ libraryDependencies ++= Seq(
   //"org.slf4j" % "slf4j-api" % "1.7.25",
   //"org.slf4j" % "slf4j-log4j12" % "1.7.25",
   "io.dropwizard.metrics" % "metrics-core" % "3.1.0",
-  "org.apache.flink" % "flink-scala_2.11" % flinkVersion, // different scala version not sure if this is a problem
-  "org.apache.flink" % "flink-streaming-scala_2.11" % flinkVersion,
-  "org.apache.flink" % "flink-metrics-core" % flinkVersion,
+  "org.apache.flink" % "flink-scala_2.11" % FlinkVersion, // different scala version not sure if this is a problem
+  "org.apache.flink" % "flink-streaming-scala_2.11" % FlinkVersion,
+  "org.apache.flink" % "flink-metrics-core" % FlinkVersion,
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
   "com.typesafe.akka" %% "akka-http" % "10.1.0",
-  "com.typesafe.akka" %% "akka-stream" % AkkaVersion
+  "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonScalaVersion,
+  "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
+  "org.specs2" %% "specs2-core" % Specs2Version % "test"
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
@@ -52,4 +59,3 @@ assemblyMergeStrategy in assembly := {
   // Default strategy
   case x => MergeStrategy.deduplicate
 }
-
