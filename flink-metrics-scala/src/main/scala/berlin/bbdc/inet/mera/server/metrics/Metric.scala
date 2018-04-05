@@ -44,7 +44,7 @@ object MetricSummary {
   type NumberMetric = Metric[_ >: Double with Int with Long <: AnyVal]
 }
 class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
-  override def getMean: Double = if (history.nonEmpty) history.map(_._2.value).sum / (1.0 * n) else 0.0
+  def getMean: Double = if (history.nonEmpty) history.map(_._2.value).sum / (1.0 * n) else 0.0
 
   def getRates: List[Double] = {
     var res: List[Double] = List()
