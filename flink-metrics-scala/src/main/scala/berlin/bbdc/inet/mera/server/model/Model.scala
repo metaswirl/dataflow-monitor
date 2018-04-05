@@ -43,7 +43,7 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
     } else if (meters.contains(key)) {
       meters(key)
     } else {
-      throw MetricNotFoundException(s"Could not find $key for $id")
+      throw MetricNotFoundException(key, id)
     }
 
   }

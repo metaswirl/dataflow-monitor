@@ -1,18 +1,23 @@
 package berlin.bbdc.inet.mera.server.metrics
 
 case class MetricNotFoundException(key: String, id: String) extends Exception(s"Could not find $key for $id")
+
 abstract class Metric[+N] {
   def value: N
 }
+
 case class Counter(count: Long) extends Metric[Long] {
   def value: Long = count
 }
+
 case class Meter(count: Long, rate: Double) extends Metric[Double] {
   def value: Double = rate
 }
+
 case class Histogram(count: Long, min: Long, max: Long, mean: Double) extends Metric[Double] {
   def value: Double = mean
 }
+
 case class Gauge(value: Double) extends Metric[Double]
 
 // TODO: Make MetricSummary covariant
