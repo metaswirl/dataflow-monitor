@@ -18,7 +18,6 @@ case class Gauge(value: Double) extends Metric[Double]
 // TODO: Make MetricSummary covariant
 abstract class MetricSummary[T](val n: Int) {
   var history: List[(Long, T)] = List()
-  var number: Int = 0
 
   def add(ts: Long, newVal: T): Unit = {
     history = (ts, newVal) :: history
@@ -29,7 +28,7 @@ abstract class MetricSummary[T](val n: Int) {
 
   def getRates: List[Double]
 
-  def getRateMean: Double = getRates.sum * 1000 / (n - 1)
+  def getRateMean: Double = getRates.sum / history.length
 
   override def toString: String = {
     val m = getMean
