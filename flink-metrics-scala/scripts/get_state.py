@@ -11,6 +11,7 @@
 """ 
 
 import networkx as nx
+from networkx.readwrite import json_graph
 import pandas as pd
 import re
 import sys
@@ -32,6 +33,10 @@ def main(folder, begin, end):
     nodes = select_data(read_data(folder, "nodes"))
     edges = select_data(read_data(folder, "edges"))
 
+    # The selectivity at the source can become infinite, as it only produces items
+    nodes.selectivity = pd.to_numeric(nodes.selectivity.replace("Infinity", 1.0))
+    nodes.capacity = pd.to_numeric(nodes.capacity.replace("Infinity", float("infinity")))
+
     tasks = nodes.task.unique()
 
     nodes_res = nodes.groupby("task").mean()
@@ -45,7 +50,9 @@ def main(folder, begin, end):
     for link in links:
         g.add_edge(link[0], link[1], **dict(edges_res.loc[link]))
 
-    print(nx.node_link_data(g))
+    global js_g
+    js_g = nx.node_link_data(g)
+    print(js_g)
 
     # Assumption: both share the same time
     # Assumption: Dataset does not cross multiple days
