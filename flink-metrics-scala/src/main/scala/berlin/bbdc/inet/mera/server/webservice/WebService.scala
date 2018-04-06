@@ -76,7 +76,7 @@ class WebService(model: Model, host: String, port: Integer) extends Directives {
     } ~
       pathPrefix("data" / "metric") {
         path(Remaining) { id =>
-          completeJson(model.tasks.filter(_.hasMetricWithId(id)).head.getMetricById(id))
+          completeJson(model.tasks.filter(_.metrics.contains(id)).head.getMetricSummary(id))
         }
       } ~
       pathPrefix("data" / "tasksOfOperator") {
