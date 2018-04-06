@@ -82,8 +82,7 @@ class WebService(model: Model, host: String, port: Integer) extends Directives {
       } ~
       pathPrefix("data" / "tasksOfOperator") {
         path(Remaining) { id =>
-          completeJson(model.operators(id).tasks)
-
+          completeJson(model.operators(id.replace("%20", " ")).tasks)
         }
       } ~
       path("data" / "metrics") {

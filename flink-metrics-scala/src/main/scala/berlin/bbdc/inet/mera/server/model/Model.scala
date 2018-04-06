@@ -1,7 +1,5 @@
 package berlin.bbdc.inet.mera.server.model
 
-import java.io._
-
 import berlin.bbdc.inet.mera.server.metrics._
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -24,21 +22,15 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   var meters: Map[String, MeterSummary] = Map()
 
   def getGaugeSummary(key: String): GaugeSummary = {
-    if (!gauges.contains(key))
-      throw MetricNotFoundException(s"Could not find $key for $id")
-    gauges(key)
+    gauges.getOrElse(key, throw MetricNotFoundException(key, id))
   }
 
   def getCounterSummary(key: String): CounterSummary = {
-    if (!counters.contains(key))
-      throw MetricNotFoundException(s"Could not find $key for $id")
-    counters(key)
+    counters.getOrElse(key, throw MetricNotFoundException(key, id))
   }
 
   def getMeterSummary(key: String): MeterSummary = {
-    if (!meters.contains(key))
-      throw MetricNotFoundException(s"Could not find $key for $id")
-    meters(key)
+    meters.getOrElse(key, throw MetricNotFoundException(key, id))
   }
 
   // TODO: Ask Carlo

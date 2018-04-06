@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.server.metrics
 
-case class MetricNotFoundException(msg:String) extends Exception
+case class MetricNotFoundException(key: String, id: String) extends Exception(s"Could not find $key for $id")
 abstract class Metric[+N] {
   def value: N
 }
@@ -18,7 +18,6 @@ case class Gauge(value: Double) extends Metric[Double]
 // TODO: Make MetricSummary covariant
 abstract class MetricSummary[T](val n: Int) {
   var history: List[(Long, T)] = List()
-  var number: Int = 0
 
   def add(ts: Long, newVal: T): Unit = {
     history = (ts, newVal) :: history
@@ -29,7 +28,7 @@ abstract class MetricSummary[T](val n: Int) {
 
   def getRates: List[Double]
 
-  def getRateMean: Double = getRates.sum * 1000 / (n - 1)
+  def getRateMean: Double = getRates.sum / history.length
 
   override def toString: String = {
     val m = getMean
@@ -37,14 +36,14 @@ abstract class MetricSummary[T](val n: Int) {
     val cn = this.getClass.getSimpleName
     val head = history.map(_._2).head
     val last = history.map(_._2).last
-    f"$cn%s($n%s, $m%s, $rm%s, ${head}%s ${last}%s)"
+    f"$cn%s($n%s, $m%s, $rm%s, $head%s $last%s)"
   }
 }
 object MetricSummary {
   type NumberMetric = Metric[_ >: Double with Int with Long <: AnyVal]
 }
 class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
-  override def getMean: Double = if (history.length > 0) history.map(_._2.value).sum / (1.0 * n) else 0.0
+  def getMean: Double = if (history.nonEmpty) history.map(_._2.value).sum / (1.0 * n) else 0.0
 
   def getRates: List[Double] = {
     var res: List[Double] = List()
@@ -55,7 +54,7 @@ class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
   }
 }
 class CounterSummary(override val n: Int) extends MetricSummary[Counter](n) {
-  def getMean: Double = if (history.length > 0) history.map(_._2.count).sum / (1.0 * n) else 0.0
+  def getMean: Double = if (history.nonEmpty) history.map(_._2.count).sum / (1.0 * n) else 0.0
 
   def getRates: List[Double] = {
     var res: List[Double] = List()
@@ -66,7 +65,7 @@ class CounterSummary(override val n: Int) extends MetricSummary[Counter](n) {
   }
 }
 class MeterSummary(override val n: Int) extends MetricSummary[Meter](n) {
-  def getMean: Double = if (history.length > 0) history.map(_._2.rate).sum / (1.0 * n) else 0.0
+  def getMean: Double = if (history.nonEmpty) history.map(_._2.rate).sum / (1.0 * n) else 0.0
 
   def getRates: List[Double] = {
     history.map(_._2.rate)

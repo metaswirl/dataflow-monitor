@@ -89,7 +89,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       model.tasks.foreach(computeInfMetrics)
     } catch {
       case ex: MetricNotFoundException =>
-        LOG.error(ex.msg)
+        LOG.error(ex.getMessage)
         return
       case ex: Exception =>
         LOG.error(ex.getMessage)

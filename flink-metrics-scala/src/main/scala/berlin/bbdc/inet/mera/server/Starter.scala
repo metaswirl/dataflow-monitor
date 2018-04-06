@@ -33,10 +33,10 @@ object Starter extends App {
 
   private def parseArguments = {
     args.sliding(2, 2).toList.collect {
-      case Array("--webHost", argWH: String) => webServiceHost = argWH
-      case Array("--webPort", argWP: String) => webServicePort = argWP.toInt
-      case Array("--flinkHost", argFH: String) => flinkHost = argFH
-      case Array("--flinkPort", argFP: String) => flinkPort = argFP.toInt
+      case Array("--webHost", argWebHost: String) => webServiceHost = argWebHost
+      case Array("--webPort", argWebPort: String) => webServicePort = argWebPort.toInt
+      case Array("--flinkHost", argFlinkHost: String) => flinkHost = argFlinkHost
+      case Array("--flinkPort", argFlinkPort: String) => flinkPort = argFlinkPort.toInt
     }
   }
 }

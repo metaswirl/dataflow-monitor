@@ -65,6 +65,7 @@ class TopologyServer(hostname: String, port: Integer) {
     val allJobsJson = getRestContent(JOBS)
     //map to intermediate object
     val allJobs: AllJobs = JsonUtils.fromJson[AllJobs](allJobsJson)
+    LOG.info(s"Detected ${allJobs.jobsRunning.size} running jobs: ${allJobs.jobsRunning.toString}" )
     //sum all of them to a list
     allJobs.jobsRunning
   }
