@@ -46,7 +46,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonScalaVersion,
   "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
-  "org.specs2" %% "specs2-core" % Specs2Version % "test"
+  "org.specs2" %% "specs2-core" % Specs2Version % "test",
+  "org.specs2" %% "specs2-mock" % Specs2Version % "test"
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
