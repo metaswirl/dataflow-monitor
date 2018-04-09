@@ -20,7 +20,6 @@ case class Histogram(count: Long, min: Long, max: Long, mean: Double) extends Me
 
 case class Gauge(value: Double) extends Metric[Double]
 
-// TODO: Make MetricSummary covariant
 abstract class MetricSummary[T <: Metric[_]](val n: Int) {
   var history: List[(Long, T)] = List()
 
@@ -29,7 +28,12 @@ abstract class MetricSummary[T <: Metric[_]](val n: Int) {
     if (history.length > n) history = history.dropRight(history.length - n)
   }
 
-  def getMean: Double
+  def calculateMean(l: List[(Long, T)]): Double
+
+  def getMean: Double = calculateMean(history)
+
+  //like getMean but for the last value seconds
+  def getMeanLastSeconds(value: Int): Double = calculateMean(history.filter(System.currentTimeMillis() <= _._1 + value * 1000))
 
   def getRates: List[Double]
 
@@ -50,9 +54,10 @@ object MetricSummary {
 }
 
 class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
-  def getMean: Double = if (history.nonEmpty) history.map(_._2.value).sum / (1.0 * n) else 0.0
 
-  def getRates: List[Double] = {
+  override def calculateMean(l: List[(Long, Gauge)]): Double = if (l.nonEmpty) l.map(_._2.value).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
     var res: List[Double] = List()
     for ((first, second) <- (history, history.drop(1)).zipped) {
       res = (first._2.value - second._2.value) * 1.0 / (first._1 - second._1) :: res
@@ -62,21 +67,24 @@ class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
 }
 
 class CounterSummary(override val n: Int) extends MetricSummary[Counter](n) {
-  def getMean: Double = if (history.nonEmpty) history.map(_._2.count).sum / (1.0 * n) else 0.0
 
-  def getRates: List[Double] = {
+  override def calculateMean(l: List[(Long, Counter)]): Double = if (l.nonEmpty) l.map(_._2.count).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
     var res: List[Double] = List()
     for ((first, second) <- (history, history.drop(1)).zipped) {
       res = (first._2.count - second._2.count) * 1.0 / (first._1 - second._1) :: res
     }
     res.reverse
   }
+
 }
 
 class MeterSummary(override val n: Int) extends MetricSummary[Meter](n) {
-  def getMean: Double = if (history.nonEmpty) history.map(_._2.rate).sum / (1.0 * n) else 0.0
 
-  def getRates: List[Double] = {
+  override def calculateMean(l: List[(Long, Meter)]): Double = if (l.nonEmpty) l.map(_._2.rate).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
     history.map(_._2.rate)
   }
 }
