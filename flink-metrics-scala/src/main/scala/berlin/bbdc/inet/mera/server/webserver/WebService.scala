@@ -1,34 +1,31 @@
-package berlin.bbdc.inet.mera.server.webservice
-
+package berlin.bbdc.inet.mera.server.webserver
 
 import java.util.concurrent.{Executors, ScheduledFuture, TimeUnit}
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
-import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
+import akka.http.scaladsl.server.Directives.{complete, get, getFromResource, parameters, path, pathEndOrSingleSlash, pathPrefix, _}
+import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.metrics.MetricSummary
 import berlin.bbdc.inet.mera.server.model.Model
-import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.immutable._
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.collection.immutable.{List, Map, Seq}
+import scala.concurrent.ExecutionContextExecutor
 
-class WebService(model: Model, host: String, port: Integer) extends Directives {
+trait WebService {
 
-  private val LOG: Logger = LoggerFactory.getLogger(getClass)
-
-  implicit val system: ActorSystem = ActorSystem()
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+  implicit val system: ActorSystem
+  implicit val materializer: ActorMaterializer
+  implicit val executionContext: ExecutionContextExecutor
+  implicit val model: Model
 
   /*
-    Contains metrics exposed to UI
-    key - metricId
-    value - list of tuples containing taskId and value of the metric
-   */
+  Contains metrics exposed to UI
+  key - metricId
+  value - list of tuples containing taskId and value of the metric
+ */
   var metricsBuffer: Map[String, List[(String, Double)]] = Map()
 
   /*
@@ -36,8 +33,7 @@ class WebService(model: Model, host: String, port: Integer) extends Directives {
    */
   var metricsFutures: Map[String, ScheduledFuture[_]] = Map()
 
-
-  val route: Route = {
+  val route: Route =
     path("data" / "operators") {
       get {
         completeJson(model.operators.keys)
@@ -76,10 +72,6 @@ class WebService(model: Model, host: String, port: Integer) extends Directives {
         }
       }
 
-  }
-
-  val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(route, this.host, this.port)
-
   private def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 
   private def initMetric(id: String, resolution: Int): Boolean = {
@@ -107,4 +99,6 @@ class WebService(model: Model, host: String, port: Integer) extends Directives {
     case Some(f) => f.cancel(false)
     case None =>
   }
+
 }
+

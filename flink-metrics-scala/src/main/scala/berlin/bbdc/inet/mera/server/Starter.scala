@@ -3,7 +3,7 @@ package berlin.bbdc.inet.mera.server
 import berlin.bbdc.inet.mera.server.metrics.MetricReceiver
 import berlin.bbdc.inet.mera.server.model.ModelFileWriter
 import berlin.bbdc.inet.mera.server.topology.TopologyServer
-import berlin.bbdc.inet.mera.server.webservice.WebService
+import berlin.bbdc.inet.mera.server.webserver.WebServer
 import org.slf4j.{Logger, LoggerFactory}
 
 object Starter extends App {
@@ -28,7 +28,7 @@ object Starter extends App {
 //  models.values foreach(m => println(m.toString))
   //Currently work on a single model - extend to multiple in the future
   val mfw: ModelFileWriter = new ModelFileWriter(folder)
-  val webService = new WebService(models.head._2, webServiceHost, webServicePort)
+  val webServer = new WebServer(models.head._2, webServiceHost, webServicePort)
   MetricReceiver.start(models.head._2, mfw)
 
   private def parseArguments = {
