@@ -4,7 +4,7 @@ import java.util.concurrent.{Executors, ScheduledFuture, TimeUnit}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
-import akka.http.scaladsl.server.Directives.{complete, get, getFromResource, parameters, path, pathEndOrSingleSlash, pathPrefix, _}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils

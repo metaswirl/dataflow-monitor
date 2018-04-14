@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.server.model
 
-import berlin.bbdc.inet.mera.server.metrics._
+import berlin.bbdc.inet.mera.server.metrics.{Counter, CounterSummary, Gauge, GaugeSummary, JobManagerMetricKey, Meter, MeterSummary, MetricKey, MetricSummary, TaskManagerStatusMetricKey, TaskManagerTaskMetricKey, UnknownMetricKey}
 import org.slf4j.{Logger, LoggerFactory}
 
 class ModelUpdater(val model: Model) {

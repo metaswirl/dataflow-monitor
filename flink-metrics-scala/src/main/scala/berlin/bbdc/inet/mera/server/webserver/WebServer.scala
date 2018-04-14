@@ -2,7 +2,7 @@ package berlin.bbdc.inet.mera.server.webserver
 
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl._
+import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.server.model.Model
 

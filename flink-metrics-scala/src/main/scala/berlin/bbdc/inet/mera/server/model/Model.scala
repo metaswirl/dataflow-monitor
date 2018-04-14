@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.server.model
 
-import berlin.bbdc.inet.mera.server.metrics._
+import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSummary}
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import com.fasterxml.jackson.annotation.JsonIgnore
 
