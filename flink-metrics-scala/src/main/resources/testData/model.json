@@ -1,0 +1,1091 @@
+{
+  "n": 1000,
+  "operators": {
+    "Flat Map": {
+      "id": "Flat Map",
+      "parallelism": 3,
+      "commType": {
+        "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+        "value": "ALL_TO_ALL"
+      }
+    },
+    "Map": {
+      "id": "Map",
+      "parallelism": 2,
+      "commType": {
+        "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+        "value": "ALL_TO_ALL"
+      }
+    },
+    "Source: Custom Source -> Timestamps/Watermarks": {
+      "id": "Source: Custom Source -> Timestamps/Watermarks",
+      "parallelism": 1,
+      "commType": {
+        "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+        "value": "ALL_TO_ALL"
+      }
+    },
+    "Sink: Unnamed": {
+      "id": "Sink: Unnamed",
+      "parallelism": 1,
+      "commType": {
+        "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+        "value": "UNCONNECTED"
+      }
+    },
+    "Filter": {
+      "id": "Filter",
+      "parallelism": 5,
+      "commType": {
+        "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+        "value": "ALL_TO_ALL"
+      }
+    }
+  },
+  "taskEdges": [
+    {
+      "source": {
+        "parent": {
+          "id": "Source: Custom Source -> Timestamps/Watermarks",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Source: Custom Source -> Timestamps/Watermarks.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Filter.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Source: Custom Source -> Timestamps/Watermarks",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Source: Custom Source -> Timestamps/Watermarks.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Filter.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Source: Custom Source -> Timestamps/Watermarks",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Source: Custom Source -> Timestamps/Watermarks.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 2,
+        "host": "localhost",
+        "id": "Filter.2",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Source: Custom Source -> Timestamps/Watermarks",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Source: Custom Source -> Timestamps/Watermarks.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 3,
+        "host": "localhost",
+        "id": "Filter.3",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Source: Custom Source -> Timestamps/Watermarks",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Source: Custom Source -> Timestamps/Watermarks.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 4,
+        "host": "localhost",
+        "id": "Filter.4",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Filter.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Flat Map.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Filter.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Flat Map.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 2,
+        "host": "localhost",
+        "id": "Filter.2",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Flat Map.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 3,
+        "host": "localhost",
+        "id": "Filter.3",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 2,
+        "host": "localhost",
+        "id": "Flat Map.2",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Filter",
+          "parallelism": 5,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 4,
+        "host": "localhost",
+        "id": "Filter.4",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 2,
+        "host": "localhost",
+        "id": "Flat Map.2",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Flat Map.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Map",
+          "parallelism": 2,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Map.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Flat Map.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Map",
+          "parallelism": 2,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Map.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Flat Map",
+          "parallelism": 3,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 2,
+        "host": "localhost",
+        "id": "Flat Map.2",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Map",
+          "parallelism": 2,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Map.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Map",
+          "parallelism": 2,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Map.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Sink: Unnamed",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "UNCONNECTED"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Sink: Unnamed.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    },
+    {
+      "source": {
+        "parent": {
+          "id": "Map",
+          "parallelism": 2,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "ALL_TO_ALL"
+          }
+        },
+        "number": 1,
+        "host": "localhost",
+        "id": "Map.1",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "target": {
+        "parent": {
+          "id": "Sink: Unnamed",
+          "parallelism": 1,
+          "commType": {
+            "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+            "value": "UNCONNECTED"
+          }
+        },
+        "number": 0,
+        "host": "localhost",
+        "id": "Sink: Unnamed.0",
+        "metrics": {},
+        "inQueueSaturation": 0.0,
+        "outQueueSaturation": 0.0,
+        "selectivity": 0.0,
+        "inRate": 0.0,
+        "capacity": 0.0,
+        "targetPartialOutRate": {},
+        "targetInRate": 0.0,
+        "targetOutRate": 0.0,
+        "inDistCtr": -1
+      },
+      "inF": 0.0,
+      "outF": 0.0
+    }
+  ],
+  "sink": {
+    "id": "Sink: Unnamed",
+    "parallelism": 1,
+    "commType": {
+      "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+      "value": "UNCONNECTED"
+    }
+  },
+  "src": {
+    "id": "Source: Custom Source -> Timestamps/Watermarks",
+    "parallelism": 1,
+    "commType": {
+      "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+      "value": "ALL_TO_ALL"
+    }
+  },
+  "tasks": [
+    {
+      "parent": {
+        "id": "Flat Map",
+        "parallelism": 3,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 0,
+      "host": "localhost",
+      "id": "Flat Map.0",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Flat Map",
+        "parallelism": 3,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 1,
+      "host": "localhost",
+      "id": "Flat Map.1",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Flat Map",
+        "parallelism": 3,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 2,
+      "host": "localhost",
+      "id": "Flat Map.2",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Map",
+        "parallelism": 2,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 0,
+      "host": "localhost",
+      "id": "Map.0",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Map",
+        "parallelism": 2,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 1,
+      "host": "localhost",
+      "id": "Map.1",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Source: Custom Source -> Timestamps/Watermarks",
+        "parallelism": 1,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 0,
+      "host": "localhost",
+      "id": "Source: Custom Source -> Timestamps/Watermarks.0",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Sink: Unnamed",
+        "parallelism": 1,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "UNCONNECTED"
+        }
+      },
+      "number": 0,
+      "host": "localhost",
+      "id": "Sink: Unnamed.0",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Filter",
+        "parallelism": 5,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 0,
+      "host": "localhost",
+      "id": "Filter.0",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Filter",
+        "parallelism": 5,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 1,
+      "host": "localhost",
+      "id": "Filter.1",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Filter",
+        "parallelism": 5,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 2,
+      "host": "localhost",
+      "id": "Filter.2",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Filter",
+        "parallelism": 5,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 3,
+      "host": "localhost",
+      "id": "Filter.3",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    },
+    {
+      "parent": {
+        "id": "Filter",
+        "parallelism": 5,
+        "commType": {
+          "enumClass": "berlin.bbdc.inet.mera.server.model.CommType",
+          "value": "ALL_TO_ALL"
+        }
+      },
+      "number": 4,
+      "host": "localhost",
+      "id": "Filter.4",
+      "metrics": {},
+      "inQueueSaturation": 0.0,
+      "outQueueSaturation": 0.0,
+      "selectivity": 0.0,
+      "inRate": 0.0,
+      "capacity": 0.0,
+      "targetPartialOutRate": {},
+      "targetInRate": 0.0,
+      "targetOutRate": 0.0,
+      "inDistCtr": -1
+    }
+  ]
+}

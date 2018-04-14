@@ -66,11 +66,11 @@ trait WebService {
           }
         }
       } ~
-      pathEndOrSingleSlash {
-        get {
-          getFromResource("static/index.html")
-        }
-      }
+      (get & pathEndOrSingleSlash) {
+        getFromResource("static/index.html")
+      } ~ {
+        getFromResourceDirectory("static")
+    }
 
   private def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 
