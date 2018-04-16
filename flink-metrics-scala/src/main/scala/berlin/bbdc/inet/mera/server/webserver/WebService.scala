@@ -74,7 +74,7 @@ trait WebService {
 
   private def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 
-  private def initMetric(id: String, resolution: Int): Boolean = {
+  def initMetric(id: String, resolution: Int): Boolean = {
     //disable old task if exists
     disableFuture(id)
 
@@ -95,7 +95,7 @@ trait WebService {
     true
   }
 
-  private def disableFuture(id: String): Unit = metricsFutures get id match {
+  def disableFuture(id: String): Unit = metricsFutures get id match {
     case Some(f) => f.cancel(false)
     case None =>
   }
