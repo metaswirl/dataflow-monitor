@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.server.model
 
-import berlin.bbdc.inet.mera.server.metrics._
+import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSummary}
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import com.fasterxml.jackson.annotation.JsonIgnore
 
@@ -16,21 +16,10 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   @JsonIgnore
   var output: List[TaskEdge] = List()
 
-  // TODO: combine into one data structure
-  var gauges: Map[String, GaugeSummary] = Map()
-  var counters: Map[String, CounterSummary] = Map()
-  var meters: Map[String, MeterSummary] = Map()
+  var metrics: Map[String, MetricSummary[_]] = Map()
 
-  def getGaugeSummary(key: String): GaugeSummary = {
-    gauges.getOrElse(key, throw MetricNotFoundException(key, id))
-  }
-
-  def getCounterSummary(key: String): CounterSummary = {
-    counters.getOrElse(key, throw MetricNotFoundException(key, id))
-  }
-
-  def getMeterSummary(key: String): MeterSummary = {
-    meters.getOrElse(key, throw MetricNotFoundException(key, id))
+  def getMetricSummary(key: String): MetricSummary[_] = {
+    metrics.getOrElse(key, throw MetricNotFoundException(key, id))
   }
 
   // TODO: Ask Carlo

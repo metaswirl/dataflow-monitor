@@ -1,22 +1,26 @@
 package berlin.bbdc.inet.mera.server.metrics
 
 case class MetricNotFoundException(key: String, id: String) extends Exception(s"Could not find $key for $id")
-abstract class Metric[+N] {
+
+trait Metric[+N] {
   def value: N
 }
+
 case class Counter(count: Long) extends Metric[Long] {
   def value: Long = count
 }
+
 case class Meter(count: Long, rate: Double) extends Metric[Double] {
   def value: Double = rate
 }
+
 case class Histogram(count: Long, min: Long, max: Long, mean: Double) extends Metric[Double] {
   def value: Double = mean
 }
+
 case class Gauge(value: Double) extends Metric[Double]
 
-// TODO: Make MetricSummary covariant
-abstract class MetricSummary[T](val n: Int) {
+abstract class MetricSummary[T <: Metric[_]](val n: Int) {
   var history: List[(Long, T)] = List()
 
   def add(ts: Long, newVal: T): Unit = {
@@ -24,7 +28,12 @@ abstract class MetricSummary[T](val n: Int) {
     if (history.length > n) history = history.dropRight(history.length - n)
   }
 
-  def getMean: Double
+  def calculateMean(l: List[(Long, T)]): Double
+
+  def getMean: Double = calculateMean(history)
+
+  //like getMean but for the last seconds
+  def getMeanBeforeLastSeconds(seconds: Int): Double = calculateMean(history.filter(System.currentTimeMillis() - seconds * 1000 <= _._1))
 
   def getRates: List[Double]
 
@@ -39,13 +48,16 @@ abstract class MetricSummary[T](val n: Int) {
     f"$cn%s($n%s, $m%s, $rm%s, $head%s $last%s)"
   }
 }
+
 object MetricSummary {
   type NumberMetric = Metric[_ >: Double with Int with Long <: AnyVal]
 }
-class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
-  def getMean: Double = if (history.nonEmpty) history.map(_._2.value).sum / (1.0 * n) else 0.0
 
-  def getRates: List[Double] = {
+class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
+
+  override def calculateMean(l: List[(Long, Gauge)]): Double = if (l.nonEmpty) l.map(_._2.value).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
     var res: List[Double] = List()
     for ((first, second) <- (history, history.drop(1)).zipped) {
       res = (first._2.value - second._2.value) * 1.0 / (first._1 - second._1) :: res
@@ -53,32 +65,44 @@ class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
     res.reverse
   }
 }
-class CounterSummary(override val n: Int) extends MetricSummary[Counter](n) {
-  def getMean: Double = if (history.nonEmpty) history.map(_._2.count).sum / (1.0 * n) else 0.0
 
-  def getRates: List[Double] = {
+class CounterSummary(override val n: Int) extends MetricSummary[Counter](n) {
+
+  override def calculateMean(l: List[(Long, Counter)]): Double = if (l.nonEmpty) l.map(_._2.count).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
     var res: List[Double] = List()
     for ((first, second) <- (history, history.drop(1)).zipped) {
       res = (first._2.count - second._2.count) * 1.0 / (first._1 - second._1) :: res
     }
     res.reverse
   }
-}
-class MeterSummary(override val n: Int) extends MetricSummary[Meter](n) {
-  def getMean: Double = if (history.nonEmpty) history.map(_._2.rate).sum / (1.0 * n) else 0.0
 
-  def getRates: List[Double] = {
+}
+
+class MeterSummary(override val n: Int) extends MetricSummary[Meter](n) {
+
+  override def calculateMean(l: List[(Long, Meter)]): Double = if (l.nonEmpty) l.map(_._2.rate).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
     history.map(_._2.rate)
   }
 }
 
 abstract class MetricKey(val rawKey: String)
+
 case class UnknownMetricKey(override val rawKey: String) extends MetricKey(rawKey)
+
 case class JobManagerMetricKey(override val rawKey: String, host: String, metric: String) extends MetricKey(rawKey)
+
 abstract class TaskManagerMetricKey(rawKey: String, host: String, tmId: String) extends MetricKey(rawKey)
+
 abstract class TaskManagerStatusMetricKey(rawKey: String, host: String, tmId: String) extends TaskManagerMetricKey(rawKey, host, tmId)
+
 case class TaskManagerJvmMetricKey(override val rawKey: String, host: String, tmId: String, metric: String) extends TaskManagerStatusMetricKey(rawKey, host, tmId)
+
 case class TaskManagerNetworkMetricKey(override val rawKey: String, host: String, tmId: String, metric: String) extends TaskManagerStatusMetricKey(rawKey, host, tmId)
+
 case class TaskManagerTaskMetricKey(override val rawKey: String, host: String, tmId: String, jobId: String, opId: String, taskId: Int, metric: String) extends TaskManagerMetricKey(rawKey, host, tmId)
 
 object MetricKey {

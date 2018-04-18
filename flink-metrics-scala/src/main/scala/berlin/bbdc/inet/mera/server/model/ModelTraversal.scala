@@ -14,7 +14,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       var sum : Double = 0
       var outDistRaw : Map[Int, Double] = Map()
       for ((out, i) <- task.output.zipWithIndex) {
-        val value = task.getGaugeSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
+        val value = task.getMetricSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
         outDistRaw += out.target.number -> value
         sum += value
       }
@@ -32,7 +32,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
           in.source.inDistCtr += 1
           f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
         }
-        val value = in.source.getGaugeSummary(key).getMean
+        val value = in.source.getMetricSummary(key).getMean
         inDistRaw += in.source.number -> value
         sum += value
       }
@@ -44,18 +44,18 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     computeOutDist()
     computeInDist()
 
-    task.outQueueSaturation = task.getGaugeSummary("buffers.outPoolUsage").getMean
+    task.outQueueSaturation = task.getMetricSummary("buffers.outPoolUsage").getMean
 
     // when the input queue is colocated with the output queue, the input queue equals the output queue.
     task.inQueueSaturation = {
-      val iQS = task.getGaugeSummary("buffers.inPoolUsage").getMean
+      val iQS = task.getMetricSummary("buffers.inPoolUsage").getMean
       val iQSlist = for ( in <- task.input if in.source.host == task.host )
-        yield in.source.gauges("buffers.outPoolUsage").getMean
+        yield in.source.metrics("buffers.outPoolUsage").getMean
       (iQS::iQSlist).max
     }
 
-    task.inRate = task.getMeterSummary("numRecordsInPerSecond").getMean
-    task.selectivity = task.getCounterSummary("numRecordsOut").getMean/task.getCounterSummary("numRecordsIn").getMean
+    task.inRate = task.getMetricSummary("numRecordsInPerSecond").getMean
+    task.selectivity = task.getMetricSummary("numRecordsOut").getMean/task.getMetricSummary("numRecordsIn").getMean
     task.capacity = if (task.inQueueSaturation > queueAlmostFull) {
       task.inRate * (1 - 0.2 * (task.inQueueSaturation - queueAlmostFull)/(queueFull - queueAlmostFull)) // peanlize bottleneck
     } else if (task.inQueueSaturation > queueAlmostEmpty && task.outQueueSaturation > queueAlmostFull) {

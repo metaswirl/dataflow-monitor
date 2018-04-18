@@ -10,6 +10,7 @@ organization := "berlin.bbdc.inet"
 
 val FlinkVersion = "1.4.2"
 val AkkaVersion = "2.5.11"
+val AkkaHttpVersion = "10.1.0"
 val HttpClientVersion = "4.5.5"
 val JacksonScalaVersion = "2.9.4"
 val Specs2Version = "4.0.2"
@@ -42,11 +43,13 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
-  "com.typesafe.akka" %% "akka-http" % "10.1.0",
+  "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonScalaVersion,
   "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
-  "org.specs2" %% "specs2-core" % Specs2Version % "test"
+  "org.specs2" %% "specs2-core" % Specs2Version % "test",
+  "org.specs2" %% "specs2-mock" % Specs2Version % "test",
+  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test"
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
