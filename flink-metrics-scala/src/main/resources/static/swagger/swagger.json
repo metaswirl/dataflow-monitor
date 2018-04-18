@@ -1,0 +1,207 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "Documentation for WebServer REST API\n",
+    "version" : "1.0.0",
+    "title" : "mera-monitor WebServer API"
+  },
+  "host" : "localhost:12345",
+  "tags" : [ {
+    "name" : "model",
+    "description" : "Everything about the running model"
+  }, {
+    "name" : "metrics",
+    "description" : "All you can do with metrics"
+  } ],
+  "paths" : {
+    "/data/operators" : {
+      "get" : {
+        "tags" : [ "model" ],
+        "summary" : "Get list of operators",
+        "description" : "Returns list of operators of the current model sorted from source to sink",
+        "operationId" : "getOperators",
+        "produces" : [ "applicationn/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/tasksOfOperator/{operatorId}" : {
+      "get" : {
+        "tags" : [ "model" ],
+        "summary" : "Get tasks for a given operator",
+        "description" : "Returns list of all tasks, their inputs, and outputs for a given operator",
+        "operationId" : "getTasksById",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "operatorId",
+          "in" : "path",
+          "description" : "ID of operator to return",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/TaskOfOperator"
+            }
+          }
+        }
+      }
+    },
+    "/data/metrics" : {
+      "get" : {
+        "tags" : [ "metrics" ],
+        "summary" : "Get list of available metrics",
+        "description" : "Returns list of all avaiable metrics provided by Flink Metric Reporter",
+        "operationId" : "getMetrics",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/initMetric/{metricId}" : {
+      "get" : {
+        "tags" : [ "metrics" ],
+        "summary" : "Initialize storing a metric with given resolution",
+        "description" : "Request collecting a metric with a given resolution. It creates a buffer on the server where the history of the metric is stored.",
+        "operationId" : "initMetric",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "metricId",
+          "in" : "path",
+          "description" : "name of the metric to track. The metric has to be available through /data/metrics endpoint",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "resolution",
+          "in" : "query",
+          "description" : "Time in seconds which stands for the resolution of the stored metric. Minimum value is 1 second.",
+          "required" : true,
+          "type" : "integer"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/data/metric/{metricId}" : {
+      "get" : {
+        "tags" : [ "metrics" ],
+        "summary" : "Get history of a metric",
+        "description" : "Returns story of a given metric for all tasks. If a metric has not been initialized with data/initMetric it returns an error. Time is formatted as seconds since epoch.",
+        "operationId" : "getMetric",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "metricId",
+          "in" : "path",
+          "description" : "ID of metric to be return",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/Metric"
+              }
+            }
+          },
+          "400" : {
+            "description" : "metric not initialized"
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "TaskOfOperator" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string"
+        },
+        "input" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "output" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        }
+      },
+      "example" : {
+        "output" : [ "output", "output" ],
+        "input" : [ "input", "input" ],
+        "id" : "id"
+      }
+    },
+    "Metric" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "string"
+        },
+        "values" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/Tuple"
+          }
+        }
+      },
+      "example" : {
+        "values" : [ {
+          "value" : 6.02745618307040320615897144307382404804229736328125,
+          "timestamp" : 0.80082819046101150206595775671303272247314453125
+        }, {
+          "value" : 6.02745618307040320615897144307382404804229736328125,
+          "timestamp" : 0.80082819046101150206595775671303272247314453125
+        } ],
+        "id" : "id"
+      }
+    },
+    "Tuple" : {
+      "type" : "object",
+      "properties" : {
+        "timestamp" : {
+          "type" : "number"
+        },
+        "value" : {
+          "type" : "number"
+        }
+      },
+      "example" : {
+        "value" : 6.02745618307040320615897144307382404804229736328125,
+        "timestamp" : 0.80082819046101150206595775671303272247314453125
+      }
+    }
+  }
+}
