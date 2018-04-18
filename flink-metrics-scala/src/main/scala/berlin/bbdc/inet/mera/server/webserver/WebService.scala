@@ -11,6 +11,7 @@ import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.metrics.MetricSummary
 import berlin.bbdc.inet.mera.server.model.Model
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map, Seq}
 import scala.concurrent.ExecutionContextExecutor
 
@@ -22,11 +23,13 @@ trait WebService {
   implicit val model: Model
 
   /*
-  Contains metrics exposed to UI
-  key - metricId
-  value - list of tuples containing taskId and value of the metric
+  * Contains metrics exposed to UI
+  * key   - metricId
+  * value - map:
+  *             - key   - taskId
+  *             - value - history of values
  */
-  var metricsBuffer: Map[String, List[(String, Double)]] = Map()
+  val metricsBuffer = new TrieMap[String, Map[String, List[Double]]]
 
   /*
     Contains all scheduled tasks
@@ -83,9 +86,19 @@ trait WebService {
       override def run(): Unit = {
         //collect list of all tasks and metric values
         val list: List[(String, Double)] = model.tasks.toList.map(
-          t => (t.id, t.getMetricSummary(id).getMeanLastSeconds(resolution)))
-        //store the list
-        metricsBuffer += (id -> list)
+          t => (t.id, t.getMetricSummary(id).getMeanBeforeLastSeconds(resolution)))
+        //get the current value lists
+        val map = metricsBuffer.get(id)
+        val mapBuilder = Map.newBuilder[String, List[Double]]
+        //for each taskId get the list and append the new element
+        for (taskTuple <- list) {
+          val valueList = map.get(taskTuple._1)
+          mapBuilder += (taskTuple._1 -> (valueList :+ taskTuple._2))
+        }
+        //update the lists in the map
+        if(metricsBuffer.putIfAbsent(id, mapBuilder.result).isDefined) {
+          metricsBuffer.replace(id, mapBuilder.result)
+        }
       }
     }
     //schedule the task
