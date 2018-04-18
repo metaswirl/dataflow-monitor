@@ -69,10 +69,15 @@ trait WebService {
           }
         }
       } ~
+      path("swagger") {
+        get {
+          getFromResource("static/swagger/swagger.json")
+        }
+      } ~
       (get & pathEndOrSingleSlash) {
         getFromResource("static/index.html")
       } ~ {
-        getFromResourceDirectory("static")
+      getFromResourceDirectory("static")
     }
 
   private def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
@@ -96,7 +101,7 @@ trait WebService {
           mapBuilder += (taskTuple._1 -> (valueList :+ taskTuple._2))
         }
         //update the lists in the map
-        if(metricsBuffer.putIfAbsent(id, mapBuilder.result).isDefined) {
+        if (metricsBuffer.putIfAbsent(id, mapBuilder.result).isDefined) {
           metricsBuffer.replace(id, mapBuilder.result)
         }
       }
