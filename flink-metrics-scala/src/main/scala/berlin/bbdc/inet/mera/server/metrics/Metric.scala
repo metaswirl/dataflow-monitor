@@ -32,8 +32,8 @@ abstract class MetricSummary[T <: Metric[_]](val n: Int) {
 
   def getMean: Double = calculateMean(history)
 
-  //like getMean but for the last value seconds
-  def getMeanLastSeconds(value: Int): Double = calculateMean(history.filter(System.currentTimeMillis() <= _._1 + value * 1000))
+  //like getMean but for the last seconds
+  def getMeanBeforeLastSeconds(seconds: Int): Double = calculateMean(history.filter(System.currentTimeMillis() - seconds * 1000 <= _._1))
 
   def getRates: List[Double]
 
