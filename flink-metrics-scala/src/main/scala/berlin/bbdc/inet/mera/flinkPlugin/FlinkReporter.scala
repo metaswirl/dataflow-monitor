@@ -1,8 +1,9 @@
 package berlin.bbdc.inet.mera.flinkPlugin
 
 import java.io.{BufferedReader, File, FileReader, PrintWriter}
+import java.util
 
-import reflect.runtime.universe._
+import scala.reflect.runtime.universe._
 import akka.actor.{Actor, ActorContext, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.metrics.Meter
@@ -22,6 +23,8 @@ import berlin.bbdc.inet.mera.message.MetricUpdate
 trait FlinkMetricManager extends MetricReporter {
   var counters : Map[String,Counter] = Map()
   var gauges : Map[String,Gauge[Number]] = Map()
+  type LatencyGauge = java.util.Map[String, java.util.HashMap[String, Double]]
+  var gaugesLatency : Map[String, Gauge[LatencyGauge]] = Map()
   var histograms : Map[String,Histogram] = Map()
   var meters : Map[String,Meter] = Map()
   var metricFilter : Option[String => Boolean] = None
@@ -29,6 +32,19 @@ trait FlinkMetricManager extends MetricReporter {
   val LOG : Logger = LoggerFactory.getLogger("MeraFlinkPlugin")
 
   def setMetricFilter(f : String => Boolean) = { metricFilter = Some(f) }
+
+  def paramInfo[T](x: T)(implicit tag: TypeTag[T]): scala.reflect.runtime.universe.Type = {
+    val targs = tag.tpe match { case TypeRef(_, _, args) => args }
+    targs(0)
+  }
+  def isNumber(x : Any): Boolean = x match {
+   case _:Number => true
+   case _ => false
+  }
+  def isLatencyGauge(x : Any): Boolean = x match {
+    case _:LatencyGauge => true
+    case _ => false
+  }
 
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
     val fullName : String = group.getMetricIdentifier(metricName)
@@ -39,18 +55,17 @@ trait FlinkMetricManager extends MetricReporter {
       metric match {
         case x: Counter => counters += (fullName -> x)
           // TODO: throws a warning about type erasure, cannot remove as it then throws an error
-          // Warning: non-variable type argument Number in type pattern org.apache.flink.metrics.Gauge[Number] is unchecked since it is eliminated by erasure:w
-        case x: Gauge[Number] =>
-            x.getValue match {
-              case _: Number => gauges += (fullName -> x)
-              case _ => LOG.warn("Did not register metric " + fullName)
-            }
+          // Warning: non-variable type argument Number in type pattern org.apache.flink.metrics.Gauge[Number] is unchecked since it is eliminated by erasure
+        case x: Gauge[Number] if isNumber(x.getValue) => gauges += (fullName -> x)
+        case x: Gauge[LatencyGauge]  => {
+          gaugesLatency += (fullName -> x)
+        }
         case x: Histogram => histograms += (fullName -> x)
         case x: Meter => meters += (fullName -> x)
         case _ => LOG.warn("Could not add metric " + fullName + " type " + metric.asInstanceOf[AnyRef].getClass.getSimpleName + "-" + metric.getClass.getSimpleName + "-" + metric.getClass + "!")
       }
     } catch {
-      case _: java.lang.ClassCastException => ( LOG.warn("Ignoring metric " + fullName))
+      case ex: java.lang.ClassCastException => ( LOG.warn("Ignoring metric " + fullName + " " + ex + " " + ex.getMessage))
     }
   }
 
@@ -123,6 +138,16 @@ class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
         case _: ClassCastException => LOG.error(g._1 + " produced an error with the value " + g._2.getValue.toString)
       }
     }
+    gaugesLatency.foreach(x => {
+      val lg : LatencyGauge = x._2.getValue()
+      val iter = lg.values().iterator()
+      if (iter.hasNext()) {
+        val hm = iter.next()
+        if (hm.containsKey("mean")) {
+          ls = GaugeItem(x._1, hm.get("mean").toDouble) :: ls
+        }
+      }
+    })
     val d = MetricUpdate(System.currentTimeMillis())
       .addAllCounters(counters.map(t => CounterItem(t._1, t._2.getCount)))
       .addAllMeters(meters.map(t => MeterItem(t._1, t._2.getCount, t._2.getRate())))
@@ -130,6 +155,7 @@ class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
       .addAllGauges(ls)
 
     master ! d
+
   }
 }
 

@@ -127,3 +127,9 @@ object TestFlinkReporter extends App {
   }
   x.report()
 }
+object TestFlinkReporter2 extends App {
+  val x = new FlinkMetricPusher
+  val gauge = new MockGauge[String]("{LatencySourceDescriptor{vertexID=1, subtaskIndex=-1}={p99=139852.0, p50=48365.0, min=902.0, max=139852.0, p95=129115.75, mean=52406.70212765957}}")
+  x.notifyOfAddedMetric(gauge, "latency", new MockMetricGroup)
+
+}
