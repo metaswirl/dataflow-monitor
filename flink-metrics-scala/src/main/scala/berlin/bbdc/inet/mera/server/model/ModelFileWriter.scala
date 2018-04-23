@@ -32,10 +32,10 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
   def updateInferredMetrics(model : Model): Unit = {
     val now = System.currentTimeMillis()
     for (task <- model.tasks) {
-      inferredMetricNodeWriter.write(f"${now};${task.id};${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation}\n")
+      inferredMetricNodeWriter.write(f"$now;${task.id};${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation}\n")
     }
     for (te <- model.taskEdges) {
-      inferredMetricEdgeWriter.write(f"${now};${te.source.id};${te.target.id};${te.outF};${te.inF}\n")
+      inferredMetricEdgeWriter.write(f"$now;${te.source};${te.target};${te.outF};${te.inF}\n")
     }
     inferredMetricNodeWriter.flush()
     inferredMetricEdgeWriter.flush()

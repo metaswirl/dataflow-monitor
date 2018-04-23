@@ -21,10 +21,10 @@ class ModelBuilder {
     new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
   }
 
-  def connectGrouped(sourceOp: Operator, targetOp: Operator) = {
+  def connectGrouped(sourceOp: Operator, targetOp: Operator): Unit = {
     for (t <- sourceOp.tasks) {
       for (t2 <- targetOp.tasks) {
-        val te = new TaskEdge(t, t2)
+        val te = new TaskEdge(t.id, t2.id)
         t.addOutput(te)
         t2.addInput(te)
         taskEdges :+= te
@@ -42,7 +42,7 @@ class ModelBuilder {
       val factor : Double = targetNum * 1.0 / sourceNum
       for (targetIndex <- 0 until targetNum) {
         val sourceIndex = (targetIndex / factor).toInt
-        val te = new TaskEdge(sourceOp.tasks(sourceIndex), targetOp.tasks(targetIndex))
+        val te = new TaskEdge(sourceOp.tasks(sourceIndex).id, targetOp.tasks(targetIndex).id)
         sourceOp.tasks(sourceIndex).addOutput(te)
         targetOp.tasks(targetIndex).addInput(te)
         taskEdges :+= te
@@ -54,7 +54,7 @@ class ModelBuilder {
         val start : Int = (targetIndex * factor).toInt
         val end : Int = ((targetIndex + 1) * factor).toInt
         for (sourceIndex <- start until end) {
-          val te = new TaskEdge(sourceOp.tasks(sourceIndex), targetOp.tasks(targetIndex))
+          val te = new TaskEdge(sourceOp.tasks(sourceIndex).id, targetOp.tasks(targetIndex).id)
           sourceOp.tasks(sourceIndex).addOutput(te)
           targetOp.tasks(targetIndex).addInput(te)
           taskEdges :+= te

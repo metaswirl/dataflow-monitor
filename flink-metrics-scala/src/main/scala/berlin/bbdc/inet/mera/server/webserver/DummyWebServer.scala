@@ -22,7 +22,7 @@ class DummyWebServer(m: Model, host: String, port: Int)
 
   Http().bindAndHandle(route, host, port)
 
-  override def initMetric(id: String, resolution: Int): Boolean = {
+  override def initMetric(id: String, resolution: Int): Unit = {
     disableFuture(id)
 
     val scheduler = Executors.newScheduledThreadPool(1)
@@ -33,6 +33,5 @@ class DummyWebServer(m: Model, host: String, port: Int)
     }
     val f = scheduler.scheduleAtFixedRate(task, resolution, resolution, TimeUnit.SECONDS)
     metricsFutures += (id -> f)
-    true
   }
 }

@@ -22,18 +22,18 @@ trait WebService {
   implicit val executionContext: ExecutionContextExecutor
   implicit val model: Model
 
-  /*
-  * Contains metrics exposed to UI
-  * key   - metricId
-  * value - map:
-  *             - key   - taskId
-  *             - value - history of values
- */
+  /**
+    * Contains metrics exposed to UI
+    * key   - metricId
+    * value - map:
+    *           - key   - taskId
+    *           - value - history of values
+    */
   val metricsBuffer = new TrieMap[String, Map[String, List[Double]]]
 
-  /*
-    Contains all scheduled tasks
-   */
+  /**
+    * Contains all scheduled tasks
+    */
   var metricsFutures: Map[String, ScheduledFuture[_]] = Map()
 
   val route: Route =
@@ -52,19 +52,25 @@ trait WebService {
       } ~
       pathPrefix("data" / "tasksOfOperator") {
         path(Remaining) { id =>
-          completeJson(model.operators(id.replace("%20", " ")).tasks)
+          val seq = model
+            .operators(id.replace("%20", " "))
+            .tasks
+            .map(t => {
+              TasksOfOperator(t.id, t.input.map(_.source), t.output.map(_.target))})
+
+          completeJson(seq)
         }
       } ~
       path("data" / "metrics") {
         get {
-          completeJson(metricsBuffer.keys.toVector)
+          completeJson(model.tasks.flatMap(_.metrics.keys).toVector.distinct)
         }
       } ~
       pathPrefix("data" / "initMetric") {
         path(Remaining) { id =>
           parameters('resolution.as[Int]) { resolution => {
-            val result = initMetric(id, resolution)
-            completeJson(Map("metric" -> id, "resolution" -> resolution, "result" -> result))
+            initMetric(id, resolution)
+            completeJson(Map("metric" -> id, "resolution" -> resolution))
           }
           }
         }
@@ -78,11 +84,17 @@ trait WebService {
         getFromResource("static/index.html")
       } ~ {
       getFromResourceDirectory("static")
-    }
+    } ~
+      //used only for testing
+      path("model") {
+        get {
+          completeJson(model)
+        }
+      }
 
   private def completeJson(obj: Any): StandardRoute = complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 
-  def initMetric(id: String, resolution: Int): Boolean = {
+  def initMetric(id: String, resolution: Int): Unit = {
     //disable old task if exists
     disableFuture(id)
 
@@ -110,7 +122,6 @@ trait WebService {
     val f = scheduler.scheduleAtFixedRate(task, resolution, resolution, TimeUnit.SECONDS)
     //store the Future
     metricsFutures += (id -> f)
-    true
   }
 
   def disableFuture(id: String): Unit = metricsFutures get id match {
@@ -119,4 +130,6 @@ trait WebService {
   }
 
 }
+
+case class TasksOfOperator(id: String, input: List[String], output: List[String])
 

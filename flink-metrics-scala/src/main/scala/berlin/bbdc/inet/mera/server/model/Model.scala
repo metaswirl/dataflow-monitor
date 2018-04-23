@@ -10,12 +10,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) {
   val id = s"${parent.id}.$number"
 
-  @JsonIgnore
   var input: List[TaskEdge] = List()
 
-  @JsonIgnore
   var output: List[TaskEdge] = List()
 
+  @JsonIgnore
   var metrics: Map[String, MetricSummary[_]] = Map()
 
   def getMetricSummary(key: String): MetricSummary[_] = {
@@ -29,15 +28,31 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   //   else if (meters.contains(key)) { return Some(meters(key)) }
   // }
 
+  @JsonIgnore
   var inQueueSaturation: Double = _
+
+  @JsonIgnore
   var outQueueSaturation: Double = _
+
+  @JsonIgnore
   var selectivity: Double = _
+
+  @JsonIgnore
   var inRate: Double = _
+
+  @JsonIgnore
   var capacity: Double = _
+
+  @JsonIgnore
   var targetPartialOutRate: Map[Int, Double] = Map()
+
+  @JsonIgnore
   var targetInRate: Double = _
+
+  @JsonIgnore
   var targetOutRate: Double = _
 
+  @JsonIgnore
   var inDistCtr: Int = -1
 
   def addOutput(te: TaskEdge): Unit = {
@@ -48,13 +63,13 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   }
 
   override def toString: String = {
-    val p = input.map(_.source.id).foldRight("")(_ + "," + _)
-    val n = output.map(_.target.id).foldRight("")(_ + "," + _)
+    val p = input.map(_.source).foldRight("")(_ + "," + _)
+    val n = output.map(_.target).foldRight("")(_ + "," + _)
     f"Task-$number%s (In: $p%s Out: $n%s)"
   }
 }
 
-class TaskEdge(val source: Task, val target: Task) {
+class TaskEdge(val source: String, val target: String) {
   var inF: Double = _
   var outF: Double = _
 }
@@ -68,8 +83,10 @@ class Operator(val id: String, val parallelism: Int, val commType: CommType) {
   //TODO: Fix for cluster
   @JsonIgnore
   val tasks: List[Task] = List.range(0, parallelism).map(new Task(this, _, "localhost"))
+
   @JsonIgnore
   var predecessor: List[Operator] = List()
+
   @JsonIgnore
   var successor: List[Operator] = List()
 
@@ -96,6 +113,8 @@ class Model(val n :Int, val operators : Map[String, Operator], val taskEdges : L
   val sink: Operator = operators.values.filter(_.successor.isEmpty).head
   val src: Operator = operators.values.filter(_.predecessor.isEmpty).head
   val tasks: Iterable[Task] = operators.values.flatMap(_.tasks)
+
+  def getTaskById(id: String): Task = tasks.find(_.id == id).get
 
   override def toString: String = {
     val op = operators.values.map("\n" + _.toString)

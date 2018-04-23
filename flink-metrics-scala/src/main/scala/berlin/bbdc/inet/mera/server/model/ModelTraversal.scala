@@ -15,29 +15,29 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       var outDistRaw : Map[Int, Double] = Map()
       for ((out, i) <- task.output.zipWithIndex) {
         val value = task.getMetricSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
-        outDistRaw += out.target.number -> value
+        outDistRaw += model.getTaskById(out.target).number -> value
         sum += value
       }
       for (te <- task.output) {
-        te.outF = outDistRaw(te.target.number)/sum
+        te.outF = outDistRaw(model.getTaskById(te.target).number)/sum
       }
     }
     def computeInDist(): Unit = {
       var sum : Double = 0
       var inDistRaw : Map[Int, Double] = Map()
       for (in <- task.input) {
-        val key = if (in.source.parent.commType == CommType.POINTWISE) {
+        val key = if (model.getTaskById(in.source).parent.commType == CommType.POINTWISE) {
           f"Network.Output.0.${task.number}%d.buffersByChannel"
         } else {
-          in.source.inDistCtr += 1
-          f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
+          model.getTaskById(in.source).inDistCtr += 1
+          f"Network.Output.0.${model.getTaskById(in.source).inDistCtr}%d.buffersByChannel"
         }
-        val value = in.source.getMetricSummary(key).getMean
-        inDistRaw += in.source.number -> value
+        val value = model.getTaskById(in.source).getMetricSummary(key).getMean
+        inDistRaw += model.getTaskById(in.source).number -> value
         sum += value
       }
       for (in <- task.input) {
-        in.inF = inDistRaw(in.source.number)/sum
+        in.inF = inDistRaw(model.getTaskById(in.source).number)/sum
       }
     }
 
@@ -49,8 +49,8 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     // when the input queue is colocated with the output queue, the input queue equals the output queue.
     task.inQueueSaturation = {
       val iQS = task.getMetricSummary("buffers.inPoolUsage").getMean
-      val iQSlist = for ( in <- task.input if in.source.host == task.host )
-        yield in.source.metrics("buffers.outPoolUsage").getMean
+      val iQSlist = for ( in <- task.input if model.getTaskById(in.source).host == task.host )
+        yield model.getTaskById(in.source).metrics("buffers.outPoolUsage").getMean
       (iQS::iQSlist).max
     }
 
