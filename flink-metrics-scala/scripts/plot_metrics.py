@@ -72,6 +72,7 @@ def plot_inferred_metrics_nodes(folder, opti_start):
             print()
             print(el)
             print(nd.describe())
+            print(nd.head())
         res = nd.plot(ax=axes[count], legend=False, colormap=cmap)
         axes[count].axvline(opti_start)
 

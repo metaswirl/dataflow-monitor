@@ -28,7 +28,6 @@ object Starter extends App {
 //  models.values foreach(m => println(m.toString))
   //Currently work on a single model - extend to multiple in the future
   val mfw: ModelFileWriter = new ModelFileWriter(folder, writeMetrics=true)
-  mfw.writeGraph(models.head._2)
   val webServer = new WebServer(models.head._2, webServiceHost, webServicePort)
   MetricReceiver.start(models.head._2, mfw)
 
