@@ -49,7 +49,7 @@ class TopologyServer(hostname: String, port: Integer) {
       val job = JsonUtils.fromJson[Job](jobJson)
       val modelBuilder = new ModelBuilder
       //iterate over vertices and for each add a new operator to the model
-      job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, findCommTypeById(v.id, job.plan)))
+      job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, findCommTypeById(v.id, job.plan), false))
       models += (jid -> modelBuilder.createModel(1000))
     }
 

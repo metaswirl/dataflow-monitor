@@ -16,6 +16,7 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
   val modelUpdater = new ModelUpdater(model)
   val LOG: Logger = LoggerFactory.getLogger("MetricReceiver")
   var first = true
+  val modelTraversal = new ModelTraversal(model, mfw)
 
   var traversalFuture : ScheduledFuture[_] = _
 
@@ -33,14 +34,14 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
         first = false
         LOG.info("Started receiving metrics. Starting model traversal.")
         // Start tra
-        val modelTraversal = new ModelTraversal(model, mfw)
         val schd : ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-        traversalFuture = schd.scheduleAtFixedRate(modelTraversal, 5, 1, TimeUnit.SECONDS)
+        traversalFuture = schd.scheduleAtFixedRate(modelTraversal, 5, 3, TimeUnit.SECONDS)
       }
     }
   }
 
   override def postStop(): Unit = {
+    modelTraversal.cancel()
     mfw.close()
     traversalFuture.cancel(true)
     super.postStop()

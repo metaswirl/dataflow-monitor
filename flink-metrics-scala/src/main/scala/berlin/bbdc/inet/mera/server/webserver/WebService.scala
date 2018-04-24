@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.metrics.MetricSummary
-import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.server.model.{Model, Task}
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map, Seq}
@@ -44,7 +44,7 @@ trait WebService {
     } ~
       pathPrefix("data" / "metric") {
         path(Remaining) { id =>
-          val list: Seq[(String, MetricSummary[_])] = model.tasks.toVector
+          val list: Seq[(String, MetricSummary[_])] = model.tasks.values.toList
             .filter(_.metrics.contains(id))
             .map(t => Tuple2[String, MetricSummary[_]](t.id, t.getMetricSummary(id)))
           completeJson(list)
@@ -85,7 +85,7 @@ trait WebService {
     val task = new Runnable {
       override def run(): Unit = {
         //collect list of all tasks and metric values
-        val list: List[(String, Double)] = model.tasks.toList.map(
+        val list: List[(String, Double)] = model.tasks.values.toList.map(
           t => (t.id, t.getMetricSummary(id).getMeanBeforeLastSeconds(resolution)))
         //get the current value lists
         val map = metricsBuffer.get(id)
