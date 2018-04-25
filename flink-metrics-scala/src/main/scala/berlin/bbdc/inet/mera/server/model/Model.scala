@@ -2,8 +2,8 @@ package berlin.bbdc.inet.mera.server.model
 
 import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSummary}
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
+import gurobi.GRBVar
 import com.fasterxml.jackson.annotation.JsonIgnore
-import gurobi._
 
 /* TODO: Separate data from traversal
  */
@@ -24,13 +24,6 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   }
   // TODO: feels like this is out of place
   var gurobiRate : GRBVar = _
-
-  // TODO: Ask Carlo
-  // def getMetric[M <: Metric](key : String) : Option[MetricSummary[M]] = {
-  //   if (gauges.contains(key)) { return Some(gauges(key)) }
-  //   else if (counters.contains(key)) { return Some(counters(key)) }
-  //   else if (meters.contains(key)) { return Some(meters(key)) }
-  // }
 
   var inQueueSaturation: Double = _
   var outQueueSaturation: Double = _
