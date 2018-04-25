@@ -1,9 +1,5 @@
 package berlin.bbdc.inet.mera.flinkPlugin
 
-import java.io.{BufferedReader, File, FileReader, PrintWriter}
-import java.util
-
-import scala.reflect.runtime.universe._
 import akka.actor.{Actor, ActorContext, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.metrics.Meter
@@ -33,10 +29,6 @@ trait FlinkMetricManager extends MetricReporter {
 
   def setMetricFilter(f : String => Boolean) = { metricFilter = Some(f) }
 
-  def paramInfo[T](x: T)(implicit tag: TypeTag[T]): scala.reflect.runtime.universe.Type = {
-    val targs = tag.tpe match { case TypeRef(_, _, args) => args }
-    targs(0)
-  }
   def isNumber(x : Any): Boolean = x match {
    case _:Number => true
    case _ => false
