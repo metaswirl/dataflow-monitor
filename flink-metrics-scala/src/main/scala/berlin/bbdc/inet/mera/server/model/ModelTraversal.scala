@@ -2,15 +2,11 @@ package berlin.bbdc.inet.mera.server.model
 
 import berlin.bbdc.inet.mera.server.metrics.MetricNotFoundException
 import org.slf4j.{Logger, LoggerFactory}
-import gurobi._
-import java.net._
-import java.io._
-import java.nio.file.Files
-
-import scala.io._
 
 class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnable {
   val LOG: Logger = LoggerFactory.getLogger("Model")
+  private val lPSolver = new LPSolver(model)
+  // TODO: move options to a config file
   private val queueAlmostEmpty : Double = 0.2
   private val queueAlmostFull : Double = 0.8
   private val penalty: Double = 0.9
@@ -19,46 +15,54 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
   private var initPhase = true
   private var initPhaseDuration = 120 * 1000
 
-  def computeInfMetrics(task: Task): Boolean = {
-    def computeOutDist() {
-      var sum : Double = 0
-      var outDistRaw : Map[Int, Double] = Map()
-      for ((out, i) <- task.output.zipWithIndex) {
-        val value = task.getMetricSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
-        outDistRaw += out.target.number -> value
-        sum += value
-      }
-      for (te <- task.output) {
-        te.outF = outDistRaw(te.target.number)/sum
-      }
+  def computeOutDist(task: Task): Int => Double = {
+    def computeOutDistPerTask(sum: Double, outDistRaw: Map[Int, Double])(taskNumber: Int) : Double = {
+      outDistRaw(taskNumber)/sum
     }
-    def computeInDist(): Unit = {
-      var sum : Double = 0
-      var inDistRaw : Map[Int, Double] = Map()
-      for (in <- task.input) {
-        val key = if (in.source.parent.commType == CommType.POINTWISE) {
-          f"Network.Output.0.${task.number}%d.buffersByChannel"
-        } else {
-          in.source.inDistCtr += 1
-          f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
-        }
-        val value = in.source.getMetricSummary(key).getMean
-        inDistRaw += in.source.number -> value
-        sum += value
-      }
-      for (in <- task.input) {
-        in.inF = inDistRaw(in.source.number)/sum
-      }
+    var sum : Double = 0
+    var outDistRaw : Map[Int, Double] = Map()
+    for ((out, i) <- task.output.zipWithIndex) {
+      val value = task.getMetricSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
+      outDistRaw += out.target.number -> value
+      sum += value
     }
+    return computeOutDistPerTask(sum, outDistRaw)
+  }
+  def computeInDist(task: Task): Int => Double = {
+    def computeInDistPerTask(sum: Double, inDistRaw: Map[Int, Double])(taskNumber: Int) : Double = {
+      inDistRaw(taskNumber)/sum
+    }
+    var sum : Double = 0
+    var inDistRaw : Map[Int, Double] = Map()
+    for (in <- task.input) {
+      val key = if (in.source.parent.commType == CommType.POINTWISE) {
+        f"Network.Output.0.${task.number}%d.buffersByChannel"
+      } else {
+        in.source.inDistCtr += 1
+        f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
+      }
+      val value = in.source.getMetricSummary(key).getMean
+      inDistRaw += in.source.number -> value
+      sum += value
+    }
+    return computeInDistPerTask(sum, inDistRaw)
+  }
 
-    computeOutDist()
-    computeInDist()
+  def computeInfMetrics(task: Task): Boolean = {
+    val compInDistPerTask = computeInDist(task)
+    val compOutDistPerTask = computeOutDist(task)
+    for (in <- task.input) {
+      in.inF = compInDistPerTask(in.source.number)
+    }
+    for (out <- task.output) {
+      out.outF = compOutDistPerTask(out.target.number)
+    }
 
     task.outQueueSaturation = task.getMetricSummary("buffers.outPoolUsage").getMean
 
-    // when the input queue is colocated with the output queue, the input queue equals the output queue.
     task.inQueueSaturation = {
       val iQS = task.getMetricSummary("buffers.inPoolUsage").getMean
+      // when the input queue is colocated with the output queue, the input queue equals the output queue.
       val iQSlist = for ( in <- task.input if in.source.host == task.host )
         yield in.source.metrics("buffers.outPoolUsage").getMean
       (iQS::iQSlist).max
@@ -81,23 +85,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     }
     true
   }
-//  def computeTargets(task: Task) : Boolean = {
-//    // targetInputRate
-//    task.targetInRate = if (task.output.isEmpty) {
-//      task.capacity
-//    } else {
-//      task.targetOutRate = task.targetPartialOutRate.map(x => {
-//        x._2 * task.outDist(x._1)
-//      }).min
-//      Math.min(task.targetOutRate/task.selectivity, task.capacity)
-//    }
-//
-//    // targetPartialOutRate of inputs
-//    for (in <- task.input) {
-//      in.source.targetPartialOutRate += task.number -> task.inDist(in.source.number) * task.targetInRate
-//    }
-//    true
-//  }
+
   def traverseModel() {
     LOG.info("Traversing model")
     model.tasks.values.foreach(_.inDistCtr = -1)
@@ -112,98 +100,85 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
         return
     }
     mfw.updateInferredMetrics(model)
-    if (initPhase) {
-      if (System.currentTimeMillis() - beginTime > initPhaseDuration) {
-        initPhase = false
-        mfw.writeStartOptimization()
-      } else {
-        return
-      }
-    }
-    solveLP()
-  }
 
-//    def traverseOp(op: Operator) : Unit = {
-//      op.tasks.foreach(computeTargets)
-//      if (op.predecessor.isEmpty) return
-//      traverseOp(op.predecessor.head)
-//    }
-//    traverseOp(model.sink)
-//    mfw.updateTargetMetrics(model)
-
-  def solveLP(): Unit = {
-    val env = new GRBEnv("/tmp/lp.log")
-    val grbModel = new GRBModel(env)
-
-    def predecessors[T](task: Task)(fun: TaskEdge => T): List[T] = {
-      task.input.map(fun(_))
+    // solve LP after initialization period
+    if (initPhase && System.currentTimeMillis() - beginTime < initPhaseDuration) {
+      return
+    } else if (initPhase) {
+      initPhase = false
+      mfw.writeStartOptimization()
     }
-    def collect(te: TaskEdge): GRBLinExpr = {
-      val expr : GRBLinExpr  = new GRBLinExpr()
-      //println(te.source.id, te.target.id, te.source.selectivity, te.outF)
-      expr.addTerm(te.source.selectivity * te.outF, te.source.gurobiRate)
-      expr
-    }
-    def traverse_operators(op: Operator): Unit = {
-      for (task <- op.tasks) {
-        val cap = if (task.capacity == Double.PositiveInfinity) GRB.INFINITY else task.capacity
-        task.gurobiRate = grbModel.addVar(0.0, task.capacity, 0.0, GRB.CONTINUOUS, "rate_" + task.id)
-        if (op.predecessor.nonEmpty) {
-          val expr = new GRBLinExpr()
-          predecessors(task)(collect).foreach(expr.add(_))
-          if (op.isLoadShedder) {
-            val dropRate : GRBVar = grbModel.addVar(0.0, GRB.INFINITY, 0.0, GRB.CONTINUOUS, "dropRate_" + task.id)
-            expr.addTerm(-1, dropRate)
-          }
-          grbModel.addConstr(task.gurobiRate, GRB.EQUAL, expr, "flow_conservation_" + task.id)
-        } else { // For the source!
-          grbModel.addConstr(task.gurobiRate, GRB.EQUAL, task.outRate, "flow_conservation_" + task.id)
-        }
-      }
-      op.successor.foreach(traverse_operators(_))
-    }
-    try {
-      traverse_operators(model.src)
-    } catch {
-      case ex: Throwable => println(ex, ex.getMessage)
-    }
-    val expr = new GRBLinExpr()
-    model.sink.tasks.foreach(t => expr.addTerm(1, t.gurobiRate))
-    grbModel.setObjective(expr, GRB.MAXIMIZE)
-    try {
-      grbModel.optimize()
-      // TODO: Check first whether a solution was found
-      var result = ""
-
-      grbModel.getVars().foreach(x => {
-        val name = x.get(GRB.StringAttr.VarName)
-        val number = x.get(GRB.DoubleAttr.X)
-        if (name.contains("dropRate")) {
-          val newName = name.replace("dropRate_", "")
-          //println(newName, number)
-          send(newName, number.toInt.toString)
-        } else if (name.contains("rate")) {
-          val newName = name.replace("rate_", "")
-          LOG.info(s"$newName: $number; ${model.tasks(newName).capacity}")
-          if (number > model.tasks(newName).capacity) {
-            LOG.warn(s"$number > ${model.tasks(newName).capacity}")
-          }
-        }
-        result = s"$result\n$name = $number"
-      })
-      val fname = s"/tmp/grb_${System.currentTimeMillis()}.lp"
-      grbModel.write(fname)
-      import java.nio.file.Paths
-      import java.nio.file.StandardOpenOption
-      Files.write(Paths.get(fname), result.getBytes, StandardOpenOption.APPEND)
-    } catch {
-      case ex: Throwable => LOG.error(ex + ":" + ex.getMessage)
-    }
+    lPSolver.solveLP()
   }
 
   def cancel(): Unit = {
   }
 
+  override def run(): Unit = {
+    traverseModel()
+  }
+}
+
+class LPSolver(val model : Model) {
+  import gurobi._
+  val LOG: Logger = LoggerFactory.getLogger("LPSolver")
+
+
+  def traverse_operators(grbModel: GRBModel, op: Operator): Unit = {
+    def collect(te: TaskEdge): GRBLinExpr = {
+      val expr : GRBLinExpr  = new GRBLinExpr()
+      expr.addTerm(te.source.selectivity * te.outF, te.source.gurobiRate)
+      expr
+    }
+
+    for (task <- op.tasks) {
+      val cap = if (task.capacity == Double.PositiveInfinity) GRB.INFINITY else task.capacity
+      task.gurobiRate = grbModel.addVar(0.0, task.capacity, 0.0, GRB.CONTINUOUS, "rate_" + task.id)
+      if (op.predecessor.nonEmpty) {
+        val expr = new GRBLinExpr()
+        task.input.map(collect).foreach(expr.add(_))
+        if (op.isLoadShedder) {
+          val dropRate : GRBVar = grbModel.addVar(0.0, GRB.INFINITY, 0.0, GRB.CONTINUOUS, "dropRate_" + task.id)
+          expr.addTerm(-1, dropRate)
+        }
+        grbModel.addConstr(task.gurobiRate, GRB.EQUAL, expr, "flow_conservation_" + task.id)
+      } else { // For the source!
+        grbModel.addConstr(task.gurobiRate, GRB.EQUAL, task.outRate, "flow_conservation_" + task.id)
+      }
+    }
+    op.successor.foreach(traverse_operators(grbModel, _))
+  }
+
+  def processResults(grbModel : GRBModel): Unit = {
+    // TODO: Check first whether a solution was found
+    var result = ""
+    grbModel.getVars().foreach(x => {
+      val name = x.get(GRB.StringAttr.VarName)
+      val number = x.get(GRB.DoubleAttr.X)
+      if (name.contains("dropRate")) {
+        // TODO: Using this to control the job. Use Akka instead.
+        val newName = name.replace("dropRate_", "")
+        send(newName, number.toInt.toString)
+      } else if (name.contains("rate")) {
+        val newName = name.replace("rate_", "")
+        LOG.info(s"$newName: $number; ${model.tasks(newName).capacity}")
+        if (number > model.tasks(newName).capacity) {
+          LOG.warn(s"$number > ${model.tasks(newName).capacity}")
+        }
+      }
+      result = s"$result\n$name = $number"
+    })
+
+    // TODO: Hide this away, only use in debug
+    val fname = s"/tmp/grb_${System.currentTimeMillis()}.lp"
+    grbModel.write(fname)
+    import java.nio.file.Paths
+    import java.nio.file.StandardOpenOption
+    import java.nio.file.Files
+    Files.write(Paths.get(fname), result.getBytes, StandardOpenOption.APPEND)
+  }
+
+  // TODO: Obviously ugly
   def send(newName : String, msg: String): Unit = {
     if (newName == "loadshedder0.0") {
       sendToPort(22200, msg)
@@ -219,15 +194,34 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       sendToPort(22221, msg)
     }
   }
+
   def sendToPort(port: Int, msg: String): Unit = {
+    import java.net._
+    import java.io._
     val s = new Socket(InetAddress.getByName("localhost"), port)
     val out = new PrintStream(s.getOutputStream())
     out.print(msg + "\n")
     out.flush()
     s.close()
   }
-  override def run(): Unit = {
-    traverseModel()
+
+  // TODO: Break this further up
+  def solveLP(): Unit = {
+    // TODO: Add config option
+    try {
+      val env = new GRBEnv("/tmp/lp.log")
+      val grbModel = new GRBModel(env)
+
+      traverse_operators(grbModel, model.src)
+      val expr = new GRBLinExpr()
+      model.sink.tasks.foreach(t => expr.addTerm(1, t.gurobiRate))
+      grbModel.setObjective(expr, GRB.MAXIMIZE)
+      grbModel.optimize()
+      processResults(grbModel)
+    } catch {
+      case ex: Throwable => LOG.error(ex + ":" + ex.getMessage)
+                            return
+    }
   }
 }
 
