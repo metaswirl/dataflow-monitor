@@ -6,6 +6,7 @@
     "title" : "mera-monitor WebServer API"
   },
   "host" : "localhost:12345",
+  "basePath" : "/",
   "tags" : [ {
     "name" : "model",
     "description" : "Everything about the running model"
@@ -13,6 +14,7 @@
     "name" : "metrics",
     "description" : "All you can do with metrics"
   } ],
+  "schemes" : [ "http" ],
   "paths" : {
     "/data/operators" : {
       "get" : {
@@ -55,6 +57,9 @@
             "schema" : {
               "$ref" : "#/definitions/TaskOfOperator"
             }
+          },
+          "404" : {
+            "description" : "operatorId not found"
           }
         }
       }
@@ -103,6 +108,9 @@
         "responses" : {
           "200" : {
             "description" : "successful operation"
+          },
+          "404" : {
+            "description" : "metricId not found in the list of available metrics. This metricId cannot be initialized."
           }
         }
       }
@@ -131,8 +139,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "metric not initialized"
+          "404" : {
+            "description" : "metric has not been initialized"
           }
         }
       }

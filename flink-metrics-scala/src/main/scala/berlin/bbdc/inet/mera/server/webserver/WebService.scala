@@ -66,7 +66,7 @@ trait WebService {
       // Returns tasks for a given operator
       pathPrefix("data" / "tasksOfOperator") {
         path(Remaining) { id =>
-          completeJson(getTasksOfOperator(id))
+          completeTasksOfOperator(id)
         }
       } ~
       // Returns history of a given metric
@@ -112,6 +112,15 @@ trait WebService {
       complete(HttpResponse(NotFound, entity = "This metric has not been initialized!"))
     } else {
       completeJson(metricsBuffer(id))
+    }
+  }
+
+  private def completeTasksOfOperator(id: String): Route = {
+    if (model.operators.contains(id)) {
+      completeJson(getTasksOfOperator(id))
+    }
+    else {
+      complete(HttpResponse(NotFound, entity = s"Operator $id not found"))
     }
   }
 
