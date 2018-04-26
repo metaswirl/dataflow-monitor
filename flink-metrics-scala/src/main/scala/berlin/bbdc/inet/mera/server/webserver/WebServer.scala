@@ -6,6 +6,7 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.server.model.Model
 
+import scala.collection.immutable.Map
 import scala.concurrent.ExecutionContextExecutor
 
 
@@ -18,4 +19,9 @@ class WebServer(m: Model, host: String, port: Int)
   implicit val model: Model = m
 
   Http().bindAndHandle(route, host, port)
+
+  override def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)] = {
+    model.tasks.map(
+      t => t.id -> t.getMetricSummary(id).getMeanBeforeLastSeconds(resolution)).toMap
+  }
 }

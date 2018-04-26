@@ -49,49 +49,58 @@ trait WebService {
   /**
     * Contains all scheduled tasks
     */
-  var metricsFutures: Map[String, ScheduledFuture[_]] = Map()
+  private var metricsFutures: Map[String, ScheduledFuture[_]] = Map()
+
+  /**
+    * Obtains list of all avaiable metrics
+    */
+  private val metricsList = () => model.tasks.flatMap(_.metrics.keys).toVector.distinct
 
   val route: Route =
-    // Returns list of operators
+  // Returns list of operators
     path("data" / "operators") {
       get {
-        completeJson(model.operators.keys)
+        completeJson(model.operators.keys.toVector.reverse)
       }
     } ~
-    // Returns tasks for a given operator
+      // Returns tasks for a given operator
       pathPrefix("data" / "tasksOfOperator") {
         path(Remaining) { id =>
-          completeJson(getTasksOfOperators(id))
+          completeJson(getTasksOfOperator(id))
         }
       } ~
-    // Returns history of a given metric
+      // Returns history of a given metric
       pathPrefix("data" / "metric") {
         path(Remaining) { id =>
           getMetricById(id)
         }
       } ~
-    // Returns all available metrics
+      // Returns all available metrics
       path("data" / "metrics") {
         get {
-          completeJson(model.tasks.flatMap(_.metrics.keys).toVector.distinct)
+          completeJson(metricsList())
         }
       } ~
-    // Initializes a metric
+      // Initializes a metric
       pathPrefix("data" / "initMetric") {
         path(Remaining) { id =>
           parameters('resolution.as[Int]) { resolution => {
-            completeJson(initMetric(id, resolution))
+            if (metricsList().contains(id)) {
+              completeJson(initMetric(id, resolution))
+            } else {
+              complete(HttpResponse(NotFound, entity = "This metric cannot been initialized!"))
+            }
           }
           }
         }
       } ~
-    // Returns swagger json
+      // Returns swagger json
       path("swagger") {
         get {
           getFromResource("static/swagger/swagger.json")
         }
       } ~
-    // Returns home page
+      // Returns home page
       (get & pathEndOrSingleSlash) {
         getFromResource("static/index.html")
       } ~ {
@@ -106,7 +115,7 @@ trait WebService {
     }
   }
 
-  private def getTasksOfOperators(id: String): Seq[TasksOfOperator] = {
+  private def getTasksOfOperator(id: String): Seq[TasksOfOperator] = {
     model
       .operators(id.replace("%20", " "))
       .tasks
@@ -118,34 +127,41 @@ trait WebService {
   private def completeJson(obj: Any): StandardRoute =
     complete(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, JsonUtils.toJson(obj))))
 
-  private class PeriodicTask(id: String, resolution: Int) extends Runnable {
-    override def run(): Unit = {
-      //collect map of new values to be added to history
-      val newValues: Map[String, (Long, Double)] = model.tasks.map(
-        t => t.id -> t.getMetricSummary(id).getMeanBeforeLastSeconds(resolution)).toMap
+  private def periodicTask(id: String, resolution: Int): Runnable = {
+    new Runnable {
+      override def run(): Unit = {
+        //collect map of new values to be added to history
+        val newValues: Map[String, (Long, Double)] = collectNewValuesOfMetric(id, resolution)
 
-      //get the current value lists
-      val currentValuesList: List[MetricData] = metricsBuffer(id)
+        //get the current value lists
+        val currentValuesList: List[MetricData] = metricsBuffer(id)
 
-      //create new list for combined lists
-      val newValuesList = List.newBuilder[MetricData]
+        //create new list for combined lists
+        val newValuesList = List.newBuilder[MetricData]
 
-      //for each task in newValues add the value with its timestamp to the history
-      for (task <- newValues.keySet) {
-        currentValuesList.find(_.taskId == task) match {
-          case Some(m) => newValuesList += MetricData(task, m.values :+ newValues(task))
-          case _ => newValuesList += MetricData(task, List(newValues(task)))
+        //for each task in newValues add the value with its timestamp to the history
+        for (task <- newValues.keySet) {
+          currentValuesList.find(_.taskId == task) match {
+            case Some(m) => newValuesList += MetricData(task, m.values :+ newValues(task))
+            case _ => newValuesList += MetricData(task, List(newValues(task)))
+          }
         }
-      }
 
-      //update the list in the history
-      if (metricsBuffer.putIfAbsent(id, newValuesList.result).isDefined) {
-        metricsBuffer.replace(id, newValuesList.result)
+        //update the list in the history
+        if (metricsBuffer.putIfAbsent(id, newValuesList.result).isDefined) {
+          metricsBuffer.replace(id, newValuesList.result)
+        }
       }
     }
   }
 
-  def initMetric(id: String, resolution: Int): Map[String, Any] = {
+  /**
+    * Obtains new values of a metric to be added to the history
+    * @return Map, where key is taskID and value a Tuple(timestamp, metric_value)
+    */
+  def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)]
+
+  private def initMetric(id: String, resolution: Int): Map[String, Any] = {
     //disable old task if exists
     disableFuture(id)
 
@@ -153,7 +169,7 @@ trait WebService {
     metricsBuffer.putIfAbsent(id, List.empty[MetricData])
 
     //schedule the task
-    val f = scheduler.scheduleAtFixedRate(new PeriodicTask(id, resolution), resolution, resolution, TimeUnit.SECONDS)
+    val f = scheduler.scheduleAtFixedRate(periodicTask(id, resolution), resolution, resolution, TimeUnit.SECONDS)
 
     //store the Future
     metricsFutures += (id -> f)
@@ -162,7 +178,7 @@ trait WebService {
     Map("id" -> id, "resolution" -> resolution)
   }
 
-  def disableFuture(id: String): Unit = metricsFutures get id match {
+  private def disableFuture(id: String): Unit = metricsFutures get id match {
     case Some(f) => f.cancel(false)
     case None =>
   }

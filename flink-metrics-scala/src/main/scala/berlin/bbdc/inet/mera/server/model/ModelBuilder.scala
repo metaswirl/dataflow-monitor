@@ -2,6 +2,8 @@ package berlin.bbdc.inet.mera.server.model
 
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 
+import scala.collection.immutable.ListMap
+
 class ModelBuilder {
   var operators: List[Operator] = List()
   var taskEdges: List[TaskEdge] = List()
@@ -18,7 +20,7 @@ class ModelBuilder {
   }
 
   def createModel(n: Int): Model = {
-    new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
+    new Model(n, ListMap(operators.map(x => x.id -> x): _*), taskEdges)
   }
 
   def connectGrouped(sourceOp: Operator, targetOp: Operator): Unit = {

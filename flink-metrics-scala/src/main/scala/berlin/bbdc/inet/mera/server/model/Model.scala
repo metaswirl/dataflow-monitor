@@ -4,6 +4,8 @@ import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSumm
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import com.fasterxml.jackson.annotation.JsonIgnore
 
+import scala.collection.immutable.ListMap
+
 /* TODO: Separate data from traversal
  */
 
@@ -106,7 +108,7 @@ class Operator(val id: String, val parallelism: Int, val commType: CommType) {
 }
 
 //TODO: operators cannot be a map since the keys will overlap
-class Model(val n :Int, val operators : Map[String, Operator], val taskEdges : List[TaskEdge]) {
+class Model(val n :Int, val operators : ListMap[String, Operator], val taskEdges : List[TaskEdge]) {
   // Assuming single sink
   // TODO: start when job starts, end when job ends.
   // TODO: sink and src should be Iterable[Operator]

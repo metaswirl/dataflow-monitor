@@ -5,6 +5,7 @@ import berlin.bbdc.inet.mera.server.model.{Model, Operator}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.Source
 
@@ -13,10 +14,10 @@ class WebServerSpec extends Specification with Specs2RouteTest with Mockito with
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   implicit val model: Model = mock[Model]
 
-  model.operators returns Map[String, Operator](
-    "Source" -> mock[Operator],
-    "Filter" -> mock[Operator],
-    "Sink" -> mock[Operator]
+  model.operators returns ListMap[String, Operator](
+    "Sink" -> mock[Operator],
+  "Filter" -> mock[Operator],
+  "Source" -> mock[Operator]
   )
 
   "WebService" should {
@@ -34,4 +35,6 @@ class WebServerSpec extends Specification with Specs2RouteTest with Mockito with
       }
     }
   }
+
+  override def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)] = ???
 }
