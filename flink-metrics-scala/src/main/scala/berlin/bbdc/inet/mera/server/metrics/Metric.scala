@@ -34,10 +34,10 @@ abstract class MetricSummary[T <: Metric[_]](val n: Int) {
 
   //like getMean but for the last seconds with one second delay
   def getMeanBeforeLastSeconds(seconds: Int): (Long, Double) = {
+    val delay = 1 // metric collection delay in seconds
     val now = System.currentTimeMillis()
     val value = calculateMean(history.filter(x =>
-      (now - (seconds + 1) * 1000 <= x._1) &&
-        (now <= x._1 + 1000)))
+      (x._1 >= now - (seconds + delay) * 1000) && (x._1 <= now - delay * 1000)))
     (now, value)
   }
 
