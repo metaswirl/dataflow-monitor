@@ -118,8 +118,9 @@ trait WebService {
   }
 
   private def completeTasksOfOperator(id: String): Route = {
-    if (model.operators.contains(id)) {
-      completeJson(getTasksOfOperator(id))
+    val _id = id.replace("%20", " ")
+    if (model.operators.contains(_id)) {
+      completeJson(getTasksOfOperator(_id))
     }
     else {
       complete(HttpResponse(NotFound, entity = s"Operator $id not found"))
@@ -128,10 +129,10 @@ trait WebService {
 
   private def getTasksOfOperator(id: String): Seq[TasksOfOperator] = {
     model
-      .operators(id.replace("%20", " "))
+      .operators(id)
       .tasks
       .map(t => {
-        TasksOfOperator(t.id, t.input.map(_.source), t.output.map(_.target))
+        TasksOfOperator(t.id, t.input.map(_.source.id), t.output.map(_.target.id))
       })
   }
 

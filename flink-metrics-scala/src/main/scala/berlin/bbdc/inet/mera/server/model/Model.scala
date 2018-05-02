@@ -3,21 +3,19 @@ package berlin.bbdc.inet.mera.server.model
 import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSummary}
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import gurobi.GRBVar
-import com.fasterxml.jackson.annotation.JsonIgnore
 
 import scala.collection.immutable.ListMap
 
 /* TODO: Separate data from traversal
  */
 
-class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) {
+class Task(val parent: Operator, val number: Int, val host: String) {
   val id = s"${parent.id}.$number"
 
   var input: List[TaskEdge] = List()
 
   var output: List[TaskEdge] = List()
 
-  @JsonIgnore
   var metrics: Map[String, MetricSummary[_]] = Map()
 
   def getMetricSummary(key: String): MetricSummary[_] = {
@@ -25,35 +23,15 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   }
   // TODO: feels like this is out of place
   var gurobiRate : GRBVar = _
-
-  @JsonIgnore
   var inQueueSaturation: Double = _
-
-  @JsonIgnore
   var outQueueSaturation: Double = _
-
-  @JsonIgnore
   var selectivity: Double = _
-
-  @JsonIgnore
   var inRate: Double = _
-
-  @JsonIgnore
   var outRate: Double = _
-
-  @JsonIgnore
   var capacity: Double = 0.0
-
-  @JsonIgnore
   var targetPartialOutRate: Map[Int, Double] = Map()
-
-  @JsonIgnore
   var targetInRate: Double = _
-
-  @JsonIgnore
   var targetOutRate: Double = _
-
-  @JsonIgnore
   var inDistCtr: Int = -1
 
   def addOutput(te: TaskEdge): Unit = {
@@ -64,13 +42,13 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   }
 
   override def toString: String = {
-    val p = input.map(_.source).foldRight("")(_ + "," + _)
-    val n = output.map(_.target).foldRight("")(_ + "," + _)
+    val p = input.map(_.source.id).foldRight("")(_ + "," + _)
+    val n = output.map(_.target.id).foldRight("")(_ + "," + _)
     f"Task-$number%s (In: $p%s Out: $n%s)"
   }
 }
 
-class TaskEdge(val source: String, val target: String) {
+class TaskEdge(val source: Task, val target: Task) {
   var inF: Double = _
   var outF: Double = _
 }
@@ -82,13 +60,10 @@ object CommType extends Enumeration {
 
 class Operator(val id: String, val parallelism: Int, val commType : CommType, val isLoadShedder : Boolean) {
   //TODO: Fix for cluster
-  @JsonIgnore
   val tasks: List[Task] = List.range(0, parallelism).map(new Task(this, _, "localhost"))
 
-  @JsonIgnore
   var predecessor: List[Operator] = List()
 
-  @JsonIgnore
   var successor: List[Operator] = List()
 
   def addSucc(op: Operator): Unit = {

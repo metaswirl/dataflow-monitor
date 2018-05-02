@@ -26,7 +26,7 @@ class ModelBuilder {
   def connectGrouped(sourceOp: Operator, targetOp: Operator): Unit = {
     for (t <- sourceOp.tasks) {
       for (t2 <- targetOp.tasks) {
-        val te = new TaskEdge(t.id, t2.id)
+        val te = new TaskEdge(t, t2)
         t.addOutput(te)
         t2.addInput(te)
         taskEdges :+= te
@@ -41,7 +41,7 @@ class ModelBuilder {
 
     if (sourceNum == targetNum) {
       for (index <- 0 until sourceNum) {
-        val te = new TaskEdge(sourceOp.tasks(index).id, targetOp.tasks(index).id)
+        val te = new TaskEdge(sourceOp.tasks(index), targetOp.tasks(index))
         sourceOp.tasks(index).addOutput(te)
         targetOp.tasks(index).addInput(te)
         taskEdges :+= te

@@ -23,7 +23,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     var outDistRaw : Map[Int, Double] = Map()
     for ((out, i) <- task.output.zipWithIndex) {
       val value = task.getMetricSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
-      outDistRaw += model.tasks(out.target).number -> value
+      outDistRaw += out.target.number -> value
       sum += value
     }
     computeOutDistPerTask(sum, outDistRaw)
@@ -35,7 +35,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     var sum : Double = 0
     var inDistRaw : Map[Int, Double] = Map()
     for (in <- task.input) {
-      val inSource = model.tasks(in.source)
+      val inSource = in.source
       val key = if (inSource.parent.commType == CommType.POINTWISE) {
         f"Network.Output.0.${task.number}%d.buffersByChannel"
       } else {
@@ -53,10 +53,10 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     val compInDistPerTask = computeInDist(task)
     val compOutDistPerTask = computeOutDist(task)
     for (in <- task.input) {
-      in.inF = compInDistPerTask(model.tasks(in.source).number)
+      in.inF = compInDistPerTask(in.source.number)
     }
     for (out <- task.output) {
-      out.outF = compOutDistPerTask(model.tasks(out.target).number)
+      out.outF = compOutDistPerTask(out.target.number)
     }
 
     task.outQueueSaturation = task.getMetricSummary("buffers.outPoolUsage").getMean
@@ -64,8 +64,8 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     task.inQueueSaturation = {
       val iQS = task.getMetricSummary("buffers.inPoolUsage").getMean
       // when the input queue is colocated with the output queue, the input queue equals the output queue.
-      val iQSlist = for ( in <- task.input if model.tasks(in.source).host == task.host )
-        yield model.tasks(in.source).metrics("buffers.outPoolUsage").getMean
+      val iQSlist = for ( in <- task.input if in.source.host == task.host )
+        yield in.source.metrics("buffers.outPoolUsage").getMean
       (iQS::iQSlist).max
     }
 
@@ -128,7 +128,7 @@ class LPSolver(val model : Model) {
   def traverse_operators(grbModel: GRBModel, op: Operator): Unit = {
     def collect(te: TaskEdge): GRBLinExpr = {
       val expr : GRBLinExpr  = new GRBLinExpr()
-      expr.addTerm(model.tasks(te.source).selectivity * te.outF, model.tasks(te.source).gurobiRate)
+      expr.addTerm(te.source.selectivity * te.outF, te.source.gurobiRate)
       expr
     }
 
