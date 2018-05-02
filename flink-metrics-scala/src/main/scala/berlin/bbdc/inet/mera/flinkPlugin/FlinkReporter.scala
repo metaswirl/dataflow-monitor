@@ -29,14 +29,8 @@ trait FlinkMetricManager extends MetricReporter {
 
   def setMetricFilter(f : String => Boolean) = { metricFilter = Some(f) }
 
-  def isNumber(x : Any): Boolean = x match {
-   case _:Number => true
-   case _ => false
-  }
-  def isLatencyGauge(x : Any): Boolean = x match {
-    case _:LatencyGauge => true
-    case _ => false
-  }
+  def isNumber(x : Any): Boolean = x.isInstanceOf[Number]
+  def isLatencyGauge(x : Any): Boolean = x.isInstanceOf[LatencyGauge]
 
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
     val fullName : String = group.getMetricIdentifier(metricName)
