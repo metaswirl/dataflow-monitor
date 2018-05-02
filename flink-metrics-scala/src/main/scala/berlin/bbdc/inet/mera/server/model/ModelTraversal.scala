@@ -23,10 +23,10 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     var outDistRaw : Map[Int, Double] = Map()
     for ((out, i) <- task.output.zipWithIndex) {
       val value = task.getMetricSummary(f"Network.Output.0.$i%d.buffersByChannel").getMean
-      outDistRaw += out.target.number -> value
+      outDistRaw += model.tasks(out.target).number -> value
       sum += value
     }
-    return computeOutDistPerTask(sum, outDistRaw)
+    computeOutDistPerTask(sum, outDistRaw)
   }
   def computeInDist(task: Task): Int => Double = {
     def computeInDistPerTask(sum: Double, inDistRaw: Map[Int, Double])(taskNumber: Int) : Double = {
@@ -35,27 +35,28 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     var sum : Double = 0
     var inDistRaw : Map[Int, Double] = Map()
     for (in <- task.input) {
-      val key = if (in.source.parent.commType == CommType.POINTWISE) {
+      val inSource = model.tasks(in.source)
+      val key = if (inSource.parent.commType == CommType.POINTWISE) {
         f"Network.Output.0.${task.number}%d.buffersByChannel"
       } else {
-        in.source.inDistCtr += 1
-        f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
+        inSource.inDistCtr += 1
+        f"Network.Output.0.${inSource.inDistCtr}%d.buffersByChannel"
       }
-      val value = in.source.getMetricSummary(key).getMean
-      inDistRaw += in.source.number -> value
+      val value = inSource.getMetricSummary(key).getMean
+      inDistRaw += inSource.number -> value
       sum += value
     }
-    return computeInDistPerTask(sum, inDistRaw)
+    computeInDistPerTask(sum, inDistRaw)
   }
 
   def computeInfMetrics(task: Task): Boolean = {
     val compInDistPerTask = computeInDist(task)
     val compOutDistPerTask = computeOutDist(task)
     for (in <- task.input) {
-      in.inF = compInDistPerTask(in.source.number)
+      in.inF = compInDistPerTask(model.tasks(in.source).number)
     }
     for (out <- task.output) {
-      out.outF = compOutDistPerTask(out.target.number)
+      out.outF = compOutDistPerTask(model.tasks(out.target).number)
     }
 
     task.outQueueSaturation = task.getMetricSummary("buffers.outPoolUsage").getMean
@@ -63,8 +64,8 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     task.inQueueSaturation = {
       val iQS = task.getMetricSummary("buffers.inPoolUsage").getMean
       // when the input queue is colocated with the output queue, the input queue equals the output queue.
-      val iQSlist = for ( in <- task.input if in.source.host == task.host )
-        yield in.source.metrics("buffers.outPoolUsage").getMean
+      val iQSlist = for ( in <- task.input if model.tasks(in.source).host == task.host )
+        yield model.tasks(in.source).metrics("buffers.outPoolUsage").getMean
       (iQS::iQSlist).max
     }
 
@@ -127,7 +128,7 @@ class LPSolver(val model : Model) {
   def traverse_operators(grbModel: GRBModel, op: Operator): Unit = {
     def collect(te: TaskEdge): GRBLinExpr = {
       val expr : GRBLinExpr  = new GRBLinExpr()
-      expr.addTerm(te.source.selectivity * te.outF, te.source.gurobiRate)
+      expr.addTerm(model.tasks(te.source).selectivity * te.outF, model.tasks(te.source).gurobiRate)
       expr
     }
 
@@ -152,7 +153,7 @@ class LPSolver(val model : Model) {
   def processResults(grbModel : GRBModel): Unit = {
     // TODO: Check first whether a solution was found
     var result = ""
-    grbModel.getVars().foreach(x => {
+    grbModel.getVars.foreach(x => {
       val name = x.get(GRB.StringAttr.VarName)
       val number = x.get(GRB.DoubleAttr.X)
       if (name.contains("dropRate")) {
@@ -199,7 +200,7 @@ class LPSolver(val model : Model) {
     import java.net._
     import java.io._
     val s = new Socket(InetAddress.getByName("localhost"), port)
-    val out = new PrintStream(s.getOutputStream())
+    val out = new PrintStream(s.getOutputStream)
     out.print(msg + "\n")
     out.flush()
     s.close()
@@ -220,7 +221,6 @@ class LPSolver(val model : Model) {
       processResults(grbModel)
     } catch {
       case ex: Throwable => LOG.error(ex + ":" + ex.getMessage)
-                            return
     }
   }
 }

@@ -41,7 +41,7 @@ class ModelBuilder {
 
     if (sourceNum == targetNum) {
       for (index <- 0 until sourceNum) {
-        val te = new TaskEdge(sourceOp.tasks(index), targetOp.tasks(index))
+        val te = new TaskEdge(sourceOp.tasks(index).id, targetOp.tasks(index).id)
         sourceOp.tasks(index).addOutput(te)
         targetOp.tasks(index).addInput(te)
         taskEdges :+= te

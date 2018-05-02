@@ -56,7 +56,7 @@ trait WebService {
   /**
     * Obtains list of all avaiable metrics
     */
-  private val metricsList = () => model.tasks.flatMap(_.metrics.keys).toVector.distinct
+  private val metricsList = () => model.tasks.values.flatMap(_.metrics.keys).toVector.distinct
 
   val route: Route =
   // Returns list of operators

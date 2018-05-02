@@ -29,7 +29,7 @@ class DummyWebServer(m: Model, host: String, port: Int)
     */
   override def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)] = {
     //get task IDs
-    val tasks = model.tasks.map(_.id)
+    val tasks = model.tasks.keys
 
     val map = Map.newBuilder[String, (Long, Double)]
     val r = Random

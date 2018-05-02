@@ -19,13 +19,13 @@ class DummyModelBuilder {
     val job = JsonUtils.fromJson[Job](jobJson.mkString)
     val modelBuilder = new ModelBuilder
     //iterate over vertices and for each add a new operator to the model
-    job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, TopologyServer.findCommTypeById(v.id, job.plan)))
+    job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, TopologyServer.findCommTypeById(v.id, job.plan), isLoadShedder = false))
     modelBuilder.createModel(1000)
   }
 
 
   def fillMetrics(model: Model): Model = {
-    model.tasks.foreach(t => t.metrics +=
+    model.tasks.values.foreach(t => t.metrics +=
       ("numBytesInRemote"           -> new CounterSummary(1),
         "numRecordsInPerSecond"     -> new CounterSummary(1),
         "numBytesInLocal"           -> new CounterSummary(1),

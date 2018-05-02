@@ -21,7 +21,7 @@ class WebServer(m: Model, host: String, port: Int)
   Http().bindAndHandle(route, host, port)
 
   override def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)] = {
-    model.tasks.map(
+    model.tasks.values.map(
       t => t.id -> t.getMetricSummary(id).getMeanBeforeLastSeconds(resolution)).toMap
   }
 }
