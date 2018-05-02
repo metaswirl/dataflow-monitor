@@ -10,7 +10,7 @@ organization := "berlin.bbdc.inet"
 val FlinkVersion = "1.4.2"
 val AkkaVersion = "2.4.20"
 
-// -------- https://scalapb.github.io/index.html ---- BEGIN
+// -------- https://scalapb.github.io/index.html ----
 PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value
 )

@@ -23,7 +23,6 @@ PB.targets in Compile := Seq(
 
 // (optional) If you need scalapb/scalapb.proto or anything from
 // google/protobuf/*.proto
-libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-runtime" % com.trueaccord.scalapb.compiler.Version.scalapbVersion % "protobuf"
 // -------- https://scalapb.github.io/index.html ---- END
 
 
@@ -49,7 +48,8 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
   "org.specs2" %% "specs2-mock" % Specs2Version % "test",
-  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test"
+  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test",
+  "com.trueaccord.scalapb" %% "scalapb-runtime" % com.trueaccord.scalapb.compiler.Version.scalapbVersion % "protobuf"
 )
 
 // Niklas: So I have conflicts because both flink and this codebase use Akka, but
