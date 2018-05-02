@@ -26,7 +26,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       outDistRaw += out.target.number -> value
       sum += value
     }
-    return computeOutDistPerTask(sum, outDistRaw)
+    computeOutDistPerTask(sum, outDistRaw)
   }
   def computeInDist(task: Task): Int => Double = {
     def computeInDistPerTask(sum: Double, inDistRaw: Map[Int, Double])(taskNumber: Int) : Double = {
@@ -35,17 +35,18 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
     var sum : Double = 0
     var inDistRaw : Map[Int, Double] = Map()
     for (in <- task.input) {
-      val key = if (in.source.parent.commType == CommType.POINTWISE) {
+      val inSource = in.source
+      val key = if (inSource.parent.commType == CommType.POINTWISE) {
         f"Network.Output.0.${task.number}%d.buffersByChannel"
       } else {
-        in.source.inDistCtr += 1
-        f"Network.Output.0.${in.source.inDistCtr}%d.buffersByChannel"
+        inSource.inDistCtr += 1
+        f"Network.Output.0.${inSource.inDistCtr}%d.buffersByChannel"
       }
-      val value = in.source.getMetricSummary(key).getMean
-      inDistRaw += in.source.number -> value
+      val value = inSource.getMetricSummary(key).getMean
+      inDistRaw += inSource.number -> value
       sum += value
     }
-    return computeInDistPerTask(sum, inDistRaw)
+    computeInDistPerTask(sum, inDistRaw)
   }
 
   def computeInfMetrics(task: Task): Boolean = {
@@ -152,7 +153,7 @@ class LPSolver(val model : Model) {
   def processResults(grbModel : GRBModel): Unit = {
     // TODO: Check first whether a solution was found
     var result = ""
-    grbModel.getVars().foreach(x => {
+    grbModel.getVars.foreach(x => {
       val name = x.get(GRB.StringAttr.VarName)
       val number = x.get(GRB.DoubleAttr.X)
       if (name.contains("dropRate")) {
@@ -199,7 +200,7 @@ class LPSolver(val model : Model) {
     import java.net._
     import java.io._
     val s = new Socket(InetAddress.getByName("localhost"), port)
-    val out = new PrintStream(s.getOutputStream())
+    val out = new PrintStream(s.getOutputStream)
     out.print(msg + "\n")
     out.flush()
     s.close()
@@ -220,7 +221,6 @@ class LPSolver(val model : Model) {
       processResults(grbModel)
     } catch {
       case ex: Throwable => LOG.error(ex + ":" + ex.getMessage)
-                            return
     }
   }
 }

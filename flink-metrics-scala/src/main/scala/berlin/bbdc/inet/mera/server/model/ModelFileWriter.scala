@@ -18,14 +18,14 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
   inferredMetricEdgeWriter.write("time;source;target;outFraction;inFraction\n")
   targetMetricWriter.write("time;task;targetInputRate;targetOutputRate;targetPartialOutRate\n")
 
-  def writeStartOptimization() = {
+  def writeStartOptimization(): Unit = {
     val now = System.currentTimeMillis()
     startOptimization.write(s"$now\n")
     startOptimization.flush()
   }
   def writeGraph(model : Model): Unit = {
     graphWriter.write("source;target\n")
-    graphWriter.write(model.taskEdges.map(te => s"${te.source.id};${te.target.id}\n").mkString)
+    graphWriter.write(model.taskEdges.map(te => s"${te.source};${te.target}\n").mkString)
     graphWriter.flush()
   }
   def updateMetrics(ts:Long, metrics: Iterable[(String, Double)]): Unit = {
@@ -41,7 +41,7 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
       inferredMetricNodeWriter.write(f"${now};${task.id};${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation}\n")
     }
     for (te <- model.taskEdges) {
-      inferredMetricEdgeWriter.write(f"${now};${te.source.id};${te.target.id};${te.outF};${te.inF}\n")
+      inferredMetricEdgeWriter.write(f"$now;${te.source};${te.target};${te.outF};${te.inF}\n")
     }
     inferredMetricNodeWriter.flush()
     inferredMetricEdgeWriter.flush()

@@ -3,18 +3,17 @@ package berlin.bbdc.inet.mera.server.model
 import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSummary}
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import gurobi.GRBVar
-import com.fasterxml.jackson.annotation.JsonIgnore
+
+import scala.collection.immutable.ListMap
 
 /* TODO: Separate data from traversal
  */
 
-class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) {
+class Task(val parent: Operator, val number: Int, val host: String) {
   val id = s"${parent.id}.$number"
 
-  @JsonIgnore
   var input: List[TaskEdge] = List()
 
-  @JsonIgnore
   var output: List[TaskEdge] = List()
 
   var metrics: Map[String, MetricSummary[_]] = Map()
@@ -24,7 +23,6 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   }
   // TODO: feels like this is out of place
   var gurobiRate : GRBVar = _
-
   var inQueueSaturation: Double = _
   var outQueueSaturation: Double = _
   var selectivity: Double = _
@@ -34,7 +32,6 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   var targetPartialOutRate: Map[Int, Double] = Map()
   var targetInRate: Double = _
   var targetOutRate: Double = _
-
   var inDistCtr: Int = -1
 
   def addOutput(te: TaskEdge): Unit = {
@@ -63,11 +60,10 @@ object CommType extends Enumeration {
 
 class Operator(val id: String, val parallelism: Int, val commType : CommType, val isLoadShedder : Boolean) {
   //TODO: Fix for cluster
-  @JsonIgnore
   val tasks: List[Task] = List.range(0, parallelism).map(new Task(this, _, "localhost"))
-  @JsonIgnore
+
   var predecessor: List[Operator] = List()
-  @JsonIgnore
+
   var successor: List[Operator] = List()
 
   def addSucc(op: Operator): Unit = {
@@ -86,7 +82,7 @@ class Operator(val id: String, val parallelism: Int, val commType : CommType, va
 }
 
 //TODO: operators cannot be a map since the keys will overlap
-class Model(val n :Int, val operators : Map[String, Operator], val taskEdges : List[TaskEdge]) {
+class Model(val n :Int, val operators : ListMap[String, Operator], val taskEdges : List[TaskEdge]) {
   // Assuming single sink
   // TODO: start when job starts, end when job ends.
   // TODO: sink and src should be Iterable[Operator]

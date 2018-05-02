@@ -2,6 +2,8 @@ package berlin.bbdc.inet.mera.server.model
 
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 
+import scala.collection.immutable.ListMap
+
 class ModelBuilder {
   var operators: List[Operator] = List()
   var taskEdges: List[TaskEdge] = List()
@@ -18,10 +20,10 @@ class ModelBuilder {
   }
 
   def createModel(n: Int): Model = {
-    new Model(n, operators.map(x => x.id -> x).toMap, taskEdges)
+    new Model(n, ListMap(operators.map(x => x.id -> x): _*), taskEdges)
   }
 
-  def connectGrouped(sourceOp: Operator, targetOp: Operator) = {
+  def connectGrouped(sourceOp: Operator, targetOp: Operator): Unit = {
     for (t <- sourceOp.tasks) {
       for (t2 <- targetOp.tasks) {
         val te = new TaskEdge(t, t2)
@@ -52,7 +54,7 @@ class ModelBuilder {
       val factor : Double = targetNum * 1.0 / sourceNum
       for (targetIndex <- 0 until targetNum) {
         val sourceIndex = (targetIndex / factor).toInt
-        val te = new TaskEdge(sourceOp.tasks(sourceIndex), targetOp.tasks(targetIndex))
+        val te = new TaskEdge(sourceOp.tasks(sourceIndex).id, targetOp.tasks(targetIndex).id)
         sourceOp.tasks(sourceIndex).addOutput(te)
         targetOp.tasks(targetIndex).addInput(te)
         taskEdges :+= te
@@ -64,7 +66,7 @@ class ModelBuilder {
         val start : Int = (targetIndex * factor).toInt
         val end : Int = ((targetIndex + 1) * factor).toInt
         for (sourceIndex <- start until end) {
-          val te = new TaskEdge(sourceOp.tasks(sourceIndex), targetOp.tasks(targetIndex))
+          val te = new TaskEdge(sourceOp.tasks(sourceIndex).id, targetOp.tasks(targetIndex).id)
           sourceOp.tasks(sourceIndex).addOutput(te)
           targetOp.tasks(targetIndex).addInput(te)
           taskEdges :+= te

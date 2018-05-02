@@ -1,10 +1,13 @@
 package berlin.bbdc.inet.mera.server.topology
 
+import java.net.ConnectException
+
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import berlin.bbdc.inet.mera.server.model.{CommType, Model, ModelBuilder}
 import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.conn.HttpHostConnectException
 import org.apache.http.impl.client.HttpClientBuilder
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -21,26 +24,6 @@ class TopologyServer(hostname: String, port: Integer) {
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
 
-  def findCommTypeById(id: String, plan: Plan): CommType = {
-    plan.nodes.foreach(n => {
-      if (n.inputs != null) {
-        n.inputs.foreach(i => {
-          if (i.id.equals(id)) {
-            i.shipStrategy match {
-              case "HASH" | "RANGE" =>
-                return CommType.POINTWISE
-              case "REBALANCE" | "FORWARD" =>
-                return CommType.ALL_TO_ALL
-              case t =>
-                throw new IllegalStateException("Unknown CommType " + t)
-            }
-          }
-        })
-      }
-    })
-    CommType.UNCONNECTED
-  }
-
   def buildModels(): Map[String, Model] = {
     var models = new mutable.HashMap[String, Model]
     //get list of all running jobs. for each job build a model
@@ -49,7 +32,7 @@ class TopologyServer(hostname: String, port: Integer) {
       val job = JsonUtils.fromJson[Job](jobJson)
       val modelBuilder = new ModelBuilder
       //iterate over vertices and for each add a new operator to the model
-      job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, findCommTypeById(v.id, job.plan),
+      job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, TopologyServer.findCommTypeById(v.id, job.plan),
                                                            v.name contains "loadshedder"))
       models += (jid -> modelBuilder.createModel(1000))
     }
@@ -76,18 +59,46 @@ class TopologyServer(hostname: String, port: Integer) {
     val client = HttpClientBuilder.create().build()
     val request = new HttpGet(url)
 
-    val response = client.execute(request)
-    Option(response.getEntity)
-      .map(x => x.getContent)
-      .map(y => {
-        val res = Source.fromInputStream(y).getLines.mkString
-        y.close()
-        client.close()
-        res
-      }) match {
-      case Some(s) => s
-      case None => ""
+    try {
+      val response = client.execute(request)
+      Option(response.getEntity)
+        .map(x => x.getContent)
+        .map(y => {
+          val res = Source.fromInputStream(y).getLines.mkString
+          y.close()
+          client.close()
+          res
+        }) match {
+        case Some(s) => s
+        case None => ""
+      }
+    } catch {
+      case _: HttpHostConnectException =>
+        throw new ConnectException(s"No instance of Flink's Jobmanager found at $FLINK_URL")
     }
+  }
+}
+
+object TopologyServer {
+
+  def findCommTypeById(id: String, plan: Plan): CommType = {
+    plan.nodes.foreach(n => {
+      if (n.inputs != null) {
+        n.inputs.foreach(i => {
+          if (i.id.equals(id)) {
+            i.shipStrategy match {
+              case "HASH" | "RANGE" =>
+                return CommType.POINTWISE
+              case "REBALANCE" | "FORWARD" =>
+                return CommType.ALL_TO_ALL
+              case t =>
+                throw new IllegalStateException("Unknown CommType " + t)
+            }
+          }
+        })
+      }
+    })
+    CommType.UNCONNECTED
   }
 }
 

@@ -1,0 +1,309 @@
+{
+  "jid": "3ec2f0e614309e9f734ffcbf7fe63af8",
+  "name": "Twitter Processor",
+  "isStoppable": true,
+  "state": "RUNNING",
+  "start-time": 1524730269223,
+  "end-time": -1,
+  "duration": 3164743,
+  "now": 1524733433966,
+  "timestamps": {
+    "CREATED": 1524730269223,
+    "RUNNING": 1524730269265,
+    "FAILING": 0,
+    "FAILED": 0,
+    "CANCELLING": 0,
+    "CANCELED": 0,
+    "FINISHED": 0,
+    "RESTARTING": 0,
+    "SUSPENDED": 0,
+    "RECONCILING": 0
+  },
+  "vertices": [
+    {
+      "id": "bc764cd8ddf7a0cff126f51c16239658",
+      "name": "Source: Custom Source",
+      "parallelism": 1,
+      "status": "RUNNING",
+      "start-time": 1524730269292,
+      "end-time": -1,
+      "duration": 3164674,
+      "tasks": {
+        "CREATED": 0,
+        "SCHEDULED": 0,
+        "DEPLOYING": 0,
+        "RUNNING": 1,
+        "FINISHED": 0,
+        "CANCELING": 0,
+        "CANCELED": 0,
+        "FAILED": 0,
+        "RECONCILING": 0
+      },
+      "metrics": {
+        "read-bytes": 0,
+        "read-bytes-complete": true,
+        "write-bytes": 515571826,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 106411,
+        "write-records-complete": true
+      }
+    },
+    {
+      "id": "0a448493b4782967b150582570326227",
+      "name": "Timestamps/Watermarks",
+      "parallelism": 1,
+      "status": "RUNNING",
+      "start-time": 1524730269299,
+      "end-time": -1,
+      "duration": 3164667,
+      "tasks": {
+        "CREATED": 0,
+        "SCHEDULED": 0,
+        "DEPLOYING": 0,
+        "RUNNING": 1,
+        "FINISHED": 0,
+        "CANCELING": 0,
+        "CANCELED": 0,
+        "FAILED": 0,
+        "RECONCILING": 0
+      },
+      "metrics": {
+        "read-bytes": 515571826,
+        "read-bytes-complete": true,
+        "write-bytes": 516628059,
+        "write-bytes-complete": true,
+        "read-records": 106411,
+        "read-records-complete": true,
+        "write-records": 106411,
+        "write-records-complete": true
+      }
+    },
+    {
+      "id": "ea632d67b7d595e5b851708ae9ad79d6",
+      "name": "Filter",
+      "parallelism": 5,
+      "status": "RUNNING",
+      "start-time": 1524730269305,
+      "end-time": -1,
+      "duration": 3164661,
+      "tasks": {
+        "CREATED": 0,
+        "SCHEDULED": 0,
+        "DEPLOYING": 0,
+        "RUNNING": 5,
+        "FINISHED": 0,
+        "CANCELING": 0,
+        "CANCELED": 0,
+        "FAILED": 0,
+        "RECONCILING": 0
+      },
+      "metrics": {
+        "read-bytes": 516628059,
+        "read-bytes-complete": true,
+        "write-bytes": 127375111,
+        "write-bytes-complete": true,
+        "read-records": 106411,
+        "read-records-complete": true,
+        "write-records": 22249,
+        "write-records-complete": true
+      }
+    },
+    {
+      "id": "6d2677a0ecc3fd8df0b72ec675edf8f4",
+      "name": "Flat Map",
+      "parallelism": 3,
+      "status": "RUNNING",
+      "start-time": 1524730269310,
+      "end-time": -1,
+      "duration": 3164656,
+      "tasks": {
+        "CREATED": 0,
+        "SCHEDULED": 0,
+        "DEPLOYING": 0,
+        "RUNNING": 3,
+        "FINISHED": 0,
+        "CANCELING": 0,
+        "CANCELED": 0,
+        "FAILED": 0,
+        "RECONCILING": 0
+      },
+      "metrics": {
+        "read-bytes": 127375111,
+        "read-bytes-complete": true,
+        "write-bytes": 1827760,
+        "write-bytes-complete": true,
+        "read-records": 22249,
+        "read-records-complete": true,
+        "write-records": 11261,
+        "write-records-complete": true
+      }
+    },
+    {
+      "id": "ddb598ad156ed281023ba4eebbe487e3",
+      "name": "Map",
+      "parallelism": 2,
+      "status": "RUNNING",
+      "start-time": 1524730269332,
+      "end-time": -1,
+      "duration": 3164634,
+      "tasks": {
+        "CREATED": 0,
+        "SCHEDULED": 0,
+        "DEPLOYING": 0,
+        "RUNNING": 2,
+        "FINISHED": 0,
+        "CANCELING": 0,
+        "CANCELED": 0,
+        "FAILED": 0,
+        "RECONCILING": 0
+      },
+      "metrics": {
+        "read-bytes": 1827760,
+        "read-bytes-complete": true,
+        "write-bytes": 1663801,
+        "write-bytes-complete": true,
+        "read-records": 11261,
+        "read-records-complete": true,
+        "write-records": 11261,
+        "write-records-complete": true
+      }
+    },
+    {
+      "id": "46f8730428df9ecd6d7318a02bdc405e",
+      "name": "Sink: Unnamed",
+      "parallelism": 1,
+      "status": "RUNNING",
+      "start-time": 1524730269342,
+      "end-time": -1,
+      "duration": 3164624,
+      "tasks": {
+        "CREATED": 0,
+        "SCHEDULED": 0,
+        "DEPLOYING": 0,
+        "RUNNING": 1,
+        "FINISHED": 0,
+        "CANCELING": 0,
+        "CANCELED": 0,
+        "FAILED": 0,
+        "RECONCILING": 0
+      },
+      "metrics": {
+        "read-bytes": 1663801,
+        "read-bytes-complete": true,
+        "write-bytes": 0,
+        "write-bytes-complete": true,
+        "read-records": 11261,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    }
+  ],
+  "status-counts": {
+    "CREATED": 0,
+    "SCHEDULED": 0,
+    "DEPLOYING": 0,
+    "RUNNING": 6,
+    "FINISHED": 0,
+    "CANCELING": 0,
+    "CANCELED": 0,
+    "FAILED": 0,
+    "RECONCILING": 0
+  },
+  "plan": {
+    "jid": "3ec2f0e614309e9f734ffcbf7fe63af8",
+    "name": "Twitter Processor",
+    "nodes": [
+      {
+        "id": "46f8730428df9ecd6d7318a02bdc405e",
+        "parallelism": 1,
+        "operator": "",
+        "operator_strategy": "",
+        "description": "Sink: Unnamed",
+        "inputs": [
+          {
+            "num": 0,
+            "id": "ddb598ad156ed281023ba4eebbe487e3",
+            "ship_strategy": "REBALANCE",
+            "exchange": "pipelined_bounded"
+          }
+        ],
+        "optimizer_properties": {}
+      },
+      {
+        "id": "ddb598ad156ed281023ba4eebbe487e3",
+        "parallelism": 2,
+        "operator": "",
+        "operator_strategy": "",
+        "description": "Map",
+        "inputs": [
+          {
+            "num": 0,
+            "id": "6d2677a0ecc3fd8df0b72ec675edf8f4",
+            "ship_strategy": "REBALANCE",
+            "exchange": "pipelined_bounded"
+          }
+        ],
+        "optimizer_properties": {}
+      },
+      {
+        "id": "6d2677a0ecc3fd8df0b72ec675edf8f4",
+        "parallelism": 3,
+        "operator": "",
+        "operator_strategy": "",
+        "description": "Flat Map",
+        "inputs": [
+          {
+            "num": 0,
+            "id": "ea632d67b7d595e5b851708ae9ad79d6",
+            "ship_strategy": "REBALANCE",
+            "exchange": "pipelined_bounded"
+          }
+        ],
+        "optimizer_properties": {}
+      },
+      {
+        "id": "ea632d67b7d595e5b851708ae9ad79d6",
+        "parallelism": 5,
+        "operator": "",
+        "operator_strategy": "",
+        "description": "Filter",
+        "inputs": [
+          {
+            "num": 0,
+            "id": "0a448493b4782967b150582570326227",
+            "ship_strategy": "REBALANCE",
+            "exchange": "pipelined_bounded"
+          }
+        ],
+        "optimizer_properties": {}
+      },
+      {
+        "id": "0a448493b4782967b150582570326227",
+        "parallelism": 1,
+        "operator": "",
+        "operator_strategy": "",
+        "description": "Timestamps/Watermarks",
+        "inputs": [
+          {
+            "num": 0,
+            "id": "bc764cd8ddf7a0cff126f51c16239658",
+            "ship_strategy": "FORWARD",
+            "exchange": "pipelined_bounded"
+          }
+        ],
+        "optimizer_properties": {}
+      },
+      {
+        "id": "bc764cd8ddf7a0cff126f51c16239658",
+        "parallelism": 1,
+        "operator": "",
+        "operator_strategy": "",
+        "description": "Source: Custom Source",
+        "optimizer_properties": {}
+      }
+    ]
+  }
+}
