@@ -2,6 +2,7 @@ package berlin.bbdc.inet.mera.server.model
 
 import berlin.bbdc.inet.mera.server.metrics.{MetricNotFoundException, MetricSummary}
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
+import gurobi.GRBVar
 import com.fasterxml.jackson.annotation.JsonIgnore
 
 /* TODO: Separate data from traversal
@@ -21,19 +22,15 @@ class Task(@JsonIgnore val parent: Operator, val number: Int, val host: String) 
   def getMetricSummary(key: String): MetricSummary[_] = {
     metrics.getOrElse(key, throw MetricNotFoundException(key, id))
   }
-
-  // TODO: Ask Carlo
-  // def getMetric[M <: Metric](key : String) : Option[MetricSummary[M]] = {
-  //   if (gauges.contains(key)) { return Some(gauges(key)) }
-  //   else if (counters.contains(key)) { return Some(counters(key)) }
-  //   else if (meters.contains(key)) { return Some(meters(key)) }
-  // }
+  // TODO: feels like this is out of place
+  var gurobiRate : GRBVar = _
 
   var inQueueSaturation: Double = _
   var outQueueSaturation: Double = _
   var selectivity: Double = _
   var inRate: Double = _
-  var capacity: Double = _
+  var outRate: Double = _
+  var capacity: Double = 0.0
   var targetPartialOutRate: Map[Int, Double] = Map()
   var targetInRate: Double = _
   var targetOutRate: Double = _
@@ -64,7 +61,7 @@ object CommType extends Enumeration {
   val POINTWISE, ALL_TO_ALL, UNCONNECTED = Value
 }
 
-class Operator(val id: String, val parallelism: Int, val commType: CommType) {
+class Operator(val id: String, val parallelism: Int, val commType : CommType, val isLoadShedder : Boolean) {
   //TODO: Fix for cluster
   @JsonIgnore
   val tasks: List[Task] = List.range(0, parallelism).map(new Task(this, _, "localhost"))
@@ -95,7 +92,7 @@ class Model(val n :Int, val operators : Map[String, Operator], val taskEdges : L
   // TODO: sink and src should be Iterable[Operator]
   val sink: Operator = operators.values.filter(_.successor.isEmpty).head
   val src: Operator = operators.values.filter(_.predecessor.isEmpty).head
-  val tasks: Iterable[Task] = operators.values.flatMap(_.tasks)
+  val tasks: Map[String,Task] = operators.values.flatMap(_.tasks).map(x => {x.id -> x}).toMap
 
   override def toString: String = {
     val op = operators.values.map("\n" + _.toString)
