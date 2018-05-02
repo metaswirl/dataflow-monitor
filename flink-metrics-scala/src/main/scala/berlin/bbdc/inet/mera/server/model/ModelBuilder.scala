@@ -8,8 +8,8 @@ class ModelBuilder {
   var operators: List[Operator] = List()
   var taskEdges: List[TaskEdge] = List()
 
-  def addSuccessor(name: String, parallelism: Int, commType: CommType): Unit = {
-    val op = new Operator(name, parallelism, commType)
+  def addSuccessor(name: String, parallelism: Int, commType: CommType, isLoadShedder: Boolean): Unit = {
+    val op = new Operator(name, parallelism, commType, isLoadShedder)
     operators match {
       case h :: t =>
         connectOperator(h, op)
@@ -39,7 +39,17 @@ class ModelBuilder {
     val sourceNum = sourceOp.tasks.length
     val targetNum = targetOp.tasks.length
 
-    if (sourceNum < targetNum) {
+    if (sourceNum == targetNum) {
+      for (index <- 0 until sourceNum) {
+        val te = new TaskEdge(sourceOp.tasks(index), targetOp.tasks(index))
+        sourceOp.tasks(index).addOutput(te)
+        targetOp.tasks(index).addInput(te)
+        taskEdges :+= te
+      }
+    } else {
+      connectGrouped(sourceOp, targetOp)
+    }
+    /*else if (sourceNum < targetNum) {
       // earlier source tasks get connected with more target tasks
       val factor : Double = targetNum * 1.0 / sourceNum
       for (targetIndex <- 0 until targetNum) {
@@ -63,6 +73,7 @@ class ModelBuilder {
         }
       }
     }
+    */
   }
 
   def connectOperator(sourceOp: Operator, targetOp: Operator): Unit = {

@@ -26,7 +26,7 @@ object Starter extends App {
   //FIXME: models could become a Set instead of Map. That would require expanding the Model class
   val models = topoServer.buildModels()
   //Currently work on a single model - extend to multiple in the future
-  val mfw: ModelFileWriter = new ModelFileWriter(folder)
+  val mfw: ModelFileWriter = new ModelFileWriter(folder, writeMetrics=true)
   val webServer = new WebServer(models.head._2, webServerHost, webServerPort)
   MetricReceiver.start(models.head._2, mfw)
 

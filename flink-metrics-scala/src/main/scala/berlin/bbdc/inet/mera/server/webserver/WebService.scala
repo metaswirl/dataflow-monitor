@@ -11,6 +11,8 @@ import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.Model
 import org.slf4j.{Logger, LoggerFactory}
+import berlin.bbdc.inet.mera.server.metrics.MetricSummary
+import berlin.bbdc.inet.mera.server.model.{Model, Task}
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map, Seq}
@@ -205,3 +207,4 @@ trait WebService {
   }
 
 }
+
