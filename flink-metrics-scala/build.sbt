@@ -1,4 +1,5 @@
-resolvers in ThisBuild ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+resolvers in ThisBuild ++= Seq(
+  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   "Apache Development Snapshot Repository" at "https://repository.apache.org/content/repositories/snapshots/",
   Resolver.mavenLocal, Resolver.bintrayRepo("commercetools", "maven"))
 
