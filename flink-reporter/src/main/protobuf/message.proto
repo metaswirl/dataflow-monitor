@@ -1,0 +1,33 @@
+syntax = "proto2";
+
+package berlin.bbdc.inet.mera;
+
+message MetricUpdate {
+  required int64 timestamp = 1;
+
+  message CounterItem {
+    required string key = 1;
+    required int64 count = 2;
+  }
+  message MeterItem {
+    required string key = 1;
+    required int64 count = 2;
+    required double rate = 3;
+  }
+  message HistItem {
+    required string key = 1;
+    required int64 count = 2;
+    required int64 min = 3;
+    required int64 max = 4;
+    required double mean = 5;
+  }
+  message GaugeItem {
+    required string key = 1;
+    required double value = 2;
+  }
+
+  repeated CounterItem counters = 2;
+  repeated MeterItem meters = 3;
+  repeated HistItem hists = 4;
+  repeated GaugeItem gauges = 5;
+}

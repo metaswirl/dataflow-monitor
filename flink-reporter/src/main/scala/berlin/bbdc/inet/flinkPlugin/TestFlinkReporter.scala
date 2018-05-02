@@ -1,4 +1,4 @@
-package berlin.bbdc.inet.mera.flinkPlugin
+package berlin.bbdc.inet.flinkPlugin
 
 import org.apache.flink.metrics._
 import scala.io.Source

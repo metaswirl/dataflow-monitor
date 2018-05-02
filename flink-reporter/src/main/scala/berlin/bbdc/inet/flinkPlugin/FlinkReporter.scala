@@ -1,4 +1,4 @@
-package berlin.bbdc.inet.mera.flinkPlugin
+package berlin.bbdc.inet.flinkPlugin
 
 import akka.actor.{Actor, ActorContext, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
