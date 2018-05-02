@@ -145,28 +145,34 @@ trait WebService {
         //get the current value lists
         val currentValuesList: List[MetricData] = metricsBuffer(id)
 
-        //create new list for combined lists
-        val newValuesList = List.newBuilder[MetricData]
-
-        //for each task in newValues add the value with its timestamp to the history
-        for (task <- newValues.keySet) {
-          currentValuesList.find(_.taskId == task) match {
-            case Some(m) => newValuesList += MetricData(task, m.values :+ newValues(task))
-            case _ => newValuesList += MetricData(task, List(newValues(task)))
-          }
-        }
+        //create new list with combined lists
+        val updatedValuesList: List[MetricData] = appendNewValuesToMetricsLists(newValues, currentValuesList)
 
         //update the list in the history
-        if (metricsBuffer.putIfAbsent(id, newValuesList.result).isDefined) {
-          metricsBuffer.replace(id, newValuesList.result)
+        if (metricsBuffer.putIfAbsent(id, updatedValuesList).isDefined) {
+          metricsBuffer.replace(id, updatedValuesList)
         }
       }
     }
   }
 
+  private def appendNewValuesToMetricsLists(newValues: Map[String, (Long, Double)], currentValuesList: List[MetricData]): List[MetricData] = {
+    val newValuesList = List.newBuilder[MetricData]
+
+    //for each task in newValues add the value with its timestamp to the history
+    for (task <- newValues.keySet) {
+      currentValuesList.find(_.taskId == task) match {
+        case Some(m) => newValuesList += MetricData(task, m.values :+ newValues(task))
+        case _ => newValuesList += MetricData(task, List(newValues(task)))
+      }
+    }
+
+    newValuesList.result
+  }
+
   /**
     * Obtains new values of a metric to be added to the history
-    * @return Map, where key is taskID and value a Tuple(timestamp, metric_value)
+    * @return Map, where key is taskID and value is a Tuple(timestamp, metric_value)
     */
   def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)]
 
@@ -174,14 +180,20 @@ trait WebService {
     //disable old task if exists
     disableFuture(id)
 
-    //initialize the metric in the buffer
-    metricsBuffer.putIfAbsent(id, List.empty[MetricData])
+    //if resolution is 0 free the memory and return
+    if (resolution == 0) {
+      metricsBuffer.remove(id)
+    }
+    else {
+      //initialize the metric in the buffer
+      metricsBuffer.putIfAbsent(id, List.empty[MetricData])
 
-    //schedule the task
-    val f = scheduler.scheduleAtFixedRate(periodicTask(id, resolution), resolution, resolution, TimeUnit.SECONDS)
+      //schedule the task
+      val f = scheduler.scheduleAtFixedRate(periodicTask(id, resolution), resolution, resolution, TimeUnit.SECONDS)
 
-    //store the Future
-    metricsFutures += (id -> f)
+      //store the Future
+      metricsFutures += (id -> f)
+    }
 
     //return message to client
     Map("id" -> id, "resolution" -> resolution)
