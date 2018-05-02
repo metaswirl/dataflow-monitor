@@ -1,7 +1,6 @@
 resolvers in ThisBuild ++= Seq(
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   "Apache Development Snapshot Repository" at "https://repository.apache.org/content/repositories/snapshots/",
-  "Artima Maven Repository" at "http://repo.artima.com/releases",
   Resolver.mavenLocal, Resolver.bintrayRepo("commercetools", "maven"))
 
 name := "mera"
