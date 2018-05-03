@@ -120,9 +120,11 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
   }
 }
 
-class LPSolver(val model : Model) {
+class LPSolver(val model : Model, val warmStart: Boolean=true) {
   import gurobi._
   val LOG: Logger = LoggerFactory.getLogger("LPSolver")
+  var grbModelOption: Option[GRBModel] = None
+  var prevResults: Map[String, Int] = Map()
 
 
   def traverse_operators(grbModel: GRBModel, op: Operator): Unit = {
@@ -150,6 +152,22 @@ class LPSolver(val model : Model) {
     op.successor.foreach(traverse_operators(grbModel, _))
   }
 
+  def storeResults(grbModel: GRBModel): Unit = {
+    grbModel.getVars.foreach(v => {
+      prevResults += v.get(GRB.StringAttr.VarName) -> v.get(GRB.IntAttr.VBasis)
+    })
+    grbModel.getConstrs.foreach(c => {
+      prevResults += c.get(GRB.StringAttr.ConstrName) -> c.get(GRB.IntAttr.CBasis)
+    })
+  }
+  def loadResults(grbModel: GRBModel): Unit = {
+    grbModel.getVars.foreach(v => {
+      prevResults.get(v.get(GRB.StringAttr.VarName)).map(v.set(GRB.IntAttr.VBasis, _))
+    })
+    grbModel.getConstrs.foreach(c => {
+      prevResults.get(c.get(GRB.StringAttr.ConstrName)).map(c.set(GRB.IntAttr.CBasis, _))
+    })
+  }
   def processResults(grbModel : GRBModel): Unit = {
     // TODO: Check first whether a solution was found
     var result = ""
@@ -210,14 +228,24 @@ class LPSolver(val model : Model) {
   def solveLP(): Unit = {
     // TODO: Add config option
     try {
-      val env = new GRBEnv("/tmp/lp.log")
-      val grbModel = new GRBModel(env)
-
+      grbModelOption = grbModelOption match {
+        case Some(m : GRBModel) => m.reset()
+                                   Some(m)
+        case None => Some(new GRBModel(new GRBEnv("/tmp/lp.log")))
+      }
+      val grbModel = grbModelOption.get
       traverse_operators(grbModel, model.src)
       val expr = new GRBLinExpr()
       model.sink.tasks.foreach(t => expr.addTerm(1, t.gurobiRate))
       grbModel.setObjective(expr, GRB.MAXIMIZE)
+      grbModel.update()
+      if (warmStart) {
+        loadResults(grbModel)
+      }
       grbModel.optimize()
+      if (warmStart) {
+        storeResults(grbModel)
+      }
       processResults(grbModel)
     } catch {
       case ex: Throwable => LOG.error(ex + ":" + ex.getMessage)
