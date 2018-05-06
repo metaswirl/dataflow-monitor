@@ -10,9 +10,8 @@ import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import berlin.bbdc.inet.mera.common.JsonUtils
 import berlin.bbdc.inet.mera.server.model.Model
+import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
-import berlin.bbdc.inet.mera.server.metrics.MetricSummary
-import berlin.bbdc.inet.mera.server.model.{Model, Task}
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map, Seq}
@@ -26,6 +25,8 @@ trait WebService {
   implicit val model: Model
 
   private val LOG: Logger = LoggerFactory.getLogger(getClass)
+
+  private val STATIC_PATH = ConfigFactory.load.getString("static.path")
 
   /**
     *
@@ -99,14 +100,14 @@ trait WebService {
       // Returns swagger json
       path("swagger") {
         get {
-          getFromResource("static/swagger/swagger.json")
+          getFromResource(STATIC_PATH + "/swagger/swagger.json")
         }
       } ~
       // Returns home page
       (get & pathEndOrSingleSlash) {
-        getFromResource("static/index.html")
+        getFromResource(STATIC_PATH + "/index.html")
       } ~ {
-      getFromResourceDirectory("static")
+      getFromResourceDirectory(STATIC_PATH)
     }
 
   private def getMetricById(id: String) = {
