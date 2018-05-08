@@ -1,10 +1,7 @@
 package berlin.bbdc.inet.mera.server.metrics
 
-import java.io.File
 import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import berlin.bbdc.inet.mera.message.MetricUpdate
 import berlin.bbdc.inet.mera.server.model._
@@ -50,10 +47,11 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
 
 object MetricReceiver {
   def start(model : Model, mfw : ModelFileWriter): Unit = {
-    val configFile = getClass.getClassLoader.getResource("meraAkka/metricServer.conf").getFile
-    val config = ConfigFactory.parseFile(new File(configFile))
+    val is = getClass.getClassLoader.getResourceAsStream("meraAkka/metricServer.conf")
+    val file = scala.io.Source.fromInputStream(is).mkString
+    val config = ConfigFactory.parseString(file)
     val actorSystem = ActorSystem("AkkaMetric", config)
-    val remote = actorSystem.actorOf(Props(new MetricReceiver(model, mfw)), name="master")
+    val remote: ActorRef = actorSystem.actorOf(Props(new MetricReceiver(model, mfw)), name="master")
   }
 }
 
