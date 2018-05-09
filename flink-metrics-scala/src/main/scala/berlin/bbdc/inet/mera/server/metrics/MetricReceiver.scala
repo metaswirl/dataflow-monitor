@@ -18,7 +18,7 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
   var traversalFuture : ScheduledFuture[_] = _
 
   override def receive: PartialFunction[Any, Unit] = {
-    case d: MetricUpdate => {
+    case d: MetricUpdate =>
       mfw.updateMetrics(d.timestamp, d.counters.map(t => (t.key, t.count.toDouble)) ++
         d.meters.map(t => (t.key, t.rate)) ++ d.gauges.map(t => (t.key, t.value)))
       modelUpdater.update(d.timestamp,
@@ -34,7 +34,6 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
         val schd : ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
         traversalFuture = schd.scheduleAtFixedRate(modelTraversal, 5, 3, TimeUnit.SECONDS)
       }
-    }
   }
 
   override def postStop(): Unit = {
@@ -47,9 +46,7 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
 
 object MetricReceiver {
   def start(model : Model, mfw : ModelFileWriter): Unit = {
-    val is = getClass.getClassLoader.getResourceAsStream("meraAkka/metricServer.conf")
-    val file = scala.io.Source.fromInputStream(is).mkString
-    val config = ConfigFactory.parseString(file)
+    val config = ConfigFactory.load("meraAkka/metricServer.conf")
     val actorSystem = ActorSystem("AkkaMetric", config)
     val remote: ActorRef = actorSystem.actorOf(Props(new MetricReceiver(model, mfw)), name="master")
   }
