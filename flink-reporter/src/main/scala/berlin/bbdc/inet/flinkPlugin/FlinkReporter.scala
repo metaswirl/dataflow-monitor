@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.flinkPlugin
 
-import akka.actor.{Actor, ActorContext, ActorSystem, Props}
+import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.metrics.Meter
 import org.apache.flink.metrics.Counter
@@ -15,6 +15,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import berlin.bbdc.inet.mera.message.MetricUpdate._
 import berlin.bbdc.inet.mera.message.MetricUpdate
+import org.apache.flink.configuration.{GlobalConfiguration, JobManagerOptions}
 
 trait FlinkMetricManager extends MetricReporter {
   var counters : Map[String,Counter] = Map()
@@ -31,6 +32,9 @@ trait FlinkMetricManager extends MetricReporter {
 
   def isNumber(x : Any): Boolean = x.isInstanceOf[Number]
   def isLatencyGauge(x : Any): Boolean = x.isInstanceOf[LatencyGauge]
+
+  /** We assume mera will be running on the same machine as the JobManager*/
+  val jobManagerIpAddress: String = GlobalConfiguration.loadConfiguration.getString(JobManagerOptions.ADDRESS)
 
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
     val fullName : String = group.getMetricIdentifier(metricName)
@@ -72,25 +76,12 @@ trait FlinkMetricManager extends MetricReporter {
 }
 
 class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
-  // TODO: use flinkPlugin.conf from resources folder instead
-  val config = ConfigFactory.parseString("""
-    akka {
-      actor {
-        provider = "akka.remote.RemoteActorRefProvider"
-      }
-      remote {
-        enabled-transports = ["akka.remote.netty.tcp"]
-        netty.tcp {
-          hostname = "127.0.0.1"
-          port = 0
-        }
-      }
-    }""")
+  val config = ConfigFactory.load("flinkPlugin.conf")
   val actorSystem = ActorSystem("AkkaMetric", config)
-  val master = actorSystem.actorSelection("akka.tcp://AkkaMetric@127.0.0.1:2552/user/master")
+  val master = actorSystem.actorSelection(f"akka.tcp://AkkaMetric@${jobManagerIpAddress}:2552/user/master")
 
   override def open(config: MetricConfig) = {
-    LOG.info("Initializing reporter")
+    LOG.info(s"Initializing reporter with destination: ${jobManagerIpAddress}:2552")
     this.setMetricFilter((x: String) => (!x.contains("jobmanager")) &&
       (!( x.contains(".taskmanager.") &&
         ( x.contains(".Status.") || x.contains(".JVM.") )
