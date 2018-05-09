@@ -32,6 +32,12 @@ trait FlinkMetricManager extends MetricReporter {
   def isNumber(x : Any): Boolean = x.isInstanceOf[Number]
   def isLatencyGauge(x : Any): Boolean = x.isInstanceOf[LatencyGauge]
 
+  var serverIpAddress: String = "127.0.0.1"
+
+  override def open(metricConfig: MetricConfig): Unit = {
+    serverIpAddress = metricConfig.getString("serverIpAddress", serverIpAddress)
+  }
+
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
     val fullName : String = group.getMetricIdentifier(metricName)
     if (!metricFilter.map(_(fullName)).getOrElse(true)) {
@@ -73,7 +79,7 @@ trait FlinkMetricManager extends MetricReporter {
 
 class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
   // TODO: use flinkPlugin.conf from resources folder instead
-  val config = ConfigFactory.parseString("""
+  val config = ConfigFactory.parseString(f"""
     akka {
       actor {
         provider = "akka.remote.RemoteActorRefProvider"
@@ -81,13 +87,13 @@ class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
       remote {
         enabled-transports = ["akka.remote.netty.tcp"]
         netty.tcp {
-          hostname = "127.0.0.1"
+          hostname = "${serverIpAddress}"
           port = 0
         }
       }
     }""")
   val actorSystem = ActorSystem("AkkaMetric", config)
-  val master = actorSystem.actorSelection("akka.tcp://AkkaMetric@127.0.0.1:2552/user/master")
+  val master = actorSystem.actorSelection(f"akka.tcp://AkkaMetric@${serverIpAddress}:2552/user/master")
 
   override def open(config: MetricConfig) = {
     LOG.info("Initializing reporter")
