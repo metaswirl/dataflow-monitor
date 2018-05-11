@@ -15,6 +15,8 @@ import networkx as nx
 import pydot
 import shutil
 import subprocess
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 figsize=(20, 10)
 # https://stackoverflow.com/questions/8389636/creating-over-20-unique-legend-colors-using-matplotlib
@@ -232,7 +234,7 @@ def plot_raw_metrics(folder, keys, opti_start):
         axes[1].axvline(opti_start)
 
         keys = [c for c in metrics.columns if c.endswith(".latency")]
-        metrics[keys].sum(axis=1).plot(ax=axes[2], title="latency", legend=False)
+        metrics[keys].sum(axis=1).plot(ax=axes[2], title="summed latency", legend=False)
         axes[2].axvline(opti_start)
 
         keys = [c for c in metrics.columns if "Source" in c and c.endswith(".numRecordsOutPerSecond")]
@@ -249,6 +251,106 @@ def plot_raw_metrics(folder, keys, opti_start):
     plot_raw_metrics_diff()
     plot_target_metrics()
     plot_drop_rates()
+
+def plot_save_agg_metrics(folder, opti_start, offsetSeconds=30):
+    print("- compute and plot aggregate metrics for run")
+    def merge_metric_name(key):
+        join = lambda x: ".".join(x)
+        key_parts = key.split('.')
+        last = key_parts[-1]
+        if "inputQueue" in last or "outputQueue" in last:
+            return key_parts[-1]
+        if "Queue" in last:
+            return join(key_parts[-4:])
+        if "buffersByChannel" in last:
+            return join(key_parts[-5:])
+        if "Pool" in last:
+            return join(key_parts[-2:])
+        else:
+            return key_parts[-1]
+
+    def new_f(name):
+        return "bar_{}.{}".format(name, plot_format)
+
+    fnames = []
+
+    # TODO: add initialization time
+    metrics = pd.read_csv(folder + "/metrics.csv", sep=";")
+    #metrics.key = metrics.key.str.replace("*.taskmanager.[^.]*.Scala SocketTextStreamWordCount Example.", "")
+    metrics.time = pd.to_datetime(metrics.time, unit='ms')
+    startTime = metrics.time[0] + timedelta(seconds=offsetSeconds)
+    before = metrics[(metrics.time >= startTime) & (metrics.time <= opti_start)]
+    after = metrics[metrics.time > opti_start]
+    #keys = [c for c in metrics.key.unique() if "dropCount" in c]
+
+    before_means = before.groupby('key').mean()
+    after_means = after.groupby('key').mean()
+    before_means = before_means.value.rename("before")
+    after_means = after_means.value.rename("after")
+    together = pd.concat([after_means, before_means], axis=1).reset_index('key')
+    together['difference'] = (together.after-together.before).fillna(0)
+    together['task'] = together.key.apply(lambda x: ".".join(x.split(".")[4:6]))
+    together['metric'] = together.key.apply(merge_metric_name)
+    before_res = together.pivot(index='metric', columns='task', values='before')
+    after_res = together.pivot(index='metric', columns='task', values='after')
+    diff_res = together.pivot(index='metric', columns='task', values='difference')
+
+    for fn, m in [("pool", ".*Pool"), ("latency", "latency"),
+            ("num_bytes", "numBytes.*PerSecond"), ("num_records",
+                "numRecords.*PerSecond")]:
+        print("\t- plot " + fn)
+        fig, axes = plt.subplots(3, 1, sharex=True, figsize=figsize)
+        before_res[before_res.index.map(lambda x: re.match(m, x) != None)].plot.bar(ax=axes[0],
+                legend=False, title="before optimization")
+        after_res[after_res.index.map(lambda x: re.match(m, x) != None)].plot.bar(ax=axes[1],
+                legend=False, title="after optimization")
+        res = diff_res[diff_res.index.map(lambda x: re.match(m, x) != None)].plot.bar(ax=axes[2],
+                legend=False, title="after-before")
+        plt.xticks(rotation=20)
+        fig.suptitle("metric on average")
+        lines, labels = res.get_legend_handles_labels()
+        fig.legend( lines, labels, loc = 'upper right' , ncol=1 )
+        fname = new_f(fn)
+        fnames.append(fname)
+        fig.savefig(pjoin(folder, fname), bbox_inches='tight',
+                format=plot_format, dpi=dpi)
+
+    before_res.to_csv(pjoin(folder, "before_optimization.csv"))
+    after_res.to_csv(pjoin(folder, "after_optimization.csv"))
+    diff_res.to_csv(pjoin(folder, "diff_optimization.csv"))
+
+    print("\t- plot drop count stats")
+    after['task'] = after.key.apply(lambda x: ".".join(x.split(".")[4:6]))
+    after['metric'] = after.key.apply(merge_metric_name)
+    drop_counts = after[after.metric == 'dropCount']
+    stds = drop_counts.groupby('task').std()
+    means = drop_counts.groupby('task').mean()
+    covs = (stds/means)
+    fig, axes = plt.subplots(3, 1, sharex=True, figsize=figsize)
+    stds.plot.bar(legend=False, title="standard deviation", ax=axes[0])
+    res = means.plot.bar(legend=False, title="mean", ax=axes[1])
+    covs.plot.bar(legend=False, title="cov", ax=axes[2])
+    plt.xticks(rotation=20)
+    fig.suptitle("drop_counts")
+    fname = new_f("drop_count_stats")
+    fig.savefig(pjoin(folder, fname), bbox_inches='tight',
+            format=plot_format, dpi=dpi)
+    fnames.append(fname)
+    drop_counts_res = pd.concat((stds.unstack(), means.unstack(),
+        covs.unstack()), axis=1).fillna(0)
+    drop_counts_res.index = drop_counts_res.index.droplevel(0)
+    drop_counts_res.columns = ['mean', 'std', 'cov']
+    drop_counts_res.to_csv(pjoin(folder, "drop_counts_stats.csv"))
+    return fnames
+    
+def read_start_of_optimization(folder):
+    try:
+        with open(pjoin(folder, "optimization_start.csv"), 'r') as f:
+            opti_start = pd.to_datetime(int(f.read().strip()), unit='ms')
+    except:
+        opti_start = datetime.fromtimestamp(0)
+    return opti_start
+    
 
 def draw_graph(folder):
     print("- drawing graph")
@@ -269,11 +371,7 @@ def main(folder=None, viewer=True):
 
     print("Storing plots in '{}'".format(folder))
 
-    try:
-        with open(pjoin(folder, "optimization_start.csv"), 'r') as f:
-            opti_start = pd.to_datetime(int(f.read().strip()), unit='ms')
-    except:
-        opti_start = 0
+    opti_start = read_start_of_optimization(folder)
 
     plots_fnames = []
     draw_graph(folder)
@@ -288,6 +386,8 @@ def main(folder=None, viewer=True):
         "numRecordsIn"], opti_start)
     plots_fnames += [fname_raw_metrics, fname_target, fname_raw_metrics_drop_rates,
             fname_raw_metrics_diff, fname_raw_metrics_bar]
+    plots_fnames += plot_save_agg_metrics(folder, opti_start)
+
 
     pdfunite = shutil.which("pdfunite")
     if pdfunite:
