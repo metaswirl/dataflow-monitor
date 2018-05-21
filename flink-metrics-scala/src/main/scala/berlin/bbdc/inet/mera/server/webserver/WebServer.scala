@@ -2,26 +2,21 @@ package berlin.bbdc.inet.mera.server.webserver
 
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import berlin.bbdc.inet.mera.server.model.Model
 
-import scala.collection.immutable.Map
 import scala.concurrent.ExecutionContextExecutor
 
 
-class WebServer(m: Model, host: String, port: Int)
-  extends WebService {
+class WebServer(proxy: MetricContainer, host: String, port: Int)
+  extends WebService with Loggable {
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val model: Model = m
+  implicit val metricContainer: MetricContainer = proxy
 
-  Http().bindAndHandle(route, host, port)
-
-  override def collectNewValuesOfMetric(id: String, resolution: Int): Map[String, (Long, Double)] = {
-    model.tasks.values.map(
-      t => t.id -> t.getMetricSummary(id).getMeanBeforeLastSeconds(resolution)).toMap
-  }
+  private val myLoggedRoute = logRequestResult(Logging.InfoLevel, route)
+  Http().bindAndHandle(myLoggedRoute, host, port)
 }

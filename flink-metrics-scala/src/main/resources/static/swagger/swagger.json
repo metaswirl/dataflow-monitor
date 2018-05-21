@@ -6,7 +6,7 @@
     "title" : "mera-monitor WebServer API"
   },
   "host" : "localhost:12345",
-  "basePath" : "/",
+  "basePath" : "",
   "tags" : [ {
     "name" : "model",
     "description" : "Everything about the running model"
@@ -16,13 +16,13 @@
   } ],
   "schemes" : [ "http" ],
   "paths" : {
-    "/data/operators" : {
+    "/data/topology" : {
       "get" : {
         "tags" : [ "model" ],
-        "summary" : "Get list of operators",
-        "description" : "Returns list of operators of the current model sorted from source to sink",
-        "operationId" : "getOperators",
-        "produces" : [ "applicationn/json" ],
+        "summary" : "Get topology of the model",
+        "description" : "Returns list of operators with tasks and their routing",
+        "operationId" : "getTopology",
+        "produces" : [ "application/json" ],
         "parameters" : [ ],
         "responses" : {
           "200" : {
@@ -30,36 +30,9 @@
             "schema" : {
               "type" : "array",
               "items" : {
-                "type" : "string"
+                "$ref" : "#/definitions/OperatorTopology"
               }
             }
-          }
-        }
-      }
-    },
-    "/data/tasksOfOperator/{operatorId}" : {
-      "get" : {
-        "tags" : [ "model" ],
-        "summary" : "Get tasks for a given operator",
-        "description" : "Returns list of all tasks, their inputs, and outputs for a given operator",
-        "operationId" : "getTasksById",
-        "produces" : [ "application/json" ],
-        "parameters" : [ {
-          "name" : "operatorId",
-          "in" : "path",
-          "description" : "ID of operator to return",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "successful operation",
-            "schema" : {
-              "$ref" : "#/definitions/TaskOfOperator"
-            }
-          },
-          "404" : {
-            "description" : "operatorId not found"
           }
         }
       }
@@ -85,49 +58,72 @@
         }
       }
     },
-    "/data/initMetric/{metricId}" : {
+    "/data/metrics/tasks/init" : {
       "get" : {
         "tags" : [ "metrics" ],
-        "summary" : "Initialize storing a metric with given resolution",
-        "description" : "Request collecting a metric with a given resolution. It creates a buffer on the server where the history of the metric is stored.",
-        "operationId" : "initMetric",
+        "summary" : "Get all running metrics",
+        "description" : "Gets list of all currently collected Tuples(TaskId, MetricId)",
+        "operationId" : "getInitMetricsTasks",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/MetricKey"
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "metrics" ],
+        "summary" : "Initialize storing metrics",
+        "description" : "Initialize storing a metric for given list of tasks with a resolution",
+        "operationId" : "postInitMetricsTasks",
         "produces" : [ "application/json" ],
         "parameters" : [ {
-          "name" : "metricId",
-          "in" : "path",
-          "description" : "name of the metric to track. The metric has to be available through /data/metrics endpoint",
+          "in" : "body",
+          "name" : "body",
           "required" : true,
-          "type" : "string"
-        }, {
-          "name" : "resolution",
-          "in" : "query",
-          "description" : "Time in seconds which stands for the resolution of the stored metric. Minimum value is 1 second.",
-          "required" : true,
-          "type" : "integer"
+          "schema" : {
+            "$ref" : "#/definitions/TasksInitMessage"
+          }
         } ],
         "responses" : {
           "200" : {
             "description" : "successful operation"
-          },
-          "404" : {
-            "description" : "metricId not found in the list of available metrics. This metricId cannot be initialized."
           }
         }
       }
     },
-    "/data/metric/{metricId}" : {
+    "/data/metrics/task" : {
       "get" : {
         "tags" : [ "metrics" ],
         "summary" : "Get history of a metric",
-        "description" : "Returns story of a given metric for all tasks. If a metric has not been initialized with data/initMetric it returns an error. Time is formatted as seconds since epoch.",
-        "operationId" : "getMetric",
+        "description" : "Returns history of a given metric for a task since a timestamp. If a metric has not been initialized with data/initMetric it returns an error. Time is formatted as millis since epoch.",
+        "operationId" : "getMetricsTasks",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "metricId",
-          "in" : "path",
+          "in" : "query",
           "description" : "ID of metric to be return",
           "required" : true,
           "type" : "string"
+        }, {
+          "name" : "taskId",
+          "in" : "query",
+          "description" : "ID of task",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "since",
+          "in" : "query",
+          "description" : "timestamp in millis",
+          "required" : true,
+          "type" : "number"
         } ],
         "responses" : {
           "200" : {
@@ -147,10 +143,58 @@
     }
   },
   "definitions" : {
-    "TaskOfOperator" : {
+    "TasksInitMessage" : {
       "type" : "object",
       "properties" : {
-        "id" : {
+        "taskIds" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "metricId" : {
+          "type" : "string"
+        },
+        "resolution" : {
+          "type" : "integer"
+        }
+      },
+      "example" : {
+        "metricId" : "metricId",
+        "taskIds" : [ "taskIds", "taskIds" ],
+        "resolution" : 0
+      }
+    },
+    "OperatorTopology" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "tasks" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/TaskTopology"
+          }
+        }
+      },
+      "example" : {
+        "name" : "name",
+        "tasks" : [ {
+          "output" : [ "output", "output" ],
+          "input" : [ "input", "input" ],
+          "name" : "name"
+        }, {
+          "output" : [ "output", "output" ],
+          "input" : [ "input", "input" ],
+          "name" : "name"
+        } ]
+      }
+    },
+    "TaskTopology" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
           "type" : "string"
         },
         "input" : {
@@ -169,7 +213,7 @@
       "example" : {
         "output" : [ "output", "output" ],
         "input" : [ "input", "input" ],
-        "id" : "id"
+        "name" : "name"
       }
     },
     "Metric" : {
@@ -209,6 +253,21 @@
       "example" : {
         "value" : 6.02745618307040320615897144307382404804229736328125,
         "timestamp" : 0.80082819046101150206595775671303272247314453125
+      }
+    },
+    "MetricKey" : {
+      "type" : "object",
+      "properties" : {
+        "taskId" : {
+          "type" : "string"
+        },
+        "metricId" : {
+          "type" : "string"
+        }
+      },
+      "example" : {
+        "metricId" : "metricId",
+        "taskId" : "taskId"
       }
     }
   }

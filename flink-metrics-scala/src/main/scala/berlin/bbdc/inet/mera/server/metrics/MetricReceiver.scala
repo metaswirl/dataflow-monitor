@@ -4,14 +4,14 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFutur
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import berlin.bbdc.inet.mera.message.MetricUpdate
-import berlin.bbdc.inet.mera.server.model._
-import com.typesafe.config.ConfigFactory
+import berlin.bbdc.inet.mera.server.model.{Model, ModelFileWriter, ModelTraversal, ModelUpdater}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.slf4j.{Logger, LoggerFactory}
 
 class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
   mfw.writeGraph(model)
   val modelUpdater = new ModelUpdater(model)
-  val LOG: Logger = LoggerFactory.getLogger("MetricReceiver")
+  val LOG: Logger = LoggerFactory.getLogger(getClass)
   var first = true
   val modelTraversal = new ModelTraversal(model, mfw)
 
@@ -45,10 +45,21 @@ class MetricReceiver(model: Model, mfw : ModelFileWriter) extends Actor {
 }
 
 object MetricReceiver {
+  val LOG: Logger = LoggerFactory.getLogger(getClass)
+
   def start(model : Model, mfw : ModelFileWriter): Unit = {
-    val config = ConfigFactory.load("meraAkka/metricServer.conf")
-    val actorSystem = ActorSystem("AkkaMetric", config)
+    val actorSystem = ActorSystem("AkkaMetric", loadConfig())
     val remote: ActorRef = actorSystem.actorOf(Props(new MetricReceiver(model, mfw)), name="master")
   }
+
+  def loadConfig(): Config = {
+    val isCluster = ConfigFactory.load.getBoolean("metricReceiver.isCluster")
+    val config = ConfigFactory.load("meraAkka/metricServer.conf")
+
+    LOG.info(s"Running a cluster configuration: $isCluster")
+    if (isCluster) config
+    else config.withValue("akka.remote.netty.tcp.hostname", ConfigValueFactory.fromAnyRef("localhost"))
+  }
+
 }
 
