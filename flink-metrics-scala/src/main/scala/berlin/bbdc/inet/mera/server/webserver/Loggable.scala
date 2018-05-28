@@ -11,6 +11,10 @@ import akka.stream.scaladsl.Sink
 
 import scala.concurrent.{ExecutionContext, Future}
 
+/**
+  * Trait modifies default akka-http logging style
+  * Ref: https://stackoverflow.com/questions/32475471/how-does-one-log-akka-http-client-requests
+  */
 trait Loggable {
 
   def logRequestResult(level: LogLevel, route: Route)
