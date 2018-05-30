@@ -14,3 +14,10 @@
 # Maven
 log/
 target/
+
+# sbt
+project/build.properties
+
+# Python
+__pycache__/
+.ipynb_checkpoints/
