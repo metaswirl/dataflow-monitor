@@ -16,8 +16,11 @@ log/
 target/
 
 # sbt
-project/build.properties
+build.properties
 
 # Python
 __pycache__/
 .ipynb_checkpoints/
+
+# vim
+*.swp
