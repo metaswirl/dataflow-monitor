@@ -1,6 +1,7 @@
 package berlin.bbdc.inet.mera.server
 
-import berlin.bbdc.inet.mera.server.dummywebserver.{DummyMetricContainer, DummyModelBuilder, DummyWebServer}
+import berlin.bbdc.inet.mera.server.dummywebserver.{DummyMetricContainer, DummyModelBuilder}
+import berlin.bbdc.inet.mera.server.webserver.WebServer
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -15,5 +16,5 @@ object DummyWebServerApp extends App {
   val model = builder.getModelFromJson("testData/twitter_model.json")
   val metricContainer = new DummyMetricContainer(model)
 
-  val webServer = new DummyWebServer(model, metricContainer, webServerHost, webServerPort)
+  val webServer = new WebServer(metricContainer, webServerHost, webServerPort)
 }
