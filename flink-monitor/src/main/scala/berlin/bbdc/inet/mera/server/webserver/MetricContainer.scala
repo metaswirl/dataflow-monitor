@@ -4,6 +4,7 @@ import java.io
 import java.util.concurrent.{Executors, ScheduledFuture, TimeUnit}
 
 import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.server.webserver.MetricContainer.MetricValue
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.concurrent.TrieMap
@@ -16,12 +17,6 @@ class MetricContainer(model: Model) {
   val cores: Int = Runtime.getRuntime.availableProcessors()
   LOG.debug(s"Metric executor started with ${cores + 1} cores")
   private val scheduler = Executors.newScheduledThreadPool(cores + 1)
-
-  /**
-    * MetricValue_1 - timestamp
-    * MetricValue_2 - value of the metric at given timestamp
-    */
-  type MetricValue = (Long, Double)
 
   /**
     * Unique MetricKey is combined of
@@ -136,11 +131,23 @@ class MetricContainer(model: Model) {
       .getMetricSummary(metricKey._2)
       .getMeanBeforeLastSeconds(resolution)
 
-  def getMetricSince(metricKey: MetricKey, since: Long): List[MetricValue] = metricsBuffer(metricKey) filter {
-    _._1 > since
-  }
+  def getMetricsOfTask(metricKey: MetricKey, since: Long): TaskMetrics = TaskMetrics(metricKey._1, getMetricSince(metricKey, since))
+
+  private def getMetricSince(metricKey: MetricKey, since: Long): List[MetricValue] = metricsBuffer(metricKey) filter { _._1 > since }
+}
+
+object MetricContainer {
+
+  /**
+    * MetricValue_1 - timestamp
+    * MetricValue_2 - value of the metric at given timestamp
+    */
+  type MetricValue = (Long, Double)
+
 }
 
 case class TasksOfOperator(id: String, input: List[String], output: List[String])
 
 case class OperatorTopology(name: String, tasks: Seq[TasksOfOperator])
+
+case class TaskMetrics(taskId: String, values: List[MetricValue])
