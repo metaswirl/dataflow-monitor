@@ -39,4 +39,4 @@ libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "scalapb-runtime" % com.trueaccord.scalapb.compiler.Version.scalapbVersion % "protobuf"
 )
 
-mainClass in Compile := Some("berlin.bbdc.inet.mera.server.Starter")
+//mainClass in Compile := Some("berlin.bbdc.inet.mera.server.Starter")
