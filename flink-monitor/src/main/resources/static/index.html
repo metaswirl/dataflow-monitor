@@ -1,15 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>mera-monitor</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Flink Dataview Example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/grid-light.css">
+    <script src="frameworks/d3.js"></script>
+    <script src="frameworks/jquery/jquery-3.3.1.js"></script>
+    <script src="frameworks/bootstrap/bootstrap.bundle.js"></script>
+    <script src="frameworks/require/require.js"></script>
+    <script src="js/app.js"></script>
+
+
 </head>
 <body>
-<div id="container">
-    <b id="welcome_title">Welcome to mera-monitor server</b><br>
-    <div id="text">Monitor your Flink jobs</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="row">
+                <div class="col-sm-12 shortGraph">
+                    <svg id="shortGraph"></svg>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 longGraph">
+                    <svg id="longGraph"></svg>
+                    <script src=""></script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="row text-center">
+                <div class="col-sm-12 linePlot">
+                    <div id="linePlot"></div>
+                </div>
+                <div class="col-sm-12 selectorPlot">
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#initMetric">Init Metric</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="initMetric" tabindex="-1" role="dialog" aria-labelledby="initMetricLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Metric Initialization</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Select values for the initialization of metrics.</p>
+
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <select class="form-control" name="metrics" id="metrics"></select>
+                        </div>
+                        <div class="col-sm-6">
+                            <select class="form-control" name="tasksoroperator" id="taskoroperator">
+                                <option value="byTask">byTask</option>
+                                <option value="byOperator" disabled>byOperator</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-12">
+                            <select class="form-control" name="Ids" id="Ids" multiple></select>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="resolutionselect" id="time5s"
+                                       value="5">
+                                <label class="form-check-label" for="time5s">5sec</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="resolutionselect" id="time5m"
+                                       value="300">
+                                <label class="form-check-label" for="time5m">5min</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="resolutionselect" id="time20m"
+                                       value="1200">
+                                <label class="form-check-label" for="time20m">20min</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="initButton">
+                        Initialize
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<script src="script.js"></script>
+<script type="text/javascript" src="js/requireConfig.js"></script>
 </body>
 </html>

@@ -1,0 +1,60 @@
+.shortGraph {
+	height: 10vh;
+}
+.modal-content {
+	min-height: 70vh;
+}
+
+#Ids {
+	min-height: 40vh;
+}
+
+.longGraph {
+	height: 35vh;
+}
+
+.linePlot {
+	height: 50vh;
+}
+
+.selectorPlot {
+	height: 5vh;
+	background-color: yellow;
+}
+
+circle {
+	fill: #000;
+	stroke: #fff;
+	stroke-width: 2px;
+}
+
+path {
+	fill: none;
+	stroke: #999;
+	stroke-width: 0.5px;
+}
+
+.line1, .line2, .line3 {
+	fill: none;
+	stroke-width: 3px
+}
+
+.line1 {
+	stroke: green;
+}
+
+.line2 {
+	stroke: blue;
+}
+
+.line3 {
+	stroke: red;
+}
+
+.line3:hover {
+	stroke: green;
+}
+
+text {
+	font-size: 0.5rem;
+}
