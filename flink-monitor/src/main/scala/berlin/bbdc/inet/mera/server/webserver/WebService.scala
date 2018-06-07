@@ -47,7 +47,7 @@ trait WebService {
       // Returns history of a given metric
       pathPrefix("data" / "metrics" / "task") {
         parameters('metricId.as[String], 'since.as[Long], 'taskId.as[String]) { (metricId, since, taskId) =>
-          completeJson(metricContainer.getMetricSince((taskId, metricId), since))
+          completeJson(metricContainer.getMetricsOfTask((taskId, metricId), since))
         }
       } ~
       // Returns swagger json
