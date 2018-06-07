@@ -31,5 +31,25 @@ Before using the monitor, your version of Flink first has to be instrumented.
 
 We assume that Flink is co-located with the monitor and its jobmanager is reachable through _localhost_.
 
+As a prerequisite of the optimizer Gurobi has to be installed.
+
+Get it here:
+
+- Download: http://www.gurobi.com/downloads/gurobi-optimizer
+- As an Academic get your license here: http://www.gurobi.com/academia/for-universities
+- Activate your license with `grbgetkey`
+- Follow the guide here: http://www.gurobi.com/documentation/8.0/quickstart_linux/software_installation_guid.html
+
+        - GUROBI_HOME should point to your <installdir>.
+        - PATH should be extended to include <installdir>/bin.
+        - LD_LIBRARY_PATH should be extended to include <installdir>/lib.
+
+Then you can start the monitor either via
+
     cd flink-monitor/
     sbt run 
+
+Or 
+
+    sbt assembly
+    java -cp "target/scala-2.11/mera-assembly-0.2.jar:lib/gurobi.jar" berlin.bbdc.inet.mera.server.Starter
