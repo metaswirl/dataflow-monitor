@@ -53,3 +53,12 @@ Or
 
     sbt assembly
     java -cp "target/scala-2.11/mera-assembly-0.2.jar:lib/gurobi.jar" berlin.bbdc.inet.mera.server.Starter
+
+## Running the WebUI
+
+After running the "sbt run" simply go to 
+    
+    http://localhost:12345
+   
+To see a running LinePlot a first Metric has to be initialized. 
+
