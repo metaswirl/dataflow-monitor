@@ -4,7 +4,7 @@ import berlin.bbdc.inet.mera.server.metrics.{Counter, CounterSummary, Gauge, Gau
 import org.slf4j.{Logger, LoggerFactory}
 
 class ModelUpdater(val model: Model) {
-  val LOG: Logger = LoggerFactory.getLogger("Model")
+  val LOG: Logger = LoggerFactory.getLogger(getClass)
 
   def update(timestamp : Long, metrics: List[(MetricKey, MetricSummary.NumberMetric)]): Unit = metrics.foreach({
     case (k: TaskManagerTaskMetricKey, m: MetricSummary.NumberMetric) =>

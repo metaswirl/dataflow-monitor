@@ -82,7 +82,7 @@ class Operator(val id: String, val parallelism: Int, val commType : CommType, va
 }
 
 //TODO: operators cannot be a map since the keys will overlap
-class Model(val n :Int, val operators : ListMap[String, Operator], val taskEdges : List[TaskEdge]) {
+case class Model(n :Int, operators : ListMap[String, Operator], taskEdges : List[TaskEdge]) {
   // Assuming single sink
   // TODO: start when job starts, end when job ends.
   // TODO: sink and src should be Iterable[Operator]
