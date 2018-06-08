@@ -185,16 +185,16 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
             var line = new datastructure_2.LinePlotData();
-            line.id = selectedMetric.taskId;
+            line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
             line.name = selectedMetric.metricId;
             line.data = [];
-            result.forEach(function (point) {
+            result.values.forEach(function (point) {
                 var value = new datastructure_2.LinePlotValue();
                 value.x = point[0];
                 value.y = point[1];
                 line.data.push(value);
             });
-            if (LinePlot.get(selectedMetric.taskId) == undefined) {
+            if (LinePlot.get(line.id) == undefined) {
                 LinePlot.addSeries(line, true);
             }
             else {
