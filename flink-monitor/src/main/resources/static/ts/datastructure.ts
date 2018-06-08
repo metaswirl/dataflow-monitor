@@ -57,11 +57,15 @@ export class MetricListObject extends MetricPostObject {
 export class LinePlotData {
     name: string;
     id: string;
+    options: Lineoptions;
     data: Array<Value>
 }
 
 export class LinePlotValue {
     x: number;
     y: number
+}
+export class Lineoptions{
+    color: string;
 }
 

@@ -75,6 +75,12 @@ define("datastructure", ["require", "exports"], function (require, exports) {
         return LinePlotValue;
     }());
     exports.LinePlotValue = LinePlotValue;
+    var Lineoptions = /** @class */ (function () {
+        function Lineoptions() {
+        }
+        return Lineoptions;
+    }());
+    exports.Lineoptions = Lineoptions;
 });
 //Helper for Class RestInterface
 define("RestInterface", ["require", "exports", "datastructure", "jquery"], function (require, exports, datastructure_1, $) {
@@ -115,9 +121,10 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
     }
     exports.getDataFromMetrics = getDataFromMetrics;
 });
-define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./highcharts", "jquery"], function (require, exports, RestInterface_1, datastructure_2, Highcharts, $) {
+define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./highcharts", "jquery", "d3"], function (require, exports, RestInterface_1, datastructure_2, Highcharts, $, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
     var ChartOptions = {
         chart: {
             type: 'spline',
@@ -188,6 +195,9 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
             line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
             line.name = selectedMetric.metricId;
             line.data = [];
+            var options = new datastructure_2.Lineoptions();
+            options.color = colorScaleLines(line.id).toString();
+            line.options = options;
             result.values.forEach(function (point) {
                 var value = new datastructure_2.LinePlotValue();
                 value.x = point[0];
@@ -202,9 +212,11 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                 line.data.forEach(function (point) {
                     if (series_1.data.length >= 20) {
                         series_1.addPoint(point, false, true);
+                        //series.update(series.options)
                     }
                     else {
                         series_1.addPoint(point, false, false);
+                        //series.update(series.options)
                     }
                 });
                 LinePlot.redraw();

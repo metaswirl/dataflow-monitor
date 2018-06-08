@@ -1,9 +1,11 @@
 import {getDataFromMetrics, getInitMetrics, updateInitMetrics} from "./RestInterface";
 import {Options} from "./highcharts";
-import {LinePlotData, LinePlotValue, Metric, MetricListObject, Value} from "./datastructure";
+import {Lineoptions, LinePlotData, LinePlotValue, Metric, MetricListObject, Value} from "./datastructure";
 import Highcharts = require("./highcharts");
 import $  = require("jquery");
+import d3 = require("d3");
 
+let colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
 let ChartOptions:Options = {
     chart: {
         type: 'spline',
@@ -82,6 +84,9 @@ export function setSeries(selectedMetric: Metric, since: number) {
         line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
         line.name = selectedMetric.metricId;
         line.data = [];
+        let options = new Lineoptions();
+        options.color = colorScaleLines(line.id).toString();
+        line.options = options ;
         result.values.forEach(function (point) {
             let value = new LinePlotValue();
             value.x = point[0];
@@ -95,10 +100,12 @@ export function setSeries(selectedMetric: Metric, since: number) {
             let series: any = LinePlot.get(line.id);
             line.data.forEach(function (point) {
                 if (series.data.length >= 20) {
-                    series.addPoint(point, false, true)
+                    series.addPoint(point, false, true);
+                    //series.update(series.options)
                 }
                 else {
-                    series.addPoint(point, false, false)
+                    series.addPoint(point, false, false);
+                    //series.update(series.options)
                 }
             });
             LinePlot.redraw()
