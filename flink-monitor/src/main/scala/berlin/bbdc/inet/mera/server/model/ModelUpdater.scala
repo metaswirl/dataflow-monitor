@@ -3,7 +3,7 @@ package berlin.bbdc.inet.mera.server.model
 import berlin.bbdc.inet.mera.server.metrics.{Counter, CounterSummary, Gauge, GaugeSummary, JobManagerMetricKey, Meter, MeterSummary, MetricKey, MetricSummary, TaskManagerStatusMetricKey, TaskManagerTaskMetricKey, UnknownMetricKey}
 import org.slf4j.{Logger, LoggerFactory}
 
-class ModelUpdater(val model: Model) {
+case class ModelUpdater(model: Model) {
   val LOG: Logger = LoggerFactory.getLogger(getClass)
 
   def update(timestamp : Long, metrics: List[(MetricKey, MetricSummary.NumberMetric)]): Unit = metrics.foreach({

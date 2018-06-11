@@ -3,7 +3,7 @@ package berlin.bbdc.inet.mera.server.model
 import berlin.bbdc.inet.mera.server.metrics.MetricNotFoundException
 import org.slf4j.{Logger, LoggerFactory}
 
-class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnable {
+case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable {
   val LOG: Logger = LoggerFactory.getLogger("Model")
   private val lPSolver = new LPSolver(model)
   // TODO: move options to a config file

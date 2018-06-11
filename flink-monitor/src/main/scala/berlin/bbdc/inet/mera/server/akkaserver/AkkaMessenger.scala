@@ -13,8 +13,8 @@ class AkkaMessenger(model: Model) extends Actor {
 
   val LOG: Logger = LoggerFactory.getLogger(getClass)
   val mfw: ModelFileWriter = initModelWriter(model)
-  val modelUpdater = new ModelUpdater(model)
-  val modelTraversal = new ModelTraversal(model, mfw)
+  val modelUpdater = ModelUpdater(model)
+  val modelTraversal = ModelTraversal(model, mfw)
 
   var traversalFuture: Option[ScheduledFuture[_]] = None
 
@@ -62,7 +62,7 @@ object AkkaMessenger {
   val LOG: Logger = LoggerFactory.getLogger(getClass)
 
   def start(model: Model): Unit = {
-    val actorSystem = ActorSystem("AkkaMessenger", loadConfig())
+    val actorSystem = ActorSystem("AkkaMetric", loadConfig())
     val remote: ActorRef = actorSystem.actorOf(Props(new AkkaMessenger(model)), name = "master")
   }
 
