@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContextExecutor
 
 
 class WebServer(proxy: MetricContainer, host: String, port: Int)
-  extends WebService with Loggable {
+  extends WebService with Loggable with CorsSupport {
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -18,5 +18,5 @@ class WebServer(proxy: MetricContainer, host: String, port: Int)
   implicit val metricContainer: MetricContainer = proxy
 
   private val myLoggedRoute = logRequestResult(Logging.InfoLevel, route)
-  Http().bindAndHandle(myLoggedRoute, host, port)
+  Http().bindAndHandle(corsHandler(myLoggedRoute), host, port)
 }
