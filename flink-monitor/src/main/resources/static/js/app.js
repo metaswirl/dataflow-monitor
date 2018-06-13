@@ -124,12 +124,14 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
 define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./highcharts", "jquery", "d3"], function (require, exports, RestInterface_1, datastructure_2, Highcharts, $, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
+    exports.colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
     var ChartOptions = {
         chart: {
             type: 'spline',
             height: $(".linePlot").height(),
-            animation: true,
+            animation: {
+                duration: 1000
+            },
             marginRight: 10,
             events: {}
         },
@@ -175,8 +177,9 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                 selmetric.taskId = task;
                 selmetric.metricId = metricListObject.metricId;
                 selmetric.resolution = metricListObject.resolution;
-                if (LinePlot.get(selmetric.taskId) != undefined) {
-                    var dataPerTask = LinePlot.get(selmetric.taskId).data;
+                if (LinePlot.get(selmetric.taskId + "_" + selmetric.metricId) != undefined) {
+                    var dataPerTask = LinePlot.get(selmetric.taskId + "_" + selmetric.metricId).data;
+                    console.log(dataPerTask);
                     var dataIndex = dataPerTask.length - 1;
                     if (dataIndex >= 0) {
                         lastCall = dataPerTask[dataIndex].x;
@@ -184,19 +187,19 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                     }
                 }
                 setSeries(selmetric, metricListObject.since);
+                //LinePlot.redraw();
             });
         });
         RestInterface_1.updateInitMetrics(listOfInitMetrics);
     }, 5000);
-    console.log(LinePlot);
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
             var line = new datastructure_2.LinePlotData();
             line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
-            line.name = selectedMetric.metricId;
+            line.name = selectedMetric.taskId;
             line.data = [];
             var options = new datastructure_2.Lineoptions();
-            options.color = colorScaleLines(line.id).toString();
+            options.color = exports.colorScaleLines(line.id.split("_", 1)[0]).toString();
             line.options = options;
             result.values.forEach(function (point) {
                 var value = new datastructure_2.LinePlotValue();
@@ -205,21 +208,22 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                 line.data.push(value);
             });
             if (LinePlot.get(line.id) == undefined) {
-                LinePlot.addSeries(line, true);
+                LinePlot.addSeries(line, false);
             }
             else {
                 var series_1 = LinePlot.get(line.id);
                 line.data.forEach(function (point) {
-                    if (series_1.data.length >= 20) {
-                        series_1.addPoint(point, false, true);
-                        //series.update(series.options)
-                    }
-                    else {
-                        series_1.addPoint(point, false, false);
-                        //series.update(series.options)
+                    if (point != null) {
+                        if (series_1.data.length >= 20) {
+                            series_1.addPoint(point, true, true, false);
+                            //series.update(series.options)
+                        }
+                        else {
+                            series_1.addPoint(point, true, false, false);
+                            //series.update(series.options)
+                        }
                     }
                 });
-                LinePlot.redraw();
             }
         });
     }
@@ -305,7 +309,7 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
         });
     }
 });
-define("longGraph", ["require", "exports", "RestInterface", "d3"], function (require, exports, RestInterface_3, d3) {
+define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot"], function (require, exports, RestInterface_3, d3, LinePlot_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var margin = { top: 10, right: 20, bottom: 60, left: 20 };
@@ -345,9 +349,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3"], function (req
     var maschineColor = d3.scaleLinear();
     maschineColor.domain([0, 5]);
     maschineColor.range(["green", "orange"]);
-    var loadColor = d3.scaleLinear();
-    loadColor.domain([0, 20]);
-    loadColor.range(["green", "red"]);
+    var loadColor = LinePlot_2.colorScaleLines;
     RestInterface_3.getTopology.done(function (result) {
         result.reverse();
         // xAxis prepare
@@ -419,8 +421,8 @@ define("longGraph", ["require", "exports", "RestInterface", "d3"], function (req
             .attr("cy", function (d) {
             return yScales[d.cx](d.cy);
         })
-            .style("fill", function () {
-            return loadColor(0);
+            .style("fill", function (d) {
+            return loadColor(d.name);
         })
             .append("text")
             .text(function (d) {

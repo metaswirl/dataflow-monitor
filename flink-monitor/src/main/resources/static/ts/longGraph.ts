@@ -1,6 +1,7 @@
 import {getTopology} from "./RestInterface";
 import {Cardinality, Task} from "./datastructure";
 import d3 = require("d3");
+import {colorScaleLines} from "./LinePlot";
 
 
 let margin = {top: 10, right: 20, bottom: 60, left: 20};
@@ -40,9 +41,7 @@ let shortGraphSvg = d3.select("#shortGraph")
 let maschineColor = d3.scaleLinear();
 maschineColor.domain([0, 5]);
 maschineColor.range(["green", "orange"]);
-let loadColor = d3.scaleLinear();
-loadColor.domain([0, 20]);
-loadColor.range(["green", "red"]);
+let loadColor = colorScaleLines;
 
 getTopology.done(function (result) {
     result.reverse();
@@ -124,8 +123,8 @@ getTopology.done(function (result) {
         .attr("cy", function (d: Task) {
             return yScales[d.cx](d.cy)
         })
-        .style("fill", function () {
-            return loadColor(0)
+        .style("fill", function (d: Task) {
+            return loadColor(d.name)
         })
         .append("text")
         .text(function (d: Task) {
