@@ -3,6 +3,7 @@ package berlin.bbdc.inet.mera.server.akkaserver
 import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import berlin.bbdc.inet.mera.common.akka.LoadShedderRegistration
 import berlin.bbdc.inet.mera.message.MetricUpdate
 import berlin.bbdc.inet.mera.server.metrics.{Counter, Gauge, Histogram, Meter, MetricKey}
 import berlin.bbdc.inet.mera.server.model.{Model, ModelFileWriter, ModelTraversal, ModelUpdater}
@@ -21,6 +22,9 @@ class AkkaMessenger(model: Model) extends Actor {
   override def receive: PartialFunction[Any, Unit] = {
     case d: MetricUpdate =>
       processMetricUpdate(d)
+    case m: LoadShedderRegistration =>
+      LoadShedderManager.registerLoadShedder(m)
+
   }
 
   override def postStop(): Unit = {
@@ -60,9 +64,9 @@ class AkkaMessenger(model: Model) extends Actor {
 
 object AkkaMessenger {
   val LOG: Logger = LoggerFactory.getLogger(getClass)
+  val actorSystem = ActorSystem("AkkaMessenger", loadConfig())
 
   def start(model: Model): Unit = {
-    val actorSystem = ActorSystem("AkkaMetric", loadConfig())
     val remote: ActorRef = actorSystem.actorOf(Props(new AkkaMessenger(model)), name = "master")
   }
 

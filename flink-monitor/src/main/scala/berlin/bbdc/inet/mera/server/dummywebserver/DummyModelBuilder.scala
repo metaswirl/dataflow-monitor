@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.server.dummywebserver
 
-import berlin.bbdc.inet.mera.common.JsonUtils
+import berlin.bbdc.inet.mera.common.tools.JsonUtils
 import berlin.bbdc.inet.mera.server.metrics.CounterSummary
 import berlin.bbdc.inet.mera.server.model.{Model, ModelBuilder}
 import berlin.bbdc.inet.mera.server.topology.{Job, TopologyServer}

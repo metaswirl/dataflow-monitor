@@ -2,7 +2,7 @@ package berlin.bbdc.inet.mera.server.topology
 
 import java.net.ConnectException
 
-import berlin.bbdc.inet.mera.common.JsonUtils
+import berlin.bbdc.inet.mera.common.tools.JsonUtils
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
 import berlin.bbdc.inet.mera.server.model.{CommType, Model, ModelBuilder}
 import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}

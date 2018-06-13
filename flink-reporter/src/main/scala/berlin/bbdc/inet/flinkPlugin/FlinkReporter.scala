@@ -78,7 +78,7 @@ trait FlinkMetricManager extends MetricReporter {
 class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
   val config = ConfigFactory.load("flinkPlugin.conf")
   val actorSystem = ActorSystem("AkkaMetric", config)
-  val master = actorSystem.actorSelection(f"akka.tcp://AkkaMetric@${jobManagerIpAddress}:2552/user/master")
+  val master = actorSystem.actorSelection(f"akka.tcp://AkkaMessenger@${jobManagerIpAddress}:2552/user/master")
 
   override def open(config: MetricConfig) = {
     LOG.info(s"Initializing reporter with destination: ${jobManagerIpAddress}:2552")
