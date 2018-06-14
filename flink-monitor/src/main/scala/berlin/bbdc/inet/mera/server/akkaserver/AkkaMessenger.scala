@@ -30,16 +30,13 @@ class AkkaMessenger(model: Model) extends Actor {
   override def postStop(): Unit = {
     modelTraversal.cancel()
     mfw.close()
-    traversalFuture match {
-      case Some(f) => f.cancel(true)
-      case None =>
-    }
+    traversalFuture foreach (_.cancel(true))
     super.postStop()
   }
 
   private def initModelWriter(model: Model): ModelFileWriter = {
     val folder: String = s"/tmp/mera_${System.currentTimeMillis()}"
-    LOG.info("Writing info to " + folder)
+    LOG.debug("Writing info to " + folder)
     val mfw = ModelFileWriter(folder, writeMetrics = true)
     mfw.writeGraph(model)
     mfw

@@ -12,7 +12,6 @@ object LoadShedderManager {
   val LOG: Logger = LoggerFactory.getLogger(getClass)
 
   private var loadShedders: Map[String, ActorSelection] = Map()
-  private val scheduler = Executors.newSingleThreadScheduledExecutor()
 
   def registerLoadShedder(m: LoadShedderRegistration): Unit = {
     LOG.debug(s"Register loadShedder ${m.id} at ${m.address}:${m.port}")
