@@ -37,7 +37,7 @@ class AkkaMessenger(model: Model) extends Actor {
     super.postStop()
   }
 
-  def initModelWriter(model: Model): ModelFileWriter = {
+  private def initModelWriter(model: Model): ModelFileWriter = {
     val folder: String = s"/tmp/mera_${System.currentTimeMillis()}"
     LOG.info("Writing info to " + folder)
     val mfw = ModelFileWriter(folder, writeMetrics = true)
@@ -45,7 +45,7 @@ class AkkaMessenger(model: Model) extends Actor {
     mfw
   }
 
-  def processMetricUpdate(d: MetricUpdate): Unit = {
+  private def processMetricUpdate(d: MetricUpdate): Unit = {
     mfw.updateMetrics(d.timestamp, d.counters.map(t => (t.key, t.count.toDouble)) ++
       d.meters.map(t => (t.key, t.rate)) ++ d.gauges.map(t => (t.key, t.value)))
     modelUpdater.update(d.timestamp,
@@ -71,8 +71,8 @@ object AkkaMessenger {
   }
 
   def loadConfig(): Config = {
-    val isCluster = ConfigFactory.load.getBoolean("metricReceiver.isCluster")
-    val config = ConfigFactory.load("meraAkka/metricServer.conf")
+    val isCluster = ConfigFactory.load.getBoolean("akkaMessenger.isCluster")
+    val config = ConfigFactory.load("meraAkka/akkaMessenger.conf")
 
     LOG.info(s"Running a cluster configuration: $isCluster")
     if (isCluster) config
