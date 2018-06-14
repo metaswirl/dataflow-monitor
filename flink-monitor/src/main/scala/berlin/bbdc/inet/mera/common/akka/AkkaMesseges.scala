@@ -4,4 +4,4 @@ final case class LoadShedderRegistration(id: String, address: String, port: Int)
 
 final case class ConfirmRegistration(id: String)
 
-final case class SendNewValue(value: Double)
+final case class SendNewValue(value: Int)

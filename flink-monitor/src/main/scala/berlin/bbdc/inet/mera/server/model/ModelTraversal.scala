@@ -1,5 +1,6 @@
 package berlin.bbdc.inet.mera.server.model
 
+import berlin.bbdc.inet.mera.server.akkaserver.LoadShedderManager
 import berlin.bbdc.inet.mera.server.metrics.MetricNotFoundException
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -12,7 +13,7 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
   private val penalty: Double = 0.9
   private val beginTime = System.currentTimeMillis()
   private var initPhase = true
-  private val initPhaseDuration = 120 * 1000
+  private val initPhaseDuration = 5 * 1000
 
   def computeOutDist(task: Task): Int => Double = {
     def computeOutDistPerTask(sum: Double, outDistRaw: Map[Int, Double])(taskNumber: Int) : Double = {
@@ -87,7 +88,7 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
   }
 
   def traverseModel() {
-    LOG.info("Traversing model")
+//    LOG.debug("Traversing model")
     model.tasks.values.foreach(_.inDistCtr = -1)
     try {
       model.tasks.values.foreach(computeInfMetrics)
@@ -108,7 +109,10 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
       initPhase = false
       mfw.writeStartOptimization()
     }
-    lPSolver.solveLP()
+    //TODO: this is just a test solution because optimizer is not ready yet
+    LOG.debug("Send new values to all loadshedders")
+    LoadShedderManager.sendTestValuesToAllLoadshedders()
+    //    lPSolver.solveLP()
   }
 
   def cancel(): Unit = {

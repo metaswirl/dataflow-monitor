@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.server.akkaserver
 
-import java.util.concurrent.{Executor, Executors, TimeUnit}
+import java.util.concurrent.Executors
 
 import akka.actor.ActorSelection
 import berlin.bbdc.inet.mera.common.akka.{ConfirmRegistration, LoadShedderRegistration, SendNewValue}
@@ -19,17 +19,17 @@ object LoadShedderManager {
     val remoteMaster = AkkaMessenger.actorSystem.actorSelection(s"akka.tcp://LoadShedderSystem@${m.address}:${m.port}/user/${m.id}")
     loadShedders += (m.id -> remoteMaster)
     remoteMaster ! ConfirmRegistration(m.id)
-
-    scheduler.schedule(new Runnable {
-      val r: Random = Random
-      def run(): Unit = LoadShedderManager.sendNewValue(m.id, r.nextDouble())
-    }, 5, TimeUnit.SECONDS)
   }
 
-  def sendNewValue(loadShedderId: String, value: Double): Unit = {
+  def sendNewValue(loadShedderId: String, value: Int): Unit = {
     loadShedders.get(loadShedderId) match {
       case Some(actor) => actor ! SendNewValue(value)
       case None => throw new Error(s"Trying to send new value to an unknown loadshedder $loadShedderId")
     }
+  }
+
+  def sendTestValuesToAllLoadshedders(): Unit = {
+    val r = Random
+    loadShedders foreach {case (_,v) => v ! SendNewValue(r.nextInt())}
   }
 }
