@@ -1,5 +1,6 @@
 package berlin.bbdc.inet.mera.common
 
+import berlin.bbdc.inet.mera.common.tools.JsonUtils
 import org.specs2.mutable.Specification
 
 class JsonUtilsTest extends Specification {

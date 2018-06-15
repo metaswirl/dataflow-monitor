@@ -1,19 +1,19 @@
 package berlin.bbdc.inet.mera.server.model
 
+import berlin.bbdc.inet.mera.server.akkaserver.LoadShedderManager
 import berlin.bbdc.inet.mera.server.metrics.MetricNotFoundException
 import org.slf4j.{Logger, LoggerFactory}
 
-class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnable {
+case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable {
   val LOG: Logger = LoggerFactory.getLogger("Model")
   private val lPSolver = new LPSolver(model)
   // TODO: move options to a config file
   private val queueAlmostEmpty : Double = 0.2
   private val queueAlmostFull : Double = 0.8
   private val penalty: Double = 0.9
-  private val queueFull : Double = 1.0
   private val beginTime = System.currentTimeMillis()
   private var initPhase = true
-  private var initPhaseDuration = 120 * 1000
+  private val initPhaseDuration = 5 * 1000
 
   def computeOutDist(task: Task): Int => Double = {
     def computeOutDistPerTask(sum: Double, outDistRaw: Map[Int, Double])(taskNumber: Int) : Double = {
@@ -88,7 +88,7 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
   }
 
   def traverseModel() {
-    LOG.info("Traversing model")
+//    LOG.debug("Traversing model")
     model.tasks.values.foreach(_.inDistCtr = -1)
     try {
       model.tasks.values.foreach(computeInfMetrics)
@@ -109,7 +109,10 @@ class ModelTraversal(val model: Model, val mfw : ModelFileWriter) extends Runnab
       initPhase = false
       mfw.writeStartOptimization()
     }
-    lPSolver.solveLP()
+    //TODO: this is just a test solution because optimizer is not ready yet
+    LOG.debug("Send new values to all loadshedders")
+    LoadShedderManager.sendTestValuesToAllLoadshedders()
+    //    lPSolver.solveLP()
   }
 
   def cancel(): Unit = {
@@ -139,7 +142,7 @@ class LPSolver(val model : Model, val warmStart: Boolean=true) {
       task.gurobiRate = grbModel.addVar(0.0, task.capacity, 0.0, GRB.CONTINUOUS, "rate_" + task.id)
       if (op.predecessor.nonEmpty) {
         val expr = new GRBLinExpr()
-        task.input.map(collect).foreach(expr.add(_))
+        task.input.map(collect).foreach(expr.add)
         if (op.isLoadShedder) {
           val dropRate : GRBVar = grbModel.addVar(0.0, GRB.INFINITY, 0.0, GRB.CONTINUOUS, "dropRate_" + task.id)
           expr.addTerm(-1, dropRate)
@@ -162,10 +165,10 @@ class LPSolver(val model : Model, val warmStart: Boolean=true) {
   }
   def loadResults(grbModel: GRBModel): Unit = {
     grbModel.getVars.foreach(v => {
-      prevResults.get(v.get(GRB.StringAttr.VarName)).map(v.set(GRB.IntAttr.VBasis, _))
+      prevResults.get(v.get(GRB.StringAttr.VarName)).foreach(v.set(GRB.IntAttr.VBasis, _))
     })
     grbModel.getConstrs.foreach(c => {
-      prevResults.get(c.get(GRB.StringAttr.ConstrName)).map(c.set(GRB.IntAttr.CBasis, _))
+      prevResults.get(c.get(GRB.StringAttr.ConstrName)).foreach(c.set(GRB.IntAttr.CBasis, _))
     })
   }
   def processResults(grbModel : GRBModel): Unit = {
