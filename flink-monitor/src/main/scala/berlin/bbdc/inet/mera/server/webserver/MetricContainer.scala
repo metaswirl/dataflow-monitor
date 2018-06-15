@@ -105,6 +105,7 @@ class MetricContainer(model: Model) {
       case Some((future, _)) =>
         LOG.debug(s"Cancel collecting metric ($id,$metricId)")
         future.cancel(false)
+        //TODO: remove the record from metricsFutures
       case _ =>
     }
   }

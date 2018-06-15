@@ -2,7 +2,7 @@ package berlin.bbdc.inet.mera.server.model
 
 import java.io.{File, PrintWriter}
 
-class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
+case class ModelFileWriter(folder: String, writeMetrics: Boolean = false) {
   // TODO: Find better format for target and inferred metrics. Especially for variable sized values, such as the input distribution.
   val folderFile = new File(folder)
   folderFile.mkdirs()
@@ -17,6 +17,7 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
   inferredMetricNodeWriter.write("time;task;selectivity;inputRate;capacity;inQueue;outQueue\n")
   inferredMetricEdgeWriter.write("time;source;target;outFraction;inFraction\n")
   targetMetricWriter.write("time;task;targetInputRate;targetOutputRate;targetPartialOutRate\n")
+
 
   def writeStartOptimization(): Unit = {
     val now = System.currentTimeMillis()
@@ -38,7 +39,8 @@ class ModelFileWriter(val folder: String, writeMetrics: Boolean = false) {
   def updateInferredMetrics(model : Model): Unit = {
     val now = System.currentTimeMillis()
     for (task <- model.tasks.values) {
-      inferredMetricNodeWriter.write(f"${now};${task.id};${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation}\n")
+      //TODO: change to s interpolation if possible
+      inferredMetricNodeWriter.write(f"$now;${task.id};${task.selectivity};${task.inRate};${task.capacity};${task.inQueueSaturation};${task.outQueueSaturation}\n")
     }
     for (te <- model.taskEdges) {
       inferredMetricEdgeWriter.write(f"$now;${te.source};${te.target};${te.outF};${te.inF}\n")

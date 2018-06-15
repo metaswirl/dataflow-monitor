@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.ActorMaterializer
-import berlin.bbdc.inet.mera.common.JsonUtils
+import berlin.bbdc.inet.mera.common.tools.JsonUtils
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.immutable.List
