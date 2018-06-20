@@ -3,16 +3,18 @@ import $ =require("jquery");
 import {Task} from "./datastructure";
 
 
+
+
+
 export function drawNode(point, posx:number , posy:number, d:Task) {
-    let arc = d3.arc()
+    let arcIn = d3.arc()
         .innerRadius(6)
         .outerRadius(12)
         .startAngle(0 * Math.PI);
-    let arc2 = d3.arc()
+    let arcOut = d3.arc()
         .innerRadius(6)
         .outerRadius(12)
         .startAngle(1 * Math.PI);
-
 
     let svg = point,
         g = svg.append("g")
@@ -22,15 +24,15 @@ export function drawNode(point, posx:number , posy:number, d:Task) {
         .datum({endAngle: 1 * Math.PI})
         .style("fill", "white")
         .style("stroke", "black")
-        .attr("d", arc)
-        .attr("class", d.name + "_" + "outQueue");
+        .attr("d", arcIn)
+        .attr("class", d.name + " " + "outQueue");
 
     let inQueue = g.append("path")
         .datum({endAngle: 2 * Math.PI})
         .style("fill", "white")
         .style("stroke", "black")
-        .attr("d", arc2)
-        .attr("class", d.name + "_" + "inQueue");
+        .attr("d", arcOut)
+        .attr("class", d.name + " " + "inQueue");
 
     //let selectivity = g.append("text")
     //    .attr("dy", "-0.8em")

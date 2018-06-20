@@ -1,4 +1,4 @@
-import {getTopology} from "./RestInterface";
+import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
 import {Cardinality, Task} from "./datastructure";
 import d3 = require("d3");
 import {colorScaleLines} from "./LinePlot";
@@ -26,8 +26,6 @@ let shortGraphCanvas = {
 let xScale = d3.scaleLinear();
 let xLabel = d3.scaleOrdinal();
 let yScales = [];
-let updateColorInterval;
-let graphDataset;
 let graphSvg = d3.select("#longGraph")
     .attr("width", longGraph.width)
     .attr("height", longGraph.height)
@@ -90,7 +88,6 @@ getTopology.done(function (result) {
 
     //Prepare Cardinality List
     let cardinality = getLinks(result);
-    console.log(cardinality);
 
     //Draw the Links
     graphSvg
@@ -108,7 +105,8 @@ getTopology.done(function (result) {
         });
 
     //Prepare Data as Tasklist
-    let taskList = createTaskList(result);
+    let taskList:Array<Task> = createTaskList(result);
+
     //Draw the Nodes
     graphSvg
         .append("g")
@@ -137,6 +135,13 @@ getTopology.done(function (result) {
         let obj = d3.select(this);
         return drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
         });
+    //Init Metrics for in and out - Queue
+    let initList:Array<string> = getInitList(taskList);
+    initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
+        updateInputQueue(initList);
+    });
+    initMetricForTasks("buffers.outputQueueLength", initList, 1);
+
 //Todo: Do we want to have color coded Maschine implicators in the Graph ?
     //Draw connected Maschines
     /*graphSvg
@@ -166,15 +171,38 @@ getTopology.done(function (result) {
 });
 
 // Helper Functions
-function updateInputQueue(data:Task) {
+function updateInputQueue(data:Array<string>) {
+    let inputValList:Array<object> = [];
+    data.forEach(function (item) {
+        getDataFromMetrics("buffers.inputQueueLength", item, Date.now()-1200).done(function (result) {
+            let point = result.values[0];
+            let inputVal = {
+                taskId: item + " " + "inQueue",
+                value: point[1]
+            };
+            inputValList.push(inputVal);
+            if (inputValList.length == data.length){
+                let svgupdate = d3.selectAll(".inQueue");
+
+                console.log(svgupdate);
+            }
+        });
+    });
+}
+function updateOutputQueue(data:Array<string>) {
 
 }
-function updateOutputQueue(data:Task) {
 
+function getInitList(data:Array<Task>) {
+    let initList:Array<string> = [];
+    data.forEach(function (item) {
+        initList.push(item.name);
+    });
+    return initList;
 }
 
 function createTaskList(input) {
-    let listOfTasks: Array<object> = [];
+    let listOfTasks: Array<Task> = [];
     input.forEach(function (item, i) {
         item.tasks.forEach(function (t, j) {
             let task = {

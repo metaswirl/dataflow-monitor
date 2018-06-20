@@ -64,7 +64,6 @@ setInterval(function () {
             selmetric.resolution = metricListObject.resolution;
             if (LinePlot.get(selmetric.taskId + "_" + selmetric.metricId) != undefined) {
                 let dataPerTask = LinePlot.get(selmetric.taskId + "_" + selmetric.metricId).data;
-                console.log(dataPerTask);
                 let dataIndex = dataPerTask.length - 1;
                 if (dataIndex >= 0) {
                     lastCall = dataPerTask[dataIndex].x;

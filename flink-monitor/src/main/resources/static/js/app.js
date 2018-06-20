@@ -97,7 +97,9 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         var postObj = new datastructure_1.MetricPostObject(metric, taskIds, resolutionTime);
         var listPost = new datastructure_1.MetricListObject(postObj);
         listPost.since = Date.now();
-        setInitMetrics(listPost);
+        if (resolutionTime > 5000) {
+            setInitMetrics(listPost);
+        }
         return $.post("http://127.0.0.1:12345/data/metrics/tasks/init", JSON.stringify(postObj));
     }
     exports.initMetricForTasks = initMetricForTasks;
@@ -179,7 +181,6 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                 selmetric.resolution = metricListObject.resolution;
                 if (LinePlot.get(selmetric.taskId + "_" + selmetric.metricId) != undefined) {
                     var dataPerTask = LinePlot.get(selmetric.taskId + "_" + selmetric.metricId).data;
-                    console.log(dataPerTask);
                     var dataIndex = dataPerTask.length - 1;
                     if (dataIndex >= 0) {
                         lastCall = dataPerTask[dataIndex].x;
@@ -313,11 +314,11 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function drawNode(point, posx, posy, d) {
-        var arc = d3.arc()
+        var arcIn = d3.arc()
             .innerRadius(6)
             .outerRadius(12)
             .startAngle(0 * Math.PI);
-        var arc2 = d3.arc()
+        var arcOut = d3.arc()
             .innerRadius(6)
             .outerRadius(12)
             .startAngle(1 * Math.PI);
@@ -327,14 +328,14 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
             .datum({ endAngle: 1 * Math.PI })
             .style("fill", "white")
             .style("stroke", "black")
-            .attr("d", arc)
-            .attr("class", d.name + "_" + "outQueue");
+            .attr("d", arcIn)
+            .attr("class", d.name + " " + "outQueue");
         var inQueue = g.append("path")
             .datum({ endAngle: 2 * Math.PI })
             .style("fill", "white")
             .style("stroke", "black")
-            .attr("d", arc2)
-            .attr("class", d.name + "_" + "inQueue");
+            .attr("d", arcOut)
+            .attr("class", d.name + " " + "inQueue");
         //let selectivity = g.append("text")
         //    .attr("dy", "-0.8em")
         //    .style("text-anchor", "middle")
@@ -373,8 +374,6 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
     var xScale = d3.scaleLinear();
     var xLabel = d3.scaleOrdinal();
     var yScales = [];
-    var updateColorInterval;
-    var graphDataset;
     var graphSvg = d3.select("#longGraph")
         .attr("width", longGraph.width)
         .attr("height", longGraph.height)
@@ -431,7 +430,6 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
         });
         //Prepare Cardinality List
         var cardinality = getLinks(result);
-        console.log(cardinality);
         //Draw the Links
         graphSvg
             .append("g")
@@ -474,6 +472,12 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
             var obj = d3.select(this);
             return node_1.drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
         });
+        //Init Metrics for in and out - Queue
+        var initList = getInitList(taskList);
+        RestInterface_3.initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
+            updateInputQueue(initList);
+        });
+        RestInterface_3.initMetricForTasks("buffers.outputQueueLength", initList, 1);
         //Todo: Do we want to have color coded Maschine implicators in the Graph ?
         //Draw connected Maschines
         /*graphSvg
@@ -502,8 +506,30 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
     });
     // Helper Functions
     function updateInputQueue(data) {
+        var inputValList = [];
+        data.forEach(function (item) {
+            RestInterface_3.getDataFromMetrics("buffers.inputQueueLength", item, Date.now() - 1200).done(function (result) {
+                var point = result.values[0];
+                var inputVal = {
+                    taskId: item + " " + "inQueue",
+                    value: point[1]
+                };
+                inputValList.push(inputVal);
+                if (inputValList.length == data.length) {
+                    var svgupdate = d3.selectAll(".inQueue");
+                    console.log(svgupdate);
+                }
+            });
+        });
     }
     function updateOutputQueue(data) {
+    }
+    function getInitList(data) {
+        var initList = [];
+        data.forEach(function (item) {
+            initList.push(item.name);
+        });
+        return initList;
     }
     function createTaskList(input) {
         var listOfTasks = [];
