@@ -309,7 +309,47 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
         });
     }
 });
-define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot"], function (require, exports, RestInterface_3, d3, LinePlot_2) {
+define("node", ["require", "exports", "d3"], function (require, exports, d3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function drawNode(point, posx, posy, d) {
+        var arc = d3.arc()
+            .innerRadius(6)
+            .outerRadius(12)
+            .startAngle(0 * Math.PI);
+        var arc2 = d3.arc()
+            .innerRadius(6)
+            .outerRadius(12)
+            .startAngle(1 * Math.PI);
+        var svg = point, g = svg.append("g")
+            .attr("transform", "translate(" + posx + "," + posy + ")");
+        var outQueue = g.append("path")
+            .datum({ endAngle: 1 * Math.PI })
+            .style("fill", "white")
+            .style("stroke", "black")
+            .attr("d", arc)
+            .attr("class", d.name + "_" + "outQueue");
+        var inQueue = g.append("path")
+            .datum({ endAngle: 2 * Math.PI })
+            .style("fill", "white")
+            .style("stroke", "black")
+            .attr("d", arc2)
+            .attr("class", d.name + "_" + "inQueue");
+        //let selectivity = g.append("text")
+        //    .attr("dy", "-0.8em")
+        //    .style("text-anchor", "middle")
+        //    .attr("class", "selectivity")
+        //   .text("5");
+        //let taskId = g.append("text")
+        //    .attr("dy", "1.6em")
+        //    .style("text-anchor", "middle")
+        //    .attr("class", "taskId")
+        //    .text(".1");
+        return g.node();
+    }
+    exports.drawNode = drawNode;
+});
+define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "node"], function (require, exports, RestInterface_3, d3, LinePlot_2, node_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var margin = { top: 10, right: 20, bottom: 60, left: 20 };
@@ -423,21 +463,17 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot"], f
         })
             .style("fill", function (d) {
             return loadColor(d.name);
-        })
-            .append("text")
-            .text(function (d) {
-            return d.name;
-        })
-            .attr("cy", function () {
-            return 5;
-        })
-            .attr("cx", function (d) {
-            return xScale(d.cx);
-        })
-            .attr("text", function (d) {
-            return d.name;
-        })
-            .style("text-anchor", "end");
+        });
+        //Draw Node Overlay
+        graphSvg
+            .append("g")
+            .attr("class", "overlays")
+            .selectAll("overlay")
+            .data(taskList)
+            .enter().append(function (d) {
+            var obj = d3.select(this);
+            return node_1.drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
+        });
         //Todo: Do we want to have color coded Maschine implicators in the Graph ?
         //Draw connected Maschines
         /*graphSvg
@@ -465,24 +501,10 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot"], f
         */
     });
     // Helper Functions
-    //ToDo: Fix color Index for Load on Nodes (maybe add a scale around node for Viewing Data)
-    /*function reloadNodeColor() {
-        let graph = d3.selectAll(".node");
-        graph.each(function (item) {
-            let d3itm = d3.select(this);
-            if (item.name == "Reduce") {
-                d3itm.style("fill", function () {
-                    try {
-                        let data = LinePlot.get("Sl2-Keyed_Reduce-2-inputQueueLength").data;
-                        return loadColor(data[data.length - 1].y)
-                    }
-                    catch (e) {
-                        return loadColor(0)
-                    }
-                })
-            }
-        })
-    }*/
+    function updateInputQueue(data) {
+    }
+    function updateOutputQueue(data) {
+    }
     function createTaskList(input) {
         var listOfTasks = [];
         input.forEach(function (item, i) {

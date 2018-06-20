@@ -2,6 +2,7 @@ import {getTopology} from "./RestInterface";
 import {Cardinality, Task} from "./datastructure";
 import d3 = require("d3");
 import {colorScaleLines} from "./LinePlot";
+import {drawNode} from "./node";
 
 
 let margin = {top: 10, right: 20, bottom: 60, left: 20};
@@ -125,22 +126,17 @@ getTopology.done(function (result) {
         })
         .style("fill", function (d: Task) {
             return loadColor(d.name)
-        })
-        .append("text")
-        .text(function (d: Task) {
-            return d.name
-        })
-        .attr("cy", function () {
-            return 5
-        })
-        .attr("cx", function (d: Task) {
-            return xScale(d.cx);
-        })
-        .attr("text", function (d: Task) {
-            return d.name;
-        })
-        .style("text-anchor", "end");
-
+        });
+    //Draw Node Overlay
+    graphSvg
+        .append("g")
+        .attr("class", "overlays")
+        .selectAll("overlay")
+        .data(taskList)
+        .enter().append(function (d: Task) {
+        let obj = d3.select(this);
+        return drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
+        });
 //Todo: Do we want to have color coded Maschine implicators in the Graph ?
     //Draw connected Maschines
     /*graphSvg
@@ -170,25 +166,12 @@ getTopology.done(function (result) {
 });
 
 // Helper Functions
+function updateInputQueue(data:Task) {
 
-//ToDo: Fix color Index for Load on Nodes (maybe add a scale around node for Viewing Data)
-/*function reloadNodeColor() {
-    let graph = d3.selectAll(".node");
-    graph.each(function (item) {
-        let d3itm = d3.select(this);
-        if (item.name == "Reduce") {
-            d3itm.style("fill", function () {
-                try {
-                    let data = LinePlot.get("Sl2-Keyed_Reduce-2-inputQueueLength").data;
-                    return loadColor(data[data.length - 1].y)
-                }
-                catch (e) {
-                    return loadColor(0)
-                }
-            })
-        }
-    })
-}*/
+}
+function updateOutputQueue(data:Task) {
+
+}
 
 function createTaskList(input) {
     let listOfTasks: Array<object> = [];
