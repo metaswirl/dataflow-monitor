@@ -2,8 +2,7 @@ package berlin.bbdc.inet.mera.server.webserver
 
 import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, MediaTypes}
 import akka.http.scaladsl.testkit.Specs2RouteTest
-import berlin.bbdc.inet.mera.common.JsonUtils
-import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.common.tools.JsonUtils
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAll
@@ -14,7 +13,6 @@ import scala.io.Source
 class WebServerSpec extends Specification with Specs2RouteTest with Mockito with WebService with BeforeAll {
 
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val model: Model = mock[Model]
   implicit val metricContainer: MetricContainer = mock[MetricContainer]
 
   val taskInitMessage = TaskInitMessage(List("id0", "id1"), "metric", 5)
