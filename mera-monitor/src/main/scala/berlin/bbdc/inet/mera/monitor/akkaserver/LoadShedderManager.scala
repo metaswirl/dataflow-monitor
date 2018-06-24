@@ -33,4 +33,6 @@ object LoadShedderManager {
     val r = Random
     loadShedders foreach {case (_,v) => v ! SendNewValue(r.nextInt())}
   }
+
+  def loadsheddersExist(): Boolean = loadShedders.size > 0
 }
