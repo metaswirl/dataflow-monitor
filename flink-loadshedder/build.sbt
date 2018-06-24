@@ -13,9 +13,12 @@ scalaVersion := "2.11.12"
 val AkkaVersion = "2.5.11"
 val flinkVersion = "1.4.2"
 
+lazy val monitor = ProjectRef(file("../flink-monitor"), "flink-monitor")
+
+lazy val root = Project("flink-loadshedder", file(".")).dependsOn(monitor)
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
   "org.apache.flink" %% "flink-scala" % flinkVersion % "provided",
   "org.apache.flink" %% "flink-streaming-scala" % flinkVersion % "provided",
-  "berlin.bbdc.inet" % "mera_2.11" % "0.2"
 )
