@@ -12,17 +12,20 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration._
 
 /**
- * Loadshedder variant of the RichFlatMapFunction. The operator intends to drop records
- * in regards to its dropRate parameter.
- * The operator uses Akka to communicate with Mera-monitor. It sets up an Akka ActorSystem with a name
- * taken from application.conf file under "loadshedder.system". It then connects to Mera-monitor
- * which should be reachable under the system name taken from "mera.system" and port "mera.port".
- * Once connected to Mera, the operator is able to receive new values of the dropRate parameter.
+ * Loadshedder variant of the RichFlatMapFunction. The operator drops the first
+ * n records every second. The number n is decided by the dropRate parameter.
+ *
+ * The operator uses Akka to communicate with Mera-monitor. It sets up an Akka
+ * ActorSystem with a name taken from application.conf file under
+ * "loadshedder.system". It then connects to Mera-monitor which should be
+ * reachable under the system name taken from "mera.system" and port
+ * "mera.port".  Once connected to Mera, the operator is able to receive new
+ * values of the dropRate parameter.
  *
  * The basic syntax for using a ConfigurableLoadShedder:
  *
  * DataSet<X> input = ...;
- * DataSet<Y> result = input.flatMap(new ConfigurableLoadShedder());
+ * DataSet<Y> result = input.flatMap(new ConfigurableLoadShedder[X]());
  *
  *
  * @param dropRate Initial value of dropRate parameter (default = 0).
@@ -30,12 +33,21 @@ import scala.concurrent.duration._
  */
 class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
   extends RichFlatMapFunction[T, T] with Serializable {
-  //TODO: please document these variables. do we need all of them? //Kajetan
-  var refTime: Long = System.currentTimeMillis()
-  var count: Long = 0
+
+  // end of last time window
+  var lastTimestamp: Long = System.currentTimeMillis()
+
+  // count of forwarded items
+  var count = 0L
+
+  // count of dropped items
   var dropCount = 0L
+
+  // drop rate that will become active in the next time window
   var newDropRate: Int = dropRate
-  var now: Long = refTime
+
+  // current timestamp
+  var now: Long = lastTimestamp
 
   // name of the task
   var myName = ""
@@ -66,24 +78,28 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
   }
 
   override def flatMap(value: T, out: Collector[T]): Unit = {
-    if (count % 1000 == 0) now = System.currentTimeMillis()
-    if (now - refTime > 1000) {
-      refTime = now
-      count = 0
-      dropCount = 0
-      dropRate = newDropRate
-    }
-    if (newDropRate <= 0) {
+    // shortcut, do nothing when no drop is configured
+    if (newDropRate <= 0 && dropRate <= 0) {
       out.collect(value)
       return
     }
+    // for performance reasons we take new timestamps only every 1000 items
+    // TODO: replace this check with a timer (e.g. java.utilTimer)
+    if (count % 1000 == 0) now = System.currentTimeMillis()
+
+    if (now - lastTimestamp > 1000) {
+      lastTimestamp = now
+      dropCount = 0
+      dropRate = newDropRate
+    }
     count += 1
-    if (count <= dropRate) {
+
+    // drop the first n items in a time window
+    if (dropCount < dropRate) {
       dropCount += 1
     } else {
       out.collect(value)
     }
-
   }
 
   private def registerLoadShedder(): Unit = {
