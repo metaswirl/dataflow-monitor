@@ -1,6 +1,6 @@
 package berlin.bbdc.inet.mera.monitor.model
 
-import berlin.bbdc.inet.mera.monitor.metrics.{MetricNotFoundException, MetricSummary}
+import berlin.bbdc.inet.mera.monitor.metrics.{MetricNotFoundException, MetricSummary, SimpleMeterSummary}
 import berlin.bbdc.inet.mera.monitor.model.CommType.CommType
 import gurobi.GRBVar
 
@@ -8,7 +8,6 @@ import scala.collection.immutable.ListMap
 
 /* TODO: Separate data from traversal
  */
-
 class Task(val parent: Operator, val number: Int, val host: Option[String]) {
   val id = s"${parent.id}.$number"
 
@@ -21,6 +20,7 @@ class Task(val parent: Operator, val number: Int, val host: Option[String]) {
   def getMetricSummary(key: String): MetricSummary[_] = {
     metrics.getOrElse(key, throw MetricNotFoundException(key, id))
   }
+
   // TODO: feels like this is out of place
   var gurobiRate : GRBVar = _
   var inQueueSaturation: Double = _
@@ -37,6 +37,7 @@ class Task(val parent: Operator, val number: Int, val host: Option[String]) {
   def addOutput(te: TaskEdge): Unit = {
     output :+= te
   }
+
   def addInput(te: TaskEdge): Unit = {
     input :+= te
   }
@@ -49,8 +50,14 @@ class Task(val parent: Operator, val number: Int, val host: Option[String]) {
 }
 
 class TaskEdge(val source: Task, val target: Task) {
+  var moreMetrics: Map[String, Double] = Map()
   var inF: Double = _
   var outF: Double = _
+  var metrics: scala.collection.mutable.Map[String, SimpleMeterSummary] = scala.collection.mutable.Map()
+
+  override def toString: String = {
+    f"${source.parent.id}-${source.number} => ${target.parent.id}-${target.number}"
+  }
 }
 
 object CommType extends Enumeration {
@@ -87,7 +94,7 @@ class Operator(val id: String, val parallelism: Int, val commType : CommType, va
 case class RuntimeStatus(val running : Boolean = true, var receivedFirstMetrics : Boolean = false, var optimizerStarted : Boolean = false)
 
 //TODO: operators cannot be a map since the keys will overlap
-case class Model(n :Int, operators : ListMap[String, Operator], taskEdges : List[TaskEdge]) {
+case class Model(metricWindowSize :Int, operators : ListMap[String, Operator], taskEdges : List[TaskEdge]) {
   // Assuming single sink
   // TODO: start when job starts, end when job ends.
   // TODO: sink and src should be Iterable[Operator]

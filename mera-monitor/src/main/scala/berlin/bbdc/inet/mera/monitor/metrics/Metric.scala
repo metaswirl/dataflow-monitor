@@ -14,6 +14,10 @@ case class Meter(count: Long, rate: Double) extends Metric[Double] {
   def value: Double = rate
 }
 
+case class SimpleMeter(rate: Double) extends Metric[Double] {
+  def value: Double = rate
+}
+
 case class Histogram(count: Long, min: Long, max: Long, mean: Double) extends Metric[Double] {
   def value: Double = mean
 }
@@ -97,6 +101,15 @@ class MeterSummary(override val n: Int) extends MetricSummary[Meter](n) {
   }
 }
 
+class SimpleMeterSummary(override val n: Int) extends MetricSummary[SimpleMeter](n) {
+
+  override def calculateMean(l: List[(Long, SimpleMeter)]): Double = if (l.nonEmpty) l.map(_._2.rate).sum / (1.0 * n) else 0.0
+
+  override def getRates: List[Double] = {
+    history.map(_._2.rate)
+  }
+}
+
 abstract class MetricKey(val rawKey: String)
 
 case class UnknownMetricKey(override val rawKey: String) extends MetricKey(rawKey)
@@ -114,10 +127,8 @@ case class TaskManagerNetworkMetricKey(override val rawKey: String, host: String
 case class TaskManagerTaskMetricKey(override val rawKey: String, host: String, tmId: String, jobId: String, opId: String, taskId: Int, metric: String) extends TaskManagerMetricKey(rawKey, host, tmId)
 
 object MetricKey {
-  var allKeys: Set[String] = Set()
 
   def buildKey(rawKey: String): MetricKey = {
-    allKeys += rawKey
     val splitKey: Array[String] = rawKey.split('.')
     if (splitKey.length > 1 && splitKey(1) == "jobmanager") {
       val host = splitKey(0)

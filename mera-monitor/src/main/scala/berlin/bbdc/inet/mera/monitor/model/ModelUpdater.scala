@@ -25,15 +25,15 @@ case class ModelUpdater(model: Model) {
 
       m match {
         case x: Gauge =>
-          val gs: GaugeSummary = t.metrics.getOrElse(k.metric, new GaugeSummary(model.n)).asInstanceOf[GaugeSummary]
+          val gs: GaugeSummary = t.metrics.getOrElse(k.metric, new GaugeSummary(model.metricWindowSize)).asInstanceOf[GaugeSummary]
           gs.add(timestamp, x)
           t.metrics += (k.metric -> gs)
         case x: Counter =>
-          val cs : CounterSummary = t.metrics.getOrElse(k.metric, new CounterSummary(model.n)).asInstanceOf[CounterSummary]
+          val cs : CounterSummary = t.metrics.getOrElse(k.metric, new CounterSummary(model.metricWindowSize)).asInstanceOf[CounterSummary]
           cs.add(timestamp, x)
           t.metrics += (k.metric -> cs)
         case x: Meter =>
-          val ms : MeterSummary = t.metrics.getOrElse(k.metric, new MeterSummary(model.n)).asInstanceOf[MeterSummary]
+          val ms : MeterSummary = t.metrics.getOrElse(k.metric, new MeterSummary(model.metricWindowSize)).asInstanceOf[MeterSummary]
           ms.add(timestamp, x)
           t.metrics += (k.metric -> ms)
       }
