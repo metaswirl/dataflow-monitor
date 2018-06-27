@@ -142,7 +142,11 @@ getTopology.done(function (result) {
             updateInputQueue(initList)
         },1000);
     });
-    initMetricForTasks("buffers.outputQueueLength", initList, 1);
+    initMetricForTasks("buffers.outputQueueLength", initList, 1).done(function () {
+        setInterval(function () {
+            updateOutputQueue(initList)
+        },1000);
+    });
 
     //Set Timeout for updates on Nodes
 
@@ -186,13 +190,26 @@ function updateInputQueue(data:Array<string>) {
             };
             inputValList.push(inputVal);
             if (inputValList.length == data.length){
-                updateNode(inputValList, true, false)
+                updateNode(inputValList, true)
             }
         });
     });
 }
 function updateOutputQueue(data:Array<string>) {
-
+    let inputValList:Array<object> = [];
+    data.forEach(function (item) {
+        getDataFromMetrics("buffers.outputQueueLength", item, Date.now()-1200).done(function (result) {
+            let point = result.values[0];
+            let inputVal = {
+                taskId: item + "_" + "outQueue",
+                value: point[1]
+            };
+            inputValList.push(inputVal);
+            if (inputValList.length == data.length){
+                updateNode(inputValList, false)
+            }
+        });
+    });
 }
 
 function getInitList(data:Array<Task>) {

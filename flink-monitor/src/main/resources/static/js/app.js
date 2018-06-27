@@ -321,9 +321,18 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         .innerRadius(6)
         .outerRadius(12)
         .startAngle(1 * Math.PI);
+    var colorScale = d3.scaleLinear()
+        .domain([0, 1.5])
+        .range(["lightgreen", "red"]);
     function drawNode(point, posx, posy, d) {
         var svg = point, g = svg.append("g")
             .attr("transform", "translate(" + posx + "," + posy + ")");
+        var outQueueOutline = g.append("path")
+            .datum({ endAngle: 0 * Math.PI })
+            .style("stroke", "black")
+            .style("fill", "white")
+            .attr("d", arcOut)
+            .attr("class", "outQueueOutline");
         var outQueue = g.append("path")
             .datum({ endAngle: 0 * Math.PI })
             .style("fill", "white")
@@ -347,29 +356,55 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         return g.node();
     }
     exports.drawNode = drawNode;
-    function updateNode(nodes, input, output) {
-        var colorScale = d3.scaleLinear()
-            .domain([0, 1.5])
-            .range(["lightgreen", "red"]);
-        d3.selectAll(".inQueue")
-            .data(nodes)
-            .datum(function (d) {
-            return { endAngle: (1 + d.value) * Math.PI, color: colorScale(d.value) };
-        })
-            .style("fill", function (d) {
-            return d.color;
-        })
-            .transition()
-            .duration(500)
-            .attrTween("d", arc2Tween);
+    function updateNode(nodes, isInput) {
+        if (isInput) {
+            d3.selectAll(".inQueue")
+                .data(nodes)
+                .datum(function (d) {
+                return { endAngle: (1 + d.value) * Math.PI, color: colorScale(d.value) };
+            })
+                .transition()
+                .duration(500)
+                .attrTween("d", arcInTween)
+                .styleTween("fill", arcColorTween);
+        }
+        else {
+            d3.selectAll(".outQueue")
+                .data(nodes)
+                .datum(function (d) {
+                console.log(d.value);
+                return { endAngle: (1 - d.value) * Math.PI, color: colorScale(d.value) };
+            })
+                .transition()
+                .duration(500)
+                .attrTween("d", arcOutTween)
+                .styleTween("fill", arcColorTween);
+        }
     }
     exports.updateNode = updateNode;
-    function arc2Tween(d) {
+    function arcInTween(d) {
         var interp = d3.interpolate(this._current, d);
         this._current = d;
         return function (t) {
             var tmp = interp(t);
             return arcIn(tmp);
+        };
+    }
+    function arcOutTween(d) {
+        var interp = d3.interpolate(this._current, d);
+        this._current = d;
+        return function (t) {
+            var tmp = interp(t);
+            return arcOut(tmp);
+        };
+    }
+    function arcColorTween(d) {
+        var interp = d3.interpolate(this._current, d);
+        this._current = d;
+        return function (t) {
+            var tmp = interp(t);
+            tmp = (tmp.endAngle / Math.PI) - 1;
+            return colorScale(tmp);
         };
     }
 });
@@ -502,7 +537,11 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
                 updateInputQueue(initList);
             }, 1000);
         });
-        RestInterface_3.initMetricForTasks("buffers.outputQueueLength", initList, 1);
+        RestInterface_3.initMetricForTasks("buffers.outputQueueLength", initList, 1).done(function () {
+            setInterval(function () {
+                updateOutputQueue(initList);
+            }, 1000);
+        });
         //Set Timeout for updates on Nodes
         //Todo: Do we want to have color coded Maschine implicators in the Graph ?
         //Draw connected Maschines
@@ -542,12 +581,26 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
                 };
                 inputValList.push(inputVal);
                 if (inputValList.length == data.length) {
-                    node_1.updateNode(inputValList, true, false);
+                    node_1.updateNode(inputValList, true);
                 }
             });
         });
     }
     function updateOutputQueue(data) {
+        var inputValList = [];
+        data.forEach(function (item) {
+            RestInterface_3.getDataFromMetrics("buffers.outputQueueLength", item, Date.now() - 1200).done(function (result) {
+                var point = result.values[0];
+                var inputVal = {
+                    taskId: item + "_" + "outQueue",
+                    value: point[1]
+                };
+                inputValList.push(inputVal);
+                if (inputValList.length == data.length) {
+                    node_1.updateNode(inputValList, false);
+                }
+            });
+        });
     }
     function getInitList(data) {
         var initList = [];
