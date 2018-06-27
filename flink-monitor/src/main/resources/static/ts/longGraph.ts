@@ -1,6 +1,8 @@
-import {getTopology} from "./RestInterface";
+import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
 import {Cardinality, Task} from "./datastructure";
 import d3 = require("d3");
+import {colorScaleLines} from "./LinePlot";
+import {drawNode, updateNode, updateNodes} from "./node";
 
 
 let margin = {top: 10, right: 20, bottom: 60, left: 20};
@@ -24,8 +26,6 @@ let shortGraphCanvas = {
 let xScale = d3.scaleLinear();
 let xLabel = d3.scaleOrdinal();
 let yScales = [];
-let updateColorInterval;
-let graphDataset;
 let graphSvg = d3.select("#longGraph")
     .attr("width", longGraph.width)
     .attr("height", longGraph.height)
@@ -40,9 +40,7 @@ let shortGraphSvg = d3.select("#shortGraph")
 let maschineColor = d3.scaleLinear();
 maschineColor.domain([0, 5]);
 maschineColor.range(["green", "orange"]);
-let loadColor = d3.scaleLinear();
-loadColor.domain([0, 20]);
-loadColor.range(["green", "red"]);
+let loadColor = colorScaleLines;
 
 getTopology.done(function (result) {
     result.reverse();
@@ -90,7 +88,6 @@ getTopology.done(function (result) {
 
     //Prepare Cardinality List
     let cardinality = getLinks(result);
-    console.log(cardinality);
 
     //Draw the Links
     graphSvg
@@ -108,7 +105,8 @@ getTopology.done(function (result) {
         });
 
     //Prepare Data as Tasklist
-    let taskList = createTaskList(result);
+    let taskList:Array<Task> = createTaskList(result);
+
     //Draw the Nodes
     graphSvg
         .append("g")
@@ -124,23 +122,33 @@ getTopology.done(function (result) {
         .attr("cy", function (d: Task) {
             return yScales[d.cx](d.cy)
         })
-        .style("fill", function () {
-            return loadColor(0)
-        })
-        .append("text")
-        .text(function (d: Task) {
-            return d.name
-        })
-        .attr("cy", function () {
-            return 5
-        })
-        .attr("cx", function (d: Task) {
-            return xScale(d.cx);
-        })
-        .attr("text", function (d: Task) {
-            return d.name;
-        })
-        .style("text-anchor", "end");
+        .style("fill", function (d: Task) {
+            return loadColor(d.name)
+        });
+    //Draw Node Overlay
+    graphSvg
+        .append("g")
+        .attr("class", "overlays")
+        .selectAll("overlay")
+        .data(taskList)
+        .enter().append(function (d: Task) {
+        let obj = d3.select(this);
+        return drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
+        });
+    //Init Metrics for in and out - Queue
+    let initList:Array<string> = getInitList(taskList);
+    initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
+        setInterval(function () {
+            updateInputQueue(initList)
+        },1000);
+    });
+    initMetricForTasks("buffers.outputQueueLength", initList, 1).done(function () {
+        setInterval(function () {
+            updateOutputQueue(initList)
+        },1000);
+    });
+
+    //Set Timeout for updates on Nodes
 
 //Todo: Do we want to have color coded Maschine implicators in the Graph ?
     //Draw connected Maschines
@@ -171,28 +179,49 @@ getTopology.done(function (result) {
 });
 
 // Helper Functions
+function updateInputQueue(data:Array<string>) {
+    let inputValList:Array<object> = [];
+    data.forEach(function (item) {
+        getDataFromMetrics("buffers.inputQueueLength", item, Date.now()-1200).done(function (result) {
+            let point = result.values[0];
+            let inputVal = {
+                taskId: item + "_" + "inQueue",
+                value: point[1]
+            };
+            inputValList.push(inputVal);
+            if (inputValList.length == data.length){
+                updateNode(inputValList, true)
+            }
+        });
+    });
+}
+function updateOutputQueue(data:Array<string>) {
+    let inputValList:Array<object> = [];
+    data.forEach(function (item) {
+        getDataFromMetrics("buffers.outputQueueLength", item, Date.now()-1200).done(function (result) {
+            let point = result.values[0];
+            let inputVal = {
+                taskId: item + "_" + "outQueue",
+                value: point[1]
+            };
+            inputValList.push(inputVal);
+            if (inputValList.length == data.length){
+                updateNode(inputValList, false)
+            }
+        });
+    });
+}
 
-//ToDo: Fix color Index for Load on Nodes (maybe add a scale around node for Viewing Data)
-/*function reloadNodeColor() {
-    let graph = d3.selectAll(".node");
-    graph.each(function (item) {
-        let d3itm = d3.select(this);
-        if (item.name == "Reduce") {
-            d3itm.style("fill", function () {
-                try {
-                    let data = LinePlot.get("Sl2-Keyed_Reduce-2-inputQueueLength").data;
-                    return loadColor(data[data.length - 1].y)
-                }
-                catch (e) {
-                    return loadColor(0)
-                }
-            })
-        }
-    })
-}*/
+function getInitList(data:Array<Task>) {
+    let initList:Array<string> = [];
+    data.forEach(function (item) {
+        initList.push(item.name);
+    });
+    return initList;
+}
 
 function createTaskList(input) {
-    let listOfTasks: Array<object> = [];
+    let listOfTasks: Array<Task> = [];
     input.forEach(function (item, i) {
         item.tasks.forEach(function (t, j) {
             let task = {
