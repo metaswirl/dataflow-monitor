@@ -63,7 +63,7 @@ object MetricSummary {
 
 class GaugeSummary(override val n: Int) extends MetricSummary[Gauge](n) {
 
-  override def calculateMean(l: List[(Long, Gauge)]): Double = if (l.nonEmpty) l.map(_._2.value).sum / (1.0 * n) else 0.0
+  override def calculateMean(l: List[(Long, Gauge)]): Double = if (l.nonEmpty) l.map(_._2.value).sum / (1.0 * l.size) else 0.0
 
   override def getRates: List[Double] = {
     var res: List[Double] = List()
