@@ -313,42 +313,65 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
 define("node", ["require", "exports", "d3"], function (require, exports, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var arcOut = d3.arc()
+        .innerRadius(6)
+        .outerRadius(12)
+        .startAngle(1 * Math.PI);
+    var arcIn = d3.arc()
+        .innerRadius(6)
+        .outerRadius(12)
+        .startAngle(1 * Math.PI);
     function drawNode(point, posx, posy, d) {
-        var arcIn = d3.arc()
-            .innerRadius(6)
-            .outerRadius(12)
-            .startAngle(0 * Math.PI);
-        var arcOut = d3.arc()
-            .innerRadius(6)
-            .outerRadius(12)
-            .startAngle(1 * Math.PI);
         var svg = point, g = svg.append("g")
             .attr("transform", "translate(" + posx + "," + posy + ")");
         var outQueue = g.append("path")
-            .datum({ endAngle: 1 * Math.PI })
+            .datum({ endAngle: 0 * Math.PI })
             .style("fill", "white")
             .style("stroke", "black")
             .attr("d", arcIn)
-            .attr("class", d.name + " " + "outQueue");
+            .attr("class", "outQueue")
+            .attr("id", encodeURIComponent(d.name + "-" + "outQueue"));
+        var inQueueOutline = g.append("path")
+            .datum({ endAngle: 2 * Math.PI })
+            .style("stroke", "black")
+            .style("fill", "white")
+            .attr("d", arcOut)
+            .attr("class", "inQueueOutline");
         var inQueue = g.append("path")
             .datum({ endAngle: 2 * Math.PI })
             .style("fill", "white")
             .style("stroke", "black")
             .attr("d", arcOut)
-            .attr("class", d.name + " " + "inQueue");
-        //let selectivity = g.append("text")
-        //    .attr("dy", "-0.8em")
-        //    .style("text-anchor", "middle")
-        //    .attr("class", "selectivity")
-        //   .text("5");
-        //let taskId = g.append("text")
-        //    .attr("dy", "1.6em")
-        //    .style("text-anchor", "middle")
-        //    .attr("class", "taskId")
-        //    .text(".1");
+            .attr("class", "inQueue")
+            .attr("id", encodeURIComponent(d.name + "-" + "inQueue"));
         return g.node();
     }
     exports.drawNode = drawNode;
+    function updateNode(nodes, input, output) {
+        var colorScale = d3.scaleLinear()
+            .domain([0, 1.5])
+            .range(["lightgreen", "red"]);
+        d3.selectAll(".inQueue")
+            .data(nodes)
+            .datum(function (d) {
+            return { endAngle: (1 + d.value) * Math.PI, color: colorScale(d.value) };
+        })
+            .style("fill", function (d) {
+            return d.color;
+        })
+            .transition()
+            .duration(500)
+            .attrTween("d", arc2Tween);
+    }
+    exports.updateNode = updateNode;
+    function arc2Tween(d) {
+        var interp = d3.interpolate(this._current, d);
+        this._current = d;
+        return function (t) {
+            var tmp = interp(t);
+            return arcIn(tmp);
+        };
+    }
 });
 define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "node"], function (require, exports, RestInterface_3, d3, LinePlot_2, node_1) {
     "use strict";
@@ -475,9 +498,12 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
         //Init Metrics for in and out - Queue
         var initList = getInitList(taskList);
         RestInterface_3.initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
-            updateInputQueue(initList);
+            setInterval(function () {
+                updateInputQueue(initList);
+            }, 1000);
         });
         RestInterface_3.initMetricForTasks("buffers.outputQueueLength", initList, 1);
+        //Set Timeout for updates on Nodes
         //Todo: Do we want to have color coded Maschine implicators in the Graph ?
         //Draw connected Maschines
         /*graphSvg
@@ -511,13 +537,12 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
             RestInterface_3.getDataFromMetrics("buffers.inputQueueLength", item, Date.now() - 1200).done(function (result) {
                 var point = result.values[0];
                 var inputVal = {
-                    taskId: item + " " + "inQueue",
+                    taskId: item + "_" + "inQueue",
                     value: point[1]
                 };
                 inputValList.push(inputVal);
                 if (inputValList.length == data.length) {
-                    var svgupdate = d3.selectAll(".inQueue");
-                    console.log(svgupdate);
+                    node_1.updateNode(inputValList, true, false);
                 }
             });
         });

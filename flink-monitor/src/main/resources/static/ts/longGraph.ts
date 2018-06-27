@@ -2,7 +2,7 @@ import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterfa
 import {Cardinality, Task} from "./datastructure";
 import d3 = require("d3");
 import {colorScaleLines} from "./LinePlot";
-import {drawNode} from "./node";
+import {drawNode, updateNode, updateNodes} from "./node";
 
 
 let margin = {top: 10, right: 20, bottom: 60, left: 20};
@@ -138,9 +138,13 @@ getTopology.done(function (result) {
     //Init Metrics for in and out - Queue
     let initList:Array<string> = getInitList(taskList);
     initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
-        updateInputQueue(initList);
+        setInterval(function () {
+            updateInputQueue(initList)
+        },1000);
     });
     initMetricForTasks("buffers.outputQueueLength", initList, 1);
+
+    //Set Timeout for updates on Nodes
 
 //Todo: Do we want to have color coded Maschine implicators in the Graph ?
     //Draw connected Maschines
@@ -177,14 +181,12 @@ function updateInputQueue(data:Array<string>) {
         getDataFromMetrics("buffers.inputQueueLength", item, Date.now()-1200).done(function (result) {
             let point = result.values[0];
             let inputVal = {
-                taskId: item + " " + "inQueue",
+                taskId: item + "_" + "inQueue",
                 value: point[1]
             };
             inputValList.push(inputVal);
             if (inputValList.length == data.length){
-                let svgupdate = d3.selectAll(".inQueue");
-
-                console.log(svgupdate);
+                updateNode(inputValList, true, false)
             }
         });
     });
