@@ -137,12 +137,12 @@ getTopology.done(function (result) {
         });
     //Init Metrics for in and out - Queue
     let initList:Array<string> = getInitList(taskList);
-    initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
+    initMetricForTasks("buffers.inPoolUsage", initList, 1).done(function () {
         setInterval(function () {
             updateInputQueue(initList)
         },1000);
     });
-    initMetricForTasks("buffers.outputQueueLength", initList, 1).done(function () {
+    initMetricForTasks("buffers.outPoolUsage", initList, 1).done(function () {
         setInterval(function () {
             updateOutputQueue(initList)
         },1000);
@@ -182,7 +182,7 @@ getTopology.done(function (result) {
 function updateInputQueue(data:Array<string>) {
     let inputValList:Array<object> = [];
     data.forEach(function (item) {
-        getDataFromMetrics("buffers.inputQueueLength", item, Date.now()-1200).done(function (result) {
+        getDataFromMetrics("buffers.inPoolUsage", item, Date.now()-1200).done(function (result) {
             let point = result.values[0];
             let inputVal = {
                 taskId: item + "_" + "inQueue",
@@ -198,7 +198,7 @@ function updateInputQueue(data:Array<string>) {
 function updateOutputQueue(data:Array<string>) {
     let inputValList:Array<object> = [];
     data.forEach(function (item) {
-        getDataFromMetrics("buffers.outputQueueLength", item, Date.now()-1200).done(function (result) {
+        getDataFromMetrics("buffers.outPoolUsage", item, Date.now()-1200).done(function (result) {
             let point = result.values[0];
             let inputVal = {
                 taskId: item + "_" + "outQueue",

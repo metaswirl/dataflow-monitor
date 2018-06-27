@@ -532,12 +532,12 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
         });
         //Init Metrics for in and out - Queue
         var initList = getInitList(taskList);
-        RestInterface_3.initMetricForTasks("buffers.inputQueueLength", initList, 1).done(function () {
+        RestInterface_3.initMetricForTasks("buffers.inPoolUsage", initList, 1).done(function () {
             setInterval(function () {
                 updateInputQueue(initList);
             }, 1000);
         });
-        RestInterface_3.initMetricForTasks("buffers.outputQueueLength", initList, 1).done(function () {
+        RestInterface_3.initMetricForTasks("buffers.outPoolUsage", initList, 1).done(function () {
             setInterval(function () {
                 updateOutputQueue(initList);
             }, 1000);
@@ -573,7 +573,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
     function updateInputQueue(data) {
         var inputValList = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.inputQueueLength", item, Date.now() - 1200).done(function (result) {
+            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - 1200).done(function (result) {
                 var point = result.values[0];
                 var inputVal = {
                     taskId: item + "_" + "inQueue",
@@ -589,7 +589,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
     function updateOutputQueue(data) {
         var inputValList = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.outputQueueLength", item, Date.now() - 1200).done(function (result) {
+            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - 1200).done(function (result) {
                 var point = result.values[0];
                 var inputVal = {
                     taskId: item + "_" + "outQueue",
