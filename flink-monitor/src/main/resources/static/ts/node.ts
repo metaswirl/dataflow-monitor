@@ -1,5 +1,4 @@
 import d3 = require("d3");
-import $ =require("jquery");
 import {Task} from "./datastructure";
 
 let arcOut = d3.arc()
