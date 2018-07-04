@@ -1,9 +1,11 @@
 package berlin.bbdc.inet.mera.server.dummywebserver
 
-import berlin.bbdc.inet.mera.common.tools.JsonUtils
+import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 import berlin.bbdc.inet.mera.server.metrics.CounterSummary
-import berlin.bbdc.inet.mera.server.model.{Model, ModelBuilder}
-import berlin.bbdc.inet.mera.server.topology.{Job, TopologyServer}
+import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.server.model.ModelBuilder
+import berlin.bbdc.inet.mera.server.topology.Job
+import berlin.bbdc.inet.mera.server.topology.TopologyServer
 
 import scala.io.Source
 

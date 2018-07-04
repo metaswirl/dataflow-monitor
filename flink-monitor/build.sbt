@@ -16,10 +16,8 @@ val HttpClientVersion = "4.5.5"
 val JacksonScalaVersion = "2.9.4"
 val Specs2Version = "4.0.2"
 
-// -------- https://scalapb.github.io/index.html ---- BEGIN
-PB.targets in Compile := Seq(
-  scalapb.gen() -> (sourceManaged in Compile).value
-)
+lazy val commons = ProjectRef(file("../mera-commons"), "mera-commons")
+lazy val root = Project("flink-monitor", file(".")).dependsOn(commons)
 
 scalaVersion := "2.11.12"
 
@@ -35,8 +33,7 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
   "org.specs2" %% "specs2-mock" % Specs2Version % "test",
-  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test",
-  "com.trueaccord.scalapb" %% "scalapb-runtime" % com.trueaccord.scalapb.compiler.Version.scalapbVersion % "protobuf"
+  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test"
 )
 
 //mainClass in Compile := Some("berlin.bbdc.inet.mera.server.Starter")

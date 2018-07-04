@@ -1,14 +1,30 @@
 package berlin.bbdc.inet.mera.server.akkaserver
 
-import java.util.concurrent.{Executors, ScheduledExecutorService, ScheduledFuture, TimeUnit}
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import berlin.bbdc.inet.mera.common.akka.LoadShedderRegistration
-import berlin.bbdc.inet.mera.message.MetricUpdate
-import berlin.bbdc.inet.mera.server.metrics.{Counter, Gauge, Histogram, Meter, MetricKey}
-import berlin.bbdc.inet.mera.server.model.{Model, ModelFileWriter, ModelTraversal, ModelUpdater}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import org.slf4j.{Logger, LoggerFactory}
+import akka.actor.Actor
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.Props
+import berlin.bbdc.inet.mera.commons.akka.LoadShedderRegistration
+import berlin.bbdc.inet.mera.commons.message.MetricUpdate
+import berlin.bbdc.inet.mera.server.metrics.Counter
+import berlin.bbdc.inet.mera.server.metrics.Gauge
+import berlin.bbdc.inet.mera.server.metrics.Histogram
+import berlin.bbdc.inet.mera.server.metrics.Meter
+import berlin.bbdc.inet.mera.server.metrics.MetricKey
+import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.server.model.ModelFileWriter
+import berlin.bbdc.inet.mera.server.model.ModelTraversal
+import berlin.bbdc.inet.mera.server.model.ModelUpdater
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class AkkaMessenger(model: Model) extends Actor {
 
@@ -46,10 +62,10 @@ class AkkaMessenger(model: Model) extends Actor {
     mfw.updateMetrics(d.timestamp, d.counters.map(t => (t.key, t.count.toDouble)) ++
       d.meters.map(t => (t.key, t.rate)) ++ d.gauges.map(t => (t.key, t.value)))
     modelUpdater.update(d.timestamp,
-      d.counters.map(t => (MetricKey.buildKey(t.key), Counter(t.count))).toList ++
-        d.meters.map(t => (MetricKey.buildKey(t.key), Meter(t.count, t.rate))).toList ++
-        d.hists.map(t => (MetricKey.buildKey(t.key), Histogram(t.count, t.min, t.max, t.mean))).toList ++
-        d.gauges.map(t => (MetricKey.buildKey(t.key), Gauge(t.value))).toList
+      d.counters.map(t => (MetricKey.buildKey(t.key), Counter(t.count))) ++
+        d.meters.map(t => (MetricKey.buildKey(t.key), Meter(t.count, t.rate))) ++
+        d.hists.map(t => (MetricKey.buildKey(t.key), Histogram(t.count, t.min, t.max, t.mean))) ++
+        d.gauges.map(t => (MetricKey.buildKey(t.key), Gauge(t.value)))
     )
     if (traversalFuture.isEmpty) {
       LOG.info("Started receiving metrics. Starting model traversal.")

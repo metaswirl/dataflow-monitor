@@ -19,6 +19,7 @@ trait Loggable {
 
   def logRequestResult(level: LogLevel, route: Route)
                       (implicit m: Materializer, ex: ExecutionContext): Route = {
+
     def myLoggingFunction(logger: LoggingAdapter)(req: HttpRequest)(res: Any): Unit = {
       val entry = res match {
         case Complete(resp) =>
@@ -26,13 +27,15 @@ trait Loggable {
         case other =>
           Future.successful(LogEntry(s"$other", level))
       }
-      entry.map(_.logTo(logger))
+
+      entry.filter(_ => !req.uri.toString.contains("metrics/task?")).map(_.logTo(logger))
     }
+
     DebuggingDirectives.logRequestResult(LoggingMagnet(log => myLoggingFunction(log)))(route)
   }
 
   private def entityAsString(entity: HttpEntity)
-                    (implicit m: Materializer, ex: ExecutionContext): Future[String] = {
+                            (implicit m: Materializer, ex: ExecutionContext): Future[String] = {
     entity.dataBytes
       .map(_.decodeString(entity.contentType.charsetOption.get.value))
       .runWith(Sink.head)

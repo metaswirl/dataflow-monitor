@@ -2,14 +2,18 @@ package berlin.bbdc.inet.mera.server.topology
 
 import java.net.ConnectException
 
-import berlin.bbdc.inet.mera.common.tools.JsonUtils
+import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 import berlin.bbdc.inet.mera.server.model.CommType.CommType
-import berlin.bbdc.inet.mera.server.model.{CommType, Model, ModelBuilder}
-import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
+import berlin.bbdc.inet.mera.server.model.CommType
+import berlin.bbdc.inet.mera.server.model.Model
+import berlin.bbdc.inet.mera.server.model.ModelBuilder
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.conn.HttpHostConnectException
 import org.apache.http.impl.client.HttpClientBuilder
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.io.Source
