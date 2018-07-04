@@ -18,7 +18,6 @@ export function initMetricForTasks(metric: any, taskIds: Array<string>, resoluti
     let postObj = new MetricPostObject(metric, taskIds, resolutionTime);
     let listPost = new MetricListObject(postObj);
     listPost.since = Date.now();
-    console.log(resolutionTime);
     if(resolutionTime >= 5){
         setInitMetrics(listPost);
     }

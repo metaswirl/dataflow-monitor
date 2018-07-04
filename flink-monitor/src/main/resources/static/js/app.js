@@ -97,7 +97,6 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         var postObj = new datastructure_1.MetricPostObject(metric, taskIds, resolutionTime);
         var listPost = new datastructure_1.MetricListObject(postObj);
         listPost.since = Date.now();
-        console.log(resolutionTime);
         if (resolutionTime >= 5) {
             setInitMetrics(listPost);
         }
@@ -196,7 +195,6 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
     }, 5000);
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
-            console.log(result);
             var line = new datastructure_2.LinePlotData();
             line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
             line.name = selectedMetric.taskId;
@@ -281,7 +279,6 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
         });
     });
     $("#initButton").on("click", function () {
-        console.log("Submitted");
         initMetricOnAction();
     });
     function initMetricOnAction() {
