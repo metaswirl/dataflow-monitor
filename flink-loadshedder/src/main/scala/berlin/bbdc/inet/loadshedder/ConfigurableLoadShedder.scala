@@ -9,8 +9,6 @@ import org.apache.flink.configuration.{Configuration, GlobalConfiguration, JobMa
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration._
-
 /**
  * Loadshedder variant of the RichFlatMapFunction. The operator drops the first
  * n records every second. The number n is decided by the dropRate parameter.
@@ -46,18 +44,14 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
   // drop rate that will become active in the next time window
   var newDropRate: Int = dropRate
 
-  // current timestamp
   var now: Long = lastTimestamp
 
-  // name of the task
-  var myName = ""
+  var taskName = ""
 
-  val config = ConfigFactory.load()
+  private val config = ConfigFactory.load()
 
-  // IP address of Job Manager
   val jobManagerIpAddress: String = GlobalConfiguration.loadConfiguration.getString(JobManagerOptions.ADDRESS)
 
-  // local Akka ActorSystem
   lazy val system: ActorSystem = ActorSystem(config.getString("loadshedder.system"), loadAkkaConfig())
 
   // Mera Actor
@@ -65,11 +59,11 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
     s"akka.tcp://${config.getString("mera.system")}@$jobManagerIpAddress:${config.getInt("mera.port")}/user/master")
 
   // Local actor talking to Mera
-  lazy val akkaMessenger: ActorRef = system.actorOf(AkkaMessenger.props(master), name = myName)
+  lazy val akkaMessenger: ActorRef = system.actorOf(AkkaMessenger.props(master), name = taskName)
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    myName = getRuntimeContext.getTaskName + "." + getRuntimeContext.getIndexOfThisSubtask.toString
+    taskName = getRuntimeContext.getTaskName + "." + getRuntimeContext.getIndexOfThisSubtask.toString
     registerLoadShedder()
   }
 
@@ -107,7 +101,7 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
     val address = AddressExtension.hostOf(system)
     val port = AddressExtension.portOf(system)
     // initialize loadshedder registration in Mera
-    akkaMessenger ! InitRegistration(myName, address, port, setDropRate)
+    akkaMessenger ! InitRegistration(taskName, address, port, setDropRate)
   }
 
   // checks if Flink is ran in a cluster configuration
@@ -124,35 +118,36 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
 
 // Actor for communication with Mera-monitor
 class AkkaMessenger(master: ActorSelection) extends Actor with Timers {
-  val LOG = LoggerFactory.getLogger(getClass)
+  import scala.concurrent.duration._
 
-  // name of the Flink task
-  var name = ""
-  // network address of the task
-  var address = ""
-  //network port of the task
-  var port = 0
+  private val LOG = LoggerFactory.getLogger(getClass)
+
+  var flinkTaskName = ""
+  var flinkTaskAddress = ""
+  var flinkTaskPort = 0
   //function to set the dropRate param of the task
   var setter: Int => Unit = _
 
   def receive: Receive = {
     case m: InitRegistration =>
-      name = m.id
-      address = m.address
-      port = m.port
+      flinkTaskName = m.id
+      flinkTaskAddress = m.address
+      flinkTaskPort = m.port
       setter = m.setter
-      LOG.info("Loadshedder init registration: " + name + ", " + address + ":" + port)
+      LOG.info("Loadshedder init registration: " + flinkTaskName + ", " + flinkTaskAddress + ":" + flinkTaskPort)
       // start periodic task in case Mera is not responding
       timers.startPeriodicTimer(TickKey, Tick, 5.second)
-      master ! LoadShedderRegistration(name, address, port)
+      master ! LoadShedderRegistration(flinkTaskName, flinkTaskAddress, flinkTaskPort)
     case Tick =>
-      master ! LoadShedderRegistration(name, address, port)
+      master ! LoadShedderRegistration(flinkTaskName, flinkTaskAddress, flinkTaskPort)
     case m: ConfirmRegistration =>
-      assert(name == m.id)
+      assert(flinkTaskName == m.id)
       timers.cancel(TickKey)
       LOG.info(s"Loadshedder ${m.id} registration confirmed")
+      // register every 30s in case Mera was restarted
+      timers.startPeriodicTimer(TickKey, Tick, 30.second)
     case m: SendNewValue =>
-      LOG.debug(s"Loadshedder new value received for $name: ${m.value}")
+      LOG.debug(s"Loadshedder new value received for $flinkTaskName: ${m.value}")
       setter(m.value)
   }
 }
