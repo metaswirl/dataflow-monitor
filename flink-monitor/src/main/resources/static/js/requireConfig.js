@@ -17,4 +17,4 @@ require.config({
         }
     } // end Shim Configuration
 });
-require(["LinePlot", "interfaceLoads", "longGraph"]);
+require(["LinePlot", "interfaceLoads", "longGraph", "node"]);
