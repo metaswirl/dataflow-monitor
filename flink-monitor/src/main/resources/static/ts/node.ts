@@ -10,9 +10,9 @@ let arcIn = d3.arc()
     .innerRadius(6)
     .outerRadius(12)
     .startAngle(1 * Math.PI);
-let colorScale =  d3.scaleLinear()
-    .domain([0, 1.5])
-    .range(["lightgreen", "red"]);
+let colorScaleBuffer =  d3.scaleLinear()
+    .domain([0, 1.1])
+    .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
 
 
 
@@ -58,24 +58,27 @@ export function updateNode(nodes:Array<object>, isInput:boolean) {
         d3.selectAll(".inQueue")
             .data(nodes)
             .datum(function (d) {
-                return {endAngle: (1 + d.value) * Math.PI, color: colorScale(d.value)}
+                return {endAngle: (1 + d.value) * Math.PI, color: colorScaleBuffer(d.value)}
+            })
+            .style("fill", function (d) {
+                return d.color;
             })
             .transition()
             .duration(500)
-            .attrTween("d", arcInTween)
-            .styleTween("fill", arcColorTween);
+            .attrTween("d", arcInTween);
     }
     else {
         d3.selectAll(".outQueue")
             .data(nodes)
             .datum(function (d) {
-                console.log(d.value);
-                return {endAngle: (1 - d.value) * Math.PI, color: colorScale(d.value)}
+                return {endAngle: (1 - d.value) * Math.PI, color: colorScaleBuffer(d.value)}
+            })
+            .style("fill", function (d) {
+                return d.color;
             })
             .transition()
             .duration(500)
-            .attrTween("d", arcOutTween)
-            .styleTween("fill", arcColorTween)
+            .attrTween("d", arcOutTween);
     }
 
 }
@@ -101,6 +104,6 @@ function arcColorTween(d) {
     return function (t) {
         let tmp = interp(t);
         tmp = (tmp.endAngle / Math.PI) - 1;
-        return colorScale(tmp);
+        return colorScaleBuffer(tmp);
     }
 }

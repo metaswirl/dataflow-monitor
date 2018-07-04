@@ -321,9 +321,9 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         .innerRadius(6)
         .outerRadius(12)
         .startAngle(1 * Math.PI);
-    var colorScale = d3.scaleLinear()
-        .domain([0, 1.5])
-        .range(["lightgreen", "red"]);
+    var colorScaleBuffer = d3.scaleLinear()
+        .domain([0, 1.1])
+        .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
     function drawNode(point, posx, posy, d) {
         var svg = point, g = svg.append("g")
             .attr("transform", "translate(" + posx + "," + posy + ")");
@@ -361,24 +361,27 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
             d3.selectAll(".inQueue")
                 .data(nodes)
                 .datum(function (d) {
-                return { endAngle: (1 + d.value) * Math.PI, color: colorScale(d.value) };
+                return { endAngle: (1 + d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+            })
+                .style("fill", function (d) {
+                return d.color;
             })
                 .transition()
                 .duration(500)
-                .attrTween("d", arcInTween)
-                .styleTween("fill", arcColorTween);
+                .attrTween("d", arcInTween);
         }
         else {
             d3.selectAll(".outQueue")
                 .data(nodes)
                 .datum(function (d) {
-                console.log(d.value);
-                return { endAngle: (1 - d.value) * Math.PI, color: colorScale(d.value) };
+                return { endAngle: (1 - d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+            })
+                .style("fill", function (d) {
+                return d.color;
             })
                 .transition()
                 .duration(500)
-                .attrTween("d", arcOutTween)
-                .styleTween("fill", arcColorTween);
+                .attrTween("d", arcOutTween);
         }
     }
     exports.updateNode = updateNode;
@@ -404,7 +407,7 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         return function (t) {
             var tmp = interp(t);
             tmp = (tmp.endAngle / Math.PI) - 1;
-            return colorScale(tmp);
+            return colorScaleBuffer(tmp);
         };
     }
 });
