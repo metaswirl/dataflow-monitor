@@ -1,8 +1,11 @@
 package berlin.bbdc.inet.mera.server.akkaserver
 
 import akka.actor.ActorSelection
-import berlin.bbdc.inet.mera.common.akka.{ConfirmRegistration, LoadShedderRegistration, SendNewValue}
-import org.slf4j.{Logger, LoggerFactory}
+import berlin.bbdc.inet.mera.commons.akka.ConfirmRegistration
+import berlin.bbdc.inet.mera.commons.akka.LoadShedderRegistration
+import berlin.bbdc.inet.mera.commons.akka.SendNewValue
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import scala.util.Random
 
@@ -22,11 +25,11 @@ object LoadShedderManager {
   def sendNewValue(loadShedderId: String, value: Int): Unit = {
     loadShedders.get(loadShedderId) match {
       case Some(actor) => actor ! SendNewValue(value)
-      case None => throw new Error(s"Trying to send new value to an unknown loadshedder $loadShedderId")
+      case None => throw new Error(s"Trying to send new value to an unknown load shedder $loadShedderId")
     }
   }
 
-  def sendTestValuesToAllLoadshedders(): Unit = {
+  def sendTestValuesToAllLoadShedders(): Unit = {
     val r = Random
     loadShedders foreach {case (_,v) => v ! SendNewValue(r.nextInt())}
   }

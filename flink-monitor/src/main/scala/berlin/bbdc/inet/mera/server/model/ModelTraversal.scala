@@ -2,7 +2,8 @@ package berlin.bbdc.inet.mera.server.model
 
 import berlin.bbdc.inet.mera.server.akkaserver.LoadShedderManager
 import berlin.bbdc.inet.mera.server.metrics.MetricNotFoundException
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable {
   val LOG: Logger = LoggerFactory.getLogger("Model")
@@ -111,7 +112,7 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
     }
     //TODO: this is just a test solution because optimizer is not ready yet
     LOG.debug("Send new values to all loadshedders")
-    LoadShedderManager.sendTestValuesToAllLoadshedders()
+    LoadShedderManager.sendTestValuesToAllLoadShedders()
     //    lPSolver.solveLP()
   }
 
@@ -194,9 +195,9 @@ class LPSolver(val model : Model, val warmStart: Boolean=true) {
     // TODO: Hide this away, only use in debug
     val fname = s"/tmp/grb_${System.currentTimeMillis()}.lp"
     grbModel.write(fname)
+    import java.nio.file.Files
     import java.nio.file.Paths
     import java.nio.file.StandardOpenOption
-    import java.nio.file.Files
     Files.write(Paths.get(fname), result.getBytes, StandardOpenOption.APPEND)
   }
 
@@ -218,8 +219,8 @@ class LPSolver(val model : Model, val warmStart: Boolean=true) {
   }
 
   def sendToPort(port: Int, msg: String): Unit = {
-    import java.net._
     import java.io._
+    import java.net._
     val s = new Socket(InetAddress.getByName("localhost"), port)
     val out = new PrintStream(s.getOutputStream)
     out.print(msg + "\n")

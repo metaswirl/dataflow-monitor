@@ -15,9 +15,9 @@ val Specs2Version = "4.0.2"
 val AkkaVersion = "2.5.11"
 val flinkVersion = "1.4.2"
 
-lazy val monitor = ProjectRef(file("../flink-monitor"), "flink-monitor")
+lazy val commons = ProjectRef(file("../mera-commons"), "mera-commons")
 
-lazy val root = Project("flink-loadshedder", file(".")).dependsOn(monitor)
+lazy val root = Project("flink-loadshedder", file(".")).dependsOn(commons)
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
