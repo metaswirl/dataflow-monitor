@@ -174,20 +174,20 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
         var listOfInitMetrics = RestInterface_1.getInitMetrics();
         listOfInitMetrics.forEach(function (metricListObject) {
             metricListObject.taskIds.forEach(function (task) {
-                var selmetric = new datastructure_2.Metric();
+                var selMetric = new datastructure_2.Metric();
                 var lastCall;
-                selmetric.taskId = task;
-                selmetric.metricId = metricListObject.metricId;
-                selmetric.resolution = metricListObject.resolution;
-                if (LinePlot.get(selmetric.taskId + "_" + selmetric.metricId) != undefined) {
-                    var dataPerTask = LinePlot.get(selmetric.taskId + "_" + selmetric.metricId).data;
+                selMetric.taskId = task;
+                selMetric.metricId = metricListObject.metricId;
+                selMetric.resolution = metricListObject.resolution;
+                if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
+                    var dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
                     var dataIndex = dataPerTask.length - 1;
                     if (dataIndex >= 0) {
                         lastCall = dataPerTask[dataIndex].x;
                         metricListObject.since = lastCall;
                     }
                 }
-                setSeries(selmetric, metricListObject.since);
+                setSeries(selMetric, metricListObject.since);
                 //LinePlot.redraw();
             });
         });
@@ -542,32 +542,6 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
                 updateOutputQueue(initList);
             }, 1000);
         });
-        //Set Timeout for updates on Nodes
-        //Todo: Do we want to have color coded Maschine implicators in the Graph ?
-        //Draw connected Maschines
-        /*graphSvg
-            .append("g")
-            .attr("class", "maschines")
-            .selectAll(".maschine")
-            .data(graphDataset)
-            .enter().append("circle")
-            .attr("class", function (d) {
-                return "maschine" + d.maschine
-            })
-            .attr("r", 10)
-            .attr("cx", function (d) {
-                return xScale(d.cx)
-            })
-            .attr("cy", function (d) {
-                return yScales[d.cx](d.cy)
-            })
-            .style("stroke", function (d) {
-                return maschineColor(d.maschine)
-            })
-            .style("fill", function (d) {
-                return maschineColor(d.maschine)
-            });
-        */
     });
     // Helper Functions
     function updateInputQueue(data) {

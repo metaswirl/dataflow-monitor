@@ -147,35 +147,6 @@ getTopology.done(function (result) {
             updateOutputQueue(initList)
         },1000);
     });
-
-    //Set Timeout for updates on Nodes
-
-//Todo: Do we want to have color coded Maschine implicators in the Graph ?
-    //Draw connected Maschines
-    /*graphSvg
-        .append("g")
-        .attr("class", "maschines")
-        .selectAll(".maschine")
-        .data(graphDataset)
-        .enter().append("circle")
-        .attr("class", function (d) {
-            return "maschine" + d.maschine
-        })
-        .attr("r", 10)
-        .attr("cx", function (d) {
-            return xScale(d.cx)
-        })
-        .attr("cy", function (d) {
-            return yScales[d.cx](d.cy)
-        })
-        .style("stroke", function (d) {
-            return maschineColor(d.maschine)
-        })
-        .style("fill", function (d) {
-            return maschineColor(d.maschine)
-        });
-    */
-
 });
 
 // Helper Functions
