@@ -97,7 +97,7 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         var postObj = new datastructure_1.MetricPostObject(metric, taskIds, resolutionTime);
         var listPost = new datastructure_1.MetricListObject(postObj);
         listPost.since = Date.now();
-        if (resolutionTime > 5000) {
+        if (resolutionTime >= 5) {
             setInitMetrics(listPost);
         }
         return $.post("http://127.0.0.1:12345/data/metrics/tasks/init", JSON.stringify(postObj));
@@ -132,7 +132,7 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
             type: 'spline',
             height: $(".linePlot").height(),
             animation: {
-                duration: 1000
+                duration: 0
             },
             marginRight: 10,
             events: {}
@@ -174,20 +174,20 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
         var listOfInitMetrics = RestInterface_1.getInitMetrics();
         listOfInitMetrics.forEach(function (metricListObject) {
             metricListObject.taskIds.forEach(function (task) {
-                var selmetric = new datastructure_2.Metric();
+                var selMetric = new datastructure_2.Metric();
                 var lastCall;
-                selmetric.taskId = task;
-                selmetric.metricId = metricListObject.metricId;
-                selmetric.resolution = metricListObject.resolution;
-                if (LinePlot.get(selmetric.taskId + "_" + selmetric.metricId) != undefined) {
-                    var dataPerTask = LinePlot.get(selmetric.taskId + "_" + selmetric.metricId).data;
+                selMetric.taskId = task;
+                selMetric.metricId = metricListObject.metricId;
+                selMetric.resolution = metricListObject.resolution;
+                if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
+                    var dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
                     var dataIndex = dataPerTask.length - 1;
                     if (dataIndex >= 0) {
                         lastCall = dataPerTask[dataIndex].x;
                         metricListObject.since = lastCall;
                     }
                 }
-                setSeries(selmetric, metricListObject.since);
+                setSeries(selMetric, metricListObject.since);
                 //LinePlot.redraw();
             });
         });
@@ -321,9 +321,9 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         .innerRadius(6)
         .outerRadius(12)
         .startAngle(1 * Math.PI);
-    var colorScale = d3.scaleLinear()
-        .domain([0, 1.5])
-        .range(["lightgreen", "red"]);
+    var colorScaleBuffer = d3.scaleLinear()
+        .domain([0, 1.1])
+        .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
     function drawNode(point, posx, posy, d) {
         var svg = point, g = svg.append("g")
             .attr("transform", "translate(" + posx + "," + posy + ")");
@@ -361,24 +361,27 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
             d3.selectAll(".inQueue")
                 .data(nodes)
                 .datum(function (d) {
-                return { endAngle: (1 + d.value) * Math.PI, color: colorScale(d.value) };
+                return { endAngle: (1 + d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+            })
+                .style("fill", function (d) {
+                return d.color;
             })
                 .transition()
                 .duration(500)
-                .attrTween("d", arcInTween)
-                .styleTween("fill", arcColorTween);
+                .attrTween("d", arcInTween);
         }
         else {
             d3.selectAll(".outQueue")
                 .data(nodes)
                 .datum(function (d) {
-                console.log(d.value);
-                return { endAngle: (1 - d.value) * Math.PI, color: colorScale(d.value) };
+                return { endAngle: (1 - d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+            })
+                .style("fill", function (d) {
+                return d.color;
             })
                 .transition()
                 .duration(500)
-                .attrTween("d", arcOutTween)
-                .styleTween("fill", arcColorTween);
+                .attrTween("d", arcOutTween);
         }
     }
     exports.updateNode = updateNode;
@@ -396,15 +399,6 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         return function (t) {
             var tmp = interp(t);
             return arcOut(tmp);
-        };
-    }
-    function arcColorTween(d) {
-        var interp = d3.interpolate(this._current, d);
-        this._current = d;
-        return function (t) {
-            var tmp = interp(t);
-            tmp = (tmp.endAngle / Math.PI) - 1;
-            return colorScale(tmp);
         };
     }
 });
@@ -542,32 +536,6 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
                 updateOutputQueue(initList);
             }, 1000);
         });
-        //Set Timeout for updates on Nodes
-        //Todo: Do we want to have color coded Maschine implicators in the Graph ?
-        //Draw connected Maschines
-        /*graphSvg
-            .append("g")
-            .attr("class", "maschines")
-            .selectAll(".maschine")
-            .data(graphDataset)
-            .enter().append("circle")
-            .attr("class", function (d) {
-                return "maschine" + d.maschine
-            })
-            .attr("r", 10)
-            .attr("cx", function (d) {
-                return xScale(d.cx)
-            })
-            .attr("cy", function (d) {
-                return yScales[d.cx](d.cy)
-            })
-            .style("stroke", function (d) {
-                return maschineColor(d.maschine)
-            })
-            .style("fill", function (d) {
-                return maschineColor(d.maschine)
-            });
-        */
     });
     // Helper Functions
     function updateInputQueue(data) {

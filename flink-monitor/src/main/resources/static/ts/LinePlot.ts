@@ -11,7 +11,7 @@ let ChartOptions:Options = {
         type: 'spline',
         height: $(".linePlot").height(),
         animation: {
-            duration: 1000
+            duration: 0
         }, // don't animate in old IE
         marginRight: 10,
         events: {
@@ -57,20 +57,20 @@ setInterval(function () {
 
     listOfInitMetrics.forEach(function (metricListObject: MetricListObject) {
         metricListObject.taskIds.forEach(function (task) {
-            let selmetric: Metric = new Metric();
+            let selMetric: Metric = new Metric();
             let lastCall;
-            selmetric.taskId = task;
-            selmetric.metricId = metricListObject.metricId;
-            selmetric.resolution = metricListObject.resolution;
-            if (LinePlot.get(selmetric.taskId + "_" + selmetric.metricId) != undefined) {
-                let dataPerTask = LinePlot.get(selmetric.taskId + "_" + selmetric.metricId).data;
+            selMetric.taskId = task;
+            selMetric.metricId = metricListObject.metricId;
+            selMetric.resolution = metricListObject.resolution;
+            if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
+                let dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
                 let dataIndex = dataPerTask.length - 1;
                 if (dataIndex >= 0) {
                     lastCall = dataPerTask[dataIndex].x;
                     metricListObject.since = lastCall;
                 }
             }
-            setSeries(selmetric, metricListObject.since);
+            setSeries(selMetric, metricListObject.since);
             //LinePlot.redraw();
         })
     });
