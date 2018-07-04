@@ -1,7 +1,5 @@
 package berlin.bbdc.inet.mera.server.akkaserver
 
-import java.util.concurrent.Executors
-
 import akka.actor.ActorSelection
 import berlin.bbdc.inet.mera.common.akka.{ConfirmRegistration, LoadShedderRegistration, SendNewValue}
 import org.slf4j.{Logger, LoggerFactory}
@@ -16,8 +14,9 @@ object LoadShedderManager {
   def registerLoadShedder(m: LoadShedderRegistration): Unit = {
     LOG.debug(s"Register loadShedder ${m.id} at ${m.address}:${m.port}")
     val remoteMaster = AkkaMessenger.actorSystem.actorSelection(s"akka.tcp://LoadShedderSystem@${m.address}:${m.port}/user/${m.id}")
-    loadShedders += (m.id -> remoteMaster)
-    remoteMaster ! ConfirmRegistration(m.id)
+    if (!loadShedders.contains(m.id))
+      loadShedders += (m.id -> remoteMaster)
+      remoteMaster ! ConfirmRegistration(m.id)
   }
 
   def sendNewValue(loadShedderId: String, value: Int): Unit = {
