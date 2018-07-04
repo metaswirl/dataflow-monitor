@@ -97,7 +97,8 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         var postObj = new datastructure_1.MetricPostObject(metric, taskIds, resolutionTime);
         var listPost = new datastructure_1.MetricListObject(postObj);
         listPost.since = Date.now();
-        if (resolutionTime > 5000) {
+        console.log(resolutionTime);
+        if (resolutionTime >= 5) {
             setInitMetrics(listPost);
         }
         return $.post("http://127.0.0.1:12345/data/metrics/tasks/init", JSON.stringify(postObj));
@@ -132,7 +133,7 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
             type: 'spline',
             height: $(".linePlot").height(),
             animation: {
-                duration: 1000
+                duration: 0
             },
             marginRight: 10,
             events: {}
@@ -195,6 +196,7 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
     }, 5000);
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
+            console.log(result);
             var line = new datastructure_2.LinePlotData();
             line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
             line.name = selectedMetric.taskId;
@@ -279,6 +281,7 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
         });
     });
     $("#initButton").on("click", function () {
+        console.log("Submitted");
         initMetricOnAction();
     });
     function initMetricOnAction() {
@@ -399,15 +402,6 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         return function (t) {
             var tmp = interp(t);
             return arcOut(tmp);
-        };
-    }
-    function arcColorTween(d) {
-        var interp = d3.interpolate(this._current, d);
-        this._current = d;
-        return function (t) {
-            var tmp = interp(t);
-            tmp = (tmp.endAngle / Math.PI) - 1;
-            return colorScaleBuffer(tmp);
         };
     }
 });

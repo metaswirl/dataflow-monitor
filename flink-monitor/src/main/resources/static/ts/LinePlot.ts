@@ -11,7 +11,7 @@ let ChartOptions:Options = {
         type: 'spline',
         height: $(".linePlot").height(),
         animation: {
-            duration: 1000
+            duration: 0
         }, // don't animate in old IE
         marginRight: 10,
         events: {
@@ -83,6 +83,7 @@ setInterval(function () {
 
 export function setSeries(selectedMetric: Metric, since: number) {
     getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
+        console.log(result);
         let line = new LinePlotData();
         line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
         line.name = selectedMetric.taskId;

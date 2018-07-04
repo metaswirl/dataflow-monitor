@@ -50,6 +50,7 @@ $("#taskoroperator").on("change", function () {
     });
 });
 $("#initButton").on("click", function () {
+    console.log("Submitted");
     initMetricOnAction();
 });
 

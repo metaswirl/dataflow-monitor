@@ -98,12 +98,3 @@ function arcOutTween(d) {
         return arcOut(tmp);
     }
 }
-function arcColorTween(d) {
-    let interp = d3.interpolate(this._current, d);
-    this._current = d;
-    return function (t) {
-        let tmp = interp(t);
-        tmp = (tmp.endAngle / Math.PI) - 1;
-        return colorScaleBuffer(tmp);
-    }
-}
