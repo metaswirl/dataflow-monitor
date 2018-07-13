@@ -1,4 +1,4 @@
-package berlin.bbdc.inet.mera.common.akka
+package berlin.bbdc.inet.mera.commons.akka
 
 final case class LoadShedderRegistration(id: String, address: String, port: Int)
 

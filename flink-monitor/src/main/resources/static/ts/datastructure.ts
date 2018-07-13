@@ -8,8 +8,8 @@ export class Task {
     name: string;
     cx: number;
     cy: number;
-    input: Array<string>;
-    output: Array<string>
+    input?: Array<string>;
+    output?: Array<string>
 }
 
 export class Metric {

@@ -97,7 +97,9 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         var postObj = new datastructure_1.MetricPostObject(metric, taskIds, resolutionTime);
         var listPost = new datastructure_1.MetricListObject(postObj);
         listPost.since = Date.now();
-        setInitMetrics(listPost);
+        if (resolutionTime >= 5) {
+            setInitMetrics(listPost);
+        }
         return $.post("http://127.0.0.1:12345/data/metrics/tasks/init", JSON.stringify(postObj));
     }
     exports.initMetricForTasks = initMetricForTasks;
@@ -124,12 +126,14 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
 define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./highcharts", "jquery", "d3"], function (require, exports, RestInterface_1, datastructure_2, Highcharts, $, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
+    exports.colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
     var ChartOptions = {
         chart: {
             type: 'spline',
             height: $(".linePlot").height(),
-            animation: true,
+            animation: {
+                duration: 0
+            },
             marginRight: 10,
             events: {}
         },
@@ -170,33 +174,33 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
         var listOfInitMetrics = RestInterface_1.getInitMetrics();
         listOfInitMetrics.forEach(function (metricListObject) {
             metricListObject.taskIds.forEach(function (task) {
-                var selmetric = new datastructure_2.Metric();
+                var selMetric = new datastructure_2.Metric();
                 var lastCall;
-                selmetric.taskId = task;
-                selmetric.metricId = metricListObject.metricId;
-                selmetric.resolution = metricListObject.resolution;
-                if (LinePlot.get(selmetric.taskId) != undefined) {
-                    var dataPerTask = LinePlot.get(selmetric.taskId).data;
+                selMetric.taskId = task;
+                selMetric.metricId = metricListObject.metricId;
+                selMetric.resolution = metricListObject.resolution;
+                if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
+                    var dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
                     var dataIndex = dataPerTask.length - 1;
                     if (dataIndex >= 0) {
                         lastCall = dataPerTask[dataIndex].x;
                         metricListObject.since = lastCall;
                     }
                 }
-                setSeries(selmetric, metricListObject.since);
+                setSeries(selMetric, metricListObject.since);
+                //LinePlot.redraw();
             });
         });
         RestInterface_1.updateInitMetrics(listOfInitMetrics);
     }, 5000);
-    console.log(LinePlot);
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
             var line = new datastructure_2.LinePlotData();
             line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
-            line.name = selectedMetric.metricId;
+            line.name = selectedMetric.taskId;
             line.data = [];
             var options = new datastructure_2.Lineoptions();
-            options.color = colorScaleLines(line.id).toString();
+            options.color = exports.colorScaleLines(line.id.split("_", 1)[0]).toString();
             line.options = options;
             result.values.forEach(function (point) {
                 var value = new datastructure_2.LinePlotValue();
@@ -205,21 +209,22 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                 line.data.push(value);
             });
             if (LinePlot.get(line.id) == undefined) {
-                LinePlot.addSeries(line, true);
+                LinePlot.addSeries(line, false);
             }
             else {
                 var series_1 = LinePlot.get(line.id);
                 line.data.forEach(function (point) {
-                    if (series_1.data.length >= 20) {
-                        series_1.addPoint(point, false, true);
-                        //series.update(series.options)
-                    }
-                    else {
-                        series_1.addPoint(point, false, false);
-                        //series.update(series.options)
+                    if (point != null) {
+                        if (series_1.data.length >= 20) {
+                            series_1.addPoint(point, true, true, false);
+                            //series.update(series.options)
+                        }
+                        else {
+                            series_1.addPoint(point, true, false, false);
+                            //series.update(series.options)
+                        }
                     }
                 });
-                LinePlot.redraw();
             }
         });
     }
@@ -305,7 +310,99 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
         });
     }
 });
-define("longGraph", ["require", "exports", "RestInterface", "d3"], function (require, exports, RestInterface_3, d3) {
+define("node", ["require", "exports", "d3"], function (require, exports, d3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var arcOut = d3.arc()
+        .innerRadius(6)
+        .outerRadius(12)
+        .startAngle(1 * Math.PI);
+    var arcIn = d3.arc()
+        .innerRadius(6)
+        .outerRadius(12)
+        .startAngle(1 * Math.PI);
+    var colorScaleBuffer = d3.scaleLinear()
+        .domain([0, 1.1])
+        .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
+    function drawNode(point, posx, posy, d) {
+        var svg = point, g = svg.append("g")
+            .attr("transform", "translate(" + posx + "," + posy + ")");
+        var outQueueOutline = g.append("path")
+            .datum({ endAngle: 0 * Math.PI })
+            .style("stroke", "black")
+            .style("fill", "white")
+            .attr("d", arcOut)
+            .attr("class", "outQueueOutline");
+        var outQueue = g.append("path")
+            .datum({ endAngle: 0 * Math.PI })
+            .style("fill", "white")
+            .style("stroke", "black")
+            .attr("d", arcIn)
+            .attr("class", "outQueue")
+            .attr("id", encodeURIComponent(d.name + "-" + "outQueue"));
+        var inQueueOutline = g.append("path")
+            .datum({ endAngle: 2 * Math.PI })
+            .style("stroke", "black")
+            .style("fill", "white")
+            .attr("d", arcOut)
+            .attr("class", "inQueueOutline");
+        var inQueue = g.append("path")
+            .datum({ endAngle: 2 * Math.PI })
+            .style("fill", "white")
+            .style("stroke", "black")
+            .attr("d", arcOut)
+            .attr("class", "inQueue")
+            .attr("id", encodeURIComponent(d.name + "-" + "inQueue"));
+        return g.node();
+    }
+    exports.drawNode = drawNode;
+    function updateNode(nodes, isInput) {
+        if (isInput) {
+            d3.selectAll(".inQueue")
+                .data(nodes)
+                .datum(function (d) {
+                return { endAngle: (1 + d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+            })
+                .style("fill", function (d) {
+                return d.color;
+            })
+                .transition()
+                .duration(500)
+                .attrTween("d", arcInTween);
+        }
+        else {
+            d3.selectAll(".outQueue")
+                .data(nodes)
+                .datum(function (d) {
+                return { endAngle: (1 - d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+            })
+                .style("fill", function (d) {
+                return d.color;
+            })
+                .transition()
+                .duration(500)
+                .attrTween("d", arcOutTween);
+        }
+    }
+    exports.updateNode = updateNode;
+    function arcInTween(d) {
+        var interp = d3.interpolate(this._current, d);
+        this._current = d;
+        return function (t) {
+            var tmp = interp(t);
+            return arcIn(tmp);
+        };
+    }
+    function arcOutTween(d) {
+        var interp = d3.interpolate(this._current, d);
+        this._current = d;
+        return function (t) {
+            var tmp = interp(t);
+            return arcOut(tmp);
+        };
+    }
+});
+define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "node"], function (require, exports, RestInterface_3, d3, LinePlot_2, node_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var margin = { top: 10, right: 20, bottom: 60, left: 20 };
@@ -329,8 +426,6 @@ define("longGraph", ["require", "exports", "RestInterface", "d3"], function (req
     var xScale = d3.scaleLinear();
     var xLabel = d3.scaleOrdinal();
     var yScales = [];
-    var updateColorInterval;
-    var graphDataset;
     var graphSvg = d3.select("#longGraph")
         .attr("width", longGraph.width)
         .attr("height", longGraph.height)
@@ -345,9 +440,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3"], function (req
     var maschineColor = d3.scaleLinear();
     maschineColor.domain([0, 5]);
     maschineColor.range(["green", "orange"]);
-    var loadColor = d3.scaleLinear();
-    loadColor.domain([0, 20]);
-    loadColor.range(["green", "red"]);
+    var loadColor = LinePlot_2.colorScaleLines;
     RestInterface_3.getTopology.done(function (result) {
         result.reverse();
         // xAxis prepare
@@ -389,7 +482,6 @@ define("longGraph", ["require", "exports", "RestInterface", "d3"], function (req
         });
         //Prepare Cardinality List
         var cardinality = getLinks(result);
-        console.log(cardinality);
         //Draw the Links
         graphSvg
             .append("g")
@@ -419,68 +511,72 @@ define("longGraph", ["require", "exports", "RestInterface", "d3"], function (req
             .attr("cy", function (d) {
             return yScales[d.cx](d.cy);
         })
-            .style("fill", function () {
-            return loadColor(0);
-        })
-            .append("text")
-            .text(function (d) {
-            return d.name;
-        })
-            .attr("cy", function () {
-            return 5;
-        })
-            .attr("cx", function (d) {
-            return xScale(d.cx);
-        })
-            .attr("text", function (d) {
-            return d.name;
-        })
-            .style("text-anchor", "end");
-        //Todo: Do we want to have color coded Maschine implicators in the Graph ?
-        //Draw connected Maschines
-        /*graphSvg
-            .append("g")
-            .attr("class", "maschines")
-            .selectAll(".maschine")
-            .data(graphDataset)
-            .enter().append("circle")
-            .attr("class", function (d) {
-                return "maschine" + d.maschine
-            })
-            .attr("r", 10)
-            .attr("cx", function (d) {
-                return xScale(d.cx)
-            })
-            .attr("cy", function (d) {
-                return yScales[d.cx](d.cy)
-            })
-            .style("stroke", function (d) {
-                return maschineColor(d.maschine)
-            })
             .style("fill", function (d) {
-                return maschineColor(d.maschine)
-            });
-        */
+            return loadColor(d.name);
+        });
+        //Draw Node Overlay
+        graphSvg
+            .append("g")
+            .attr("class", "overlays")
+            .selectAll("overlay")
+            .data(taskList)
+            .enter().append(function (d) {
+            var obj = d3.select(this);
+            return node_1.drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
+        });
+        //Init Metrics for in and out - Queue
+        var initList = getInitList(taskList);
+        RestInterface_3.initMetricForTasks("buffers.inPoolUsage", initList, 1).done(function () {
+            setInterval(function () {
+                updateInputQueue(initList);
+            }, 1000);
+        });
+        RestInterface_3.initMetricForTasks("buffers.outPoolUsage", initList, 1).done(function () {
+            setInterval(function () {
+                updateOutputQueue(initList);
+            }, 1000);
+        });
     });
     // Helper Functions
-    //ToDo: Fix color Index for Load on Nodes (maybe add a scale around node for Viewing Data)
-    /*function reloadNodeColor() {
-        let graph = d3.selectAll(".node");
-        graph.each(function (item) {
-            let d3itm = d3.select(this);
-            if (item.name == "Reduce") {
-                d3itm.style("fill", function () {
-                    try {
-                        let data = LinePlot.get("Sl2-Keyed_Reduce-2-inputQueueLength").data;
-                        return loadColor(data[data.length - 1].y)
-                    }
-                    catch (e) {
-                        return loadColor(0)
-                    }
-                })
-            }
-        })
-    }*/
+    function updateInputQueue(data) {
+        var inputValList = [];
+        data.forEach(function (item) {
+            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - 1200).done(function (result) {
+                var point = result.values[0];
+                var inputVal = {
+                    taskId: item + "_" + "inQueue",
+                    value: point[1]
+                };
+                inputValList.push(inputVal);
+                if (inputValList.length == data.length) {
+                    node_1.updateNode(inputValList, true);
+                }
+            });
+        });
+    }
+    function updateOutputQueue(data) {
+        var inputValList = [];
+        data.forEach(function (item) {
+            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - 1200).done(function (result) {
+                var point = result.values[0];
+                var inputVal = {
+                    taskId: item + "_" + "outQueue",
+                    value: point[1]
+                };
+                inputValList.push(inputVal);
+                if (inputValList.length == data.length) {
+                    node_1.updateNode(inputValList, false);
+                }
+            });
+        });
+    }
+    function getInitList(data) {
+        var initList = [];
+        data.forEach(function (item) {
+            initList.push(item.name);
+        });
+        return initList;
+    }
     function createTaskList(input) {
         var listOfTasks = [];
         input.forEach(function (item, i) {

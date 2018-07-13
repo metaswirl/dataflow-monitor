@@ -66,13 +66,19 @@ class MetricContainer(model: Model) {
     metricsFutures map { case (key, value) => InitializedMetric(key._1, key._2, value._2)} toList
 
 
-  def postInitMetric(message: TaskInitMessage): io.Serializable = {
-    if (metricsList.contains(message.metricId)) {
-      initMetrics(message.taskIds, message.metricId, message.resolution)
-      message
-    } else {
-      s"Metric ${message.metricId} cannot be initialized!"
+  def postInitMetric(message: TaskInitMessage): String = {
+    message.metricId match {
+      case m if metricsList.contains(m) => initMetrics(message.taskIds, m, message.resolution); "OK"
+      case "" => disableAllMetrics(); "Disabled all metrics"
+      case m => s"Metric ${message.metricId} cannot be initialized!"
     }
+  }
+
+  private def disableAllMetrics(): Unit = {
+    LOG.debug("Disable all metrics and clear buffers")
+    metricsFutures.foreach{ case (_,v) => v._1.cancel(true)}
+    metricsFutures = Map.empty[(String, String), (ScheduledFuture[_], Int)]
+    metricsBuffer.clear
   }
 
   private def initMetrics(taskIds: List[String], metricId: String, resolution: Int): Unit = {
@@ -105,7 +111,7 @@ class MetricContainer(model: Model) {
       case Some((future, _)) =>
         LOG.debug(s"Cancel collecting metric ($id,$metricId)")
         future.cancel(false)
-        //TODO: remove the record from metricsFutures
+        metricsFutures -= Tuple2(id, metricId)
       case _ =>
     }
   }
