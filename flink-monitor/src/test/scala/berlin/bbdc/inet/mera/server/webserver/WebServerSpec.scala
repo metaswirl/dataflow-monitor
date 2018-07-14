@@ -2,7 +2,7 @@ package berlin.bbdc.inet.mera.server.webserver
 
 import akka.http.scaladsl.model.{HttpEntity, HttpMethods, HttpRequest, MediaTypes}
 import akka.http.scaladsl.testkit.Specs2RouteTest
-import berlin.bbdc.inet.mera.common.tools.JsonUtils
+import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAll
@@ -29,7 +29,7 @@ class WebServerSpec extends Specification with Specs2RouteTest with Mockito with
 
     metricContainer.topology returns List()
 
-    metricContainer.postInitMetric(taskInitMessage) returns taskInitMessage
+    metricContainer.postInitMetric(taskInitMessage) returns "OK"
 
     metricContainer.getMetricsOfTask((tId, mId), since) returns TaskMetrics(tId, List())
   }
@@ -69,7 +69,7 @@ class WebServerSpec extends Specification with Specs2RouteTest with Mockito with
         entity = HttpEntity(MediaTypes.`application/json`, JsonUtils.toJson(taskInitMessage)))
 
       postRequest ~> route ~> check {
-        entityAs[String] shouldEqual JsonUtils.toJson(taskInitMessage)
+        entityAs[String] shouldEqual """"OK""""
       }
     }
 
