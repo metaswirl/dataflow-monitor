@@ -16,9 +16,6 @@ val HttpClientVersion = "4.5.5"
 val JacksonScalaVersion = "2.9.4"
 val Specs2Version = "4.0.2"
 
-lazy val commons = ProjectRef(file("../mera-commons"), "mera-commons")
-lazy val root = Project("flink-monitor", file(".")).dependsOn(commons)
-
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
@@ -33,7 +30,6 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % HttpClientVersion,
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
   "org.specs2" %% "specs2-mock" % Specs2Version % "test",
-  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test"
+  "com.typesafe.akka" %% "akka-http-testkit" % AkkaHttpVersion % "test",
+  "berlin.bbdc.inet" % "mera-commons_2.11" % "0.1.0"
 )
-
-//mainClass in Compile := Some("berlin.bbdc.inet.mera.server.Starter")

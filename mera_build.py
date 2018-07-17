@@ -5,7 +5,7 @@ import subprocess
 import timeit
 
 MERA_PATH  = '/home/kaichi/IdeaProjects/mera-monitor'
-JOB_PATH   = '/home/kaichi/IdeaProjects/jobs/ThreeStageWordCount'
+JOB_PATH   = MERA_PATH + '/use-cases/three-stage-wordcount'
 FLINK_PATH = '/home/kaichi/Documents/flink-mera'
 
 # remove old mera-commons from cache
