@@ -5,33 +5,35 @@ export class Operator {
 }
 
 export class Task {
-    name: string;
+    constructor(id:string, cx:number, cy:number){
+     this.id = id;
+     this.cx = cx;
+     this.cy = cy;
+    }
+    id: string;
     cx: number;
     cy: number;
     input?: Array<string>;
     output?: Array<string>
 }
-
 export class Metric {
+    constructor(taskid:string, metricId:string, resolution:number){
+        this.taskId = taskid;
+        this.metricId = metricId;
+        this.resolution = resolution;
+    }
     taskId: string;
     metricId: string;
-    values: Array<Value>;
     resolution: number;
 }
 
-export class Value {
-    time: Date;
-    value: number;
-}
-
 export class Cardinality {
-    source: point;
-    target: point
-}
-
-class point {
-    cx: number;
-    cy: number
+    constructor(source:Task, target:Task){
+        this.source = source;
+        this.target = target;
+    }
+    source: Task;
+    target: Task
 }
 
 export class MetricPostObject {
@@ -55,17 +57,29 @@ export class MetricListObject extends MetricPostObject {
 }
 
 export class LinePlotData {
+    constructor(name:string, id:string, options:Lineoptions){
+        this.name = name;
+        this.id = id;
+        this.options = options
+    }
     name: string;
     id: string;
     options: Lineoptions;
-    data: Array<Value>
+    data: Array<Value> = [];
 }
 
-export class LinePlotValue {
+export class Value {
+    constructor(x:number, y:number){
+        this.x = x;
+        this.y = y;
+    }
     x: number;
     y: number
 }
 export class Lineoptions{
+    constructor(color:string){
+        this.color = color
+    }
     color: string;
 }
 

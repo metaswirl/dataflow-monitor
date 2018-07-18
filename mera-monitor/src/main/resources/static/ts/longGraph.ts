@@ -1,8 +1,8 @@
 import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
 import {Cardinality, Task} from "./datastructure";
-import d3 = require("d3");
 import {colorScaleLines} from "./LinePlot";
-import {drawNode, updateNode, updateNodes} from "./node";
+import {drawNode, updateNode} from "./node";
+import d3 = require("d3");
 
 
 let margin = {top: 10, right: 20, bottom: 60, left: 20};
@@ -37,10 +37,7 @@ let shortGraphSvg = d3.select("#shortGraph")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 //Color Axis
-let maschineColor = d3.scaleLinear();
-maschineColor.domain([0, 5]);
-maschineColor.range(["green", "orange"]);
-let loadColor = colorScaleLines;
+let nodeColor = colorScaleLines;
 
 getTopology.done(function (result) {
     result.reverse();
@@ -123,7 +120,7 @@ getTopology.done(function (result) {
             return yScales[d.cx](d.cy)
         })
         .style("fill", function (d: Task) {
-            return loadColor(d.name)
+            return nodeColor(d.id)
         });
     //Draw Node Overlay
     graphSvg
@@ -186,20 +183,16 @@ function updateOutputQueue(data:Array<string>) {
 function getInitList(data:Array<Task>) {
     let initList:Array<string> = [];
     data.forEach(function (item) {
-        initList.push(item.name);
+        initList.push(item.id);
     });
     return initList;
 }
 
 function createTaskList(input) {
-    let listOfTasks: Array<Task> = [];
+    let listOfTasks:Array<Task> = [];
     input.forEach(function (item, i) {
         item.tasks.forEach(function (t, j) {
-            let task = {
-                name: t.id,
-                cx: i,
-                cy: j
-            };
+            let task = new Task(t.id, i, j);
             listOfTasks.push(task)
         })
     });
@@ -211,19 +204,10 @@ function getLinks(dataset) {
     for (let i = 1; i < dataset.length; i++) {
         dataset[i].tasks.forEach(function (task, j) {
             task.input.forEach(function (input, k) {
-                let link = {
-                    source: {
-                        id: input,
-                        cx: i - 1,
-                        cy: k
-                    },
-                    target: {
-                        id: task.id,
-                        cx: i,
-                        cy: j
-                    }
-                };
-                links.push(link);
+                let source = new Task(input, i-1, k);
+                let target = new Task(task.id, i, j);
+                let cardinality = new Cardinality(source, target);
+                links.push(cardinality);
             })
         })
     }

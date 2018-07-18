@@ -1,6 +1,6 @@
 import {getDataFromMetrics, getInitMetrics, updateInitMetrics} from "./RestInterface";
 import {Options} from "./highcharts";
-import {Lineoptions, LinePlotData, LinePlotValue, Metric, MetricListObject, Value} from "./datastructure";
+import {Lineoptions, LinePlotData, Metric, MetricListObject, Value} from "./datastructure";
 import Highcharts = require("./highcharts");
 import $  = require("jquery");
 import d3 = require("d3");
@@ -57,11 +57,8 @@ setInterval(function () {
 
     listOfInitMetrics.forEach(function (metricListObject: MetricListObject) {
         metricListObject.taskIds.forEach(function (task) {
-            let selMetric: Metric = new Metric();
+            let selMetric = new Metric(task, metricListObject.metricId, metricListObject.resolution);
             let lastCall;
-            selMetric.taskId = task;
-            selMetric.metricId = metricListObject.metricId;
-            selMetric.resolution = metricListObject.resolution;
             if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
                 let dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
                 let dataIndex = dataPerTask.length - 1;
@@ -77,27 +74,24 @@ setInterval(function () {
     updateInitMetrics(listOfInitMetrics);
 }, 5000);
 
-
-
-
-
 export function setSeries(selectedMetric: Metric, since: number) {
     getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
-        let line = new LinePlotData();
-        line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
-        line.name = selectedMetric.taskId;
-        line.data = [];
-        let options = new Lineoptions();
-        options.color = colorScaleLines(line.id.split("_",1)[0]).toString();
-        line.options = options ;
+        let options = new Lineoptions(colorScaleLines(selectedMetric.taskId).toString());
+        let line = new LinePlotData(selectedMetric.taskId, selectedMetric.taskId + "_" + selectedMetric.metricId, options);
         result.values.forEach(function (point) {
-            let value = new LinePlotValue();
-            value.x = point[0];
-            value.y = point[1];
+            let value = new Value(point[0],point[1]);
             line.data.push(value);
         });
         if (LinePlot.get(line.id) == undefined) {
-            LinePlot.addSeries(line, false)
+            LinePlot.addSeries(line, false);
+            let plotHeading:string = $(".highcharts-title")[0].childNodes[0].textContent;
+            if(plotHeading == 'Selected Metric'){
+                $(".highcharts-title")[0].childNodes[0].textContent = selectedMetric.metricId;
+            }
+            else if(plotHeading.indexOf(selectedMetric.metricId) != -1){}
+            else{
+                $(".highcharts-title")[0].childNodes[0].textContent = plotHeading + " & " +  selectedMetric.metricId;
+            }
         }
         else {
             let series: any = LinePlot.get(line.id);
@@ -105,15 +99,12 @@ export function setSeries(selectedMetric: Metric, since: number) {
                if(point != null){
                    if (series.data.length >= 20) {
                        series.addPoint(point, true, true, false);
-                       //series.update(series.options)
                    }
                    else {
                        series.addPoint(point, true, false, false);
-                       //series.update(series.options)
                    }
                }
             });
         }
     })
-
 }

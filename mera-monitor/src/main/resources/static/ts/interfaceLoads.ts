@@ -15,7 +15,6 @@ getMetrics.done(function (result) {
 });
 getTopology.done(function (result) {
     $("#Ids").empty();
-    console.log(result);
     if ($("#taskoroperator").val() == "byOperator") {
         let optionsByOperator: Array<string> = [];
         result.forEach(function (item) {
@@ -73,7 +72,7 @@ $("#optimizeBtn").on("click", function () {
 
 function initMetricOnAction() {
     let metric = $("#metrics").val().toString();
-    let Ids = $("#Ids").val();
+    let Ids:Array<string> = $("#Ids").val();
     let resolutionString: any = $("input[name=resolutionselect]:checked").val();
     let resolution = parseInt(resolutionString);
     let post = initMetricForTasks(metric, Ids, resolution);
@@ -81,12 +80,8 @@ function initMetricOnAction() {
         let metrics: Array<MetricPostObject> = getInitMetrics();
         metrics.forEach(function (metric) {
             metric.taskIds.forEach(function (task: string) {
-                let selmetric: Metric = new Metric();
-                selmetric.taskId = task;
-                selmetric.metricId = metric.metricId;
-                selmetric.resolution = metric.resolution;
+                let selmetric = new Metric(task, metric.metricId, metric.resolution);
                 setSeries(selmetric, Date.now());
-
             })
         })
     })
