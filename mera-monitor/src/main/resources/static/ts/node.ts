@@ -32,7 +32,7 @@ export function drawNode(point, posx:number , posy:number, d:Task) {
         .style("stroke", "black")
         .attr("d", arcIn)
         .attr("class", "outQueue")
-        .attr("id", encodeURIComponent(d.name + "-" + "outQueue"));
+        .attr("id", encodeURIComponent(d.id + "-" + "outQueue"));
 
 
 
@@ -48,7 +48,7 @@ export function drawNode(point, posx:number , posy:number, d:Task) {
         .style("stroke", "black")
         .attr("d", arcOut)
         .attr("class", "inQueue")
-        .attr("id", encodeURIComponent(d.name + "-" + "inQueue"));
+        .attr("id", encodeURIComponent(d.id + "-" + "inQueue"));
     return g.node();
 
 }

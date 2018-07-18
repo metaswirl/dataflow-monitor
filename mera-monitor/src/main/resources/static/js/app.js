@@ -18,34 +18,31 @@ define("datastructure", ["require", "exports"], function (require, exports) {
     }());
     exports.Operator = Operator;
     var Task = /** @class */ (function () {
-        function Task() {
+        function Task(id, cx, cy) {
+            this.id = id;
+            this.cx = cx;
+            this.cy = cy;
         }
         return Task;
     }());
     exports.Task = Task;
     var Metric = /** @class */ (function () {
-        function Metric() {
+        function Metric(taskid, metricId, resolution) {
+            this.taskId = taskid;
+            this.metricId = metricId;
+            this.resolution = resolution;
         }
         return Metric;
     }());
     exports.Metric = Metric;
-    var Value = /** @class */ (function () {
-        function Value() {
-        }
-        return Value;
-    }());
-    exports.Value = Value;
     var Cardinality = /** @class */ (function () {
-        function Cardinality() {
+        function Cardinality(source, target) {
+            this.source = source;
+            this.target = target;
         }
         return Cardinality;
     }());
     exports.Cardinality = Cardinality;
-    var point = /** @class */ (function () {
-        function point() {
-        }
-        return point;
-    }());
     var MetricPostObject = /** @class */ (function () {
         function MetricPostObject(mId, tId, res) {
             this.resolution = res;
@@ -64,19 +61,26 @@ define("datastructure", ["require", "exports"], function (require, exports) {
     }(MetricPostObject));
     exports.MetricListObject = MetricListObject;
     var LinePlotData = /** @class */ (function () {
-        function LinePlotData() {
+        function LinePlotData(name, id, options) {
+            this.data = [];
+            this.name = name;
+            this.id = id;
+            this.options = options;
         }
         return LinePlotData;
     }());
     exports.LinePlotData = LinePlotData;
-    var LinePlotValue = /** @class */ (function () {
-        function LinePlotValue() {
+    var Value = /** @class */ (function () {
+        function Value(x, y) {
+            this.x = x;
+            this.y = y;
         }
-        return LinePlotValue;
+        return Value;
     }());
-    exports.LinePlotValue = LinePlotValue;
+    exports.Value = Value;
     var Lineoptions = /** @class */ (function () {
-        function Lineoptions() {
+        function Lineoptions(color) {
+            this.color = color;
         }
         return Lineoptions;
     }());
@@ -93,7 +97,7 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
     var pathToInit = "http://127.0.0.1:12345/data/metrics/tasks/init";
     var isOptimized = false;
     var initMetrics = [];
-    exports.getOperators = $.getJSON(pathToOperators);
+    //export let getOperators = $.getJSON(pathToOperators);
     exports.getMetrics = $.getJSON(pathToMetrics);
     exports.getTopology = $.getJSON(pathToTopology);
     function initMetricForTasks(metric, taskIds, resolutionTime) {
@@ -199,11 +203,8 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
         var listOfInitMetrics = RestInterface_1.getInitMetrics();
         listOfInitMetrics.forEach(function (metricListObject) {
             metricListObject.taskIds.forEach(function (task) {
-                var selMetric = new datastructure_2.Metric();
+                var selMetric = new datastructure_2.Metric(task, metricListObject.metricId, metricListObject.resolution);
                 var lastCall;
-                selMetric.taskId = task;
-                selMetric.metricId = metricListObject.metricId;
-                selMetric.resolution = metricListObject.resolution;
                 if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
                     var dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
                     var dataIndex = dataPerTask.length - 1;
@@ -220,21 +221,22 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
     }, 5000);
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
-            var line = new datastructure_2.LinePlotData();
-            line.id = selectedMetric.taskId + "_" + selectedMetric.metricId;
-            line.name = selectedMetric.taskId;
-            line.data = [];
-            var options = new datastructure_2.Lineoptions();
-            options.color = exports.colorScaleLines(line.id.split("_", 1)[0]).toString();
-            line.options = options;
+            var options = new datastructure_2.Lineoptions(exports.colorScaleLines(selectedMetric.taskId).toString());
+            var line = new datastructure_2.LinePlotData(selectedMetric.taskId, selectedMetric.taskId + "_" + selectedMetric.metricId, options);
             result.values.forEach(function (point) {
-                var value = new datastructure_2.LinePlotValue();
-                value.x = point[0];
-                value.y = point[1];
+                var value = new datastructure_2.Value(point[0], point[1]);
                 line.data.push(value);
             });
             if (LinePlot.get(line.id) == undefined) {
                 LinePlot.addSeries(line, false);
+                var plotHeading = $(".highcharts-title")[0].childNodes[0].textContent;
+                if (plotHeading == 'Selected Metric') {
+                    $(".highcharts-title")[0].childNodes[0].textContent = selectedMetric.metricId;
+                }
+                else if (plotHeading.indexOf(selectedMetric.metricId) != -1) { }
+                else {
+                    $(".highcharts-title")[0].childNodes[0].textContent = plotHeading + " & " + selectedMetric.metricId;
+                }
             }
             else {
                 var series_1 = LinePlot.get(line.id);
@@ -242,11 +244,9 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                     if (point != null) {
                         if (series_1.data.length >= 20) {
                             series_1.addPoint(point, true, true, false);
-                            //series.update(series.options)
                         }
                         else {
                             series_1.addPoint(point, true, false, false);
-                            //series.update(series.options)
                         }
                     }
                 });
@@ -263,7 +263,6 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
     });
     RestInterface_2.getTopology.done(function (result) {
         $("#Ids").empty();
-        console.log(result);
         if ($("#taskoroperator").val() == "byOperator") {
             var optionsByOperator_1 = [];
             result.forEach(function (item) {
@@ -327,10 +326,7 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
             var metrics = RestInterface_2.getInitMetrics();
             metrics.forEach(function (metric) {
                 metric.taskIds.forEach(function (task) {
-                    var selmetric = new datastructure_3.Metric();
-                    selmetric.taskId = task;
-                    selmetric.metricId = metric.metricId;
-                    selmetric.resolution = metric.resolution;
+                    var selmetric = new datastructure_3.Metric(task, metric.metricId, metric.resolution);
                     LinePlot_1.setSeries(selmetric, Date.now());
                 });
             });
@@ -375,7 +371,7 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
             .style("stroke", "black")
             .attr("d", arcIn)
             .attr("class", "outQueue")
-            .attr("id", encodeURIComponent(d.name + "-" + "outQueue"));
+            .attr("id", encodeURIComponent(d.id + "-" + "outQueue"));
         var inQueueOutline = g.append("path")
             .datum({ endAngle: 2 * Math.PI })
             .style("stroke", "black")
@@ -388,7 +384,7 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
             .style("stroke", "black")
             .attr("d", arcOut)
             .attr("class", "inQueue")
-            .attr("id", encodeURIComponent(d.name + "-" + "inQueue"));
+            .attr("id", encodeURIComponent(d.id + "-" + "inQueue"));
         return g.node();
     }
     exports.drawNode = drawNode;
@@ -438,7 +434,7 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         };
     }
 });
-define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "node"], function (require, exports, RestInterface_3, d3, LinePlot_2, node_1) {
+define("longGraph", ["require", "exports", "RestInterface", "datastructure", "LinePlot", "node", "d3"], function (require, exports, RestInterface_3, datastructure_4, LinePlot_2, node_1, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var margin = { top: 10, right: 20, bottom: 60, left: 20 };
@@ -473,10 +469,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     //Color Axis
-    var maschineColor = d3.scaleLinear();
-    maschineColor.domain([0, 5]);
-    maschineColor.range(["green", "orange"]);
-    var loadColor = LinePlot_2.colorScaleLines;
+    var nodeColor = LinePlot_2.colorScaleLines;
     RestInterface_3.getTopology.done(function (result) {
         result.reverse();
         // xAxis prepare
@@ -548,7 +541,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
             return yScales[d.cx](d.cy);
         })
             .style("fill", function (d) {
-            return loadColor(d.name);
+            return nodeColor(d.id);
         });
         //Draw Node Overlay
         graphSvg
@@ -609,7 +602,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
     function getInitList(data) {
         var initList = [];
         data.forEach(function (item) {
-            initList.push(item.name);
+            initList.push(item.id);
         });
         return initList;
     }
@@ -617,11 +610,7 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
         var listOfTasks = [];
         input.forEach(function (item, i) {
             item.tasks.forEach(function (t, j) {
-                var task = {
-                    name: t.id,
-                    cx: i,
-                    cy: j
-                };
+                var task = new datastructure_4.Task(t.id, i, j);
                 listOfTasks.push(task);
             });
         });
@@ -632,19 +621,10 @@ define("longGraph", ["require", "exports", "RestInterface", "d3", "LinePlot", "n
         var _loop_1 = function (i) {
             dataset[i].tasks.forEach(function (task, j) {
                 task.input.forEach(function (input, k) {
-                    var link = {
-                        source: {
-                            id: input,
-                            cx: i - 1,
-                            cy: k
-                        },
-                        target: {
-                            id: task.id,
-                            cx: i,
-                            cy: j
-                        }
-                    };
-                    links.push(link);
+                    var source = new datastructure_4.Task(input, i - 1, k);
+                    var target = new datastructure_4.Task(task.id, i, j);
+                    var cardinality = new datastructure_4.Cardinality(source, target);
+                    links.push(cardinality);
                 });
             });
         };

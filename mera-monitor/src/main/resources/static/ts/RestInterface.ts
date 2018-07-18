@@ -13,7 +13,7 @@ let isOptimized:boolean = false;
 
 let initMetrics: Array<MetricListObject> = [];
 
-export let getOperators = $.getJSON(pathToOperators);
+//export let getOperators = $.getJSON(pathToOperators);
 export let getMetrics = $.getJSON(pathToMetrics);
 export let getTopology = $.getJSON(pathToTopology);
 

@@ -1,10 +1,15 @@
 .shortGraph {
 	height: 10vh;
 }
+.longGraph {
+	height: 35vh;
+}
+.linePlot {
+	height: 45vh;
+}
 .modal-content {
 	min-height: 70vh;
 }
-
 #Ids {
 	min-height: 40vh;
 }
@@ -12,13 +17,7 @@
 	background-color: #1e7e34;
 }
 
-.longGraph {
-	height: 35vh;
-}
 
-.linePlot {
-	height: 50vh;
-}
 
 .selectorPlot {
 	height: 5vh;
