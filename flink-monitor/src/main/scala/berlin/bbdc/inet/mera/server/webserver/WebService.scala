@@ -53,6 +53,14 @@ trait WebService {
           completeJson(metricContainer.getMetricsOfTask((taskId, metricId), since))
         }
       } ~
+      // Sets optimize button - current implementation only for the UI testing
+      path ("optimize") {
+        post {
+          entity(as[String]) { body =>
+            complete(body)
+          }
+        }
+      } ~
       // Returns swagger json
       path("swagger") {
         get {
