@@ -8,6 +8,9 @@
 #Ids {
 	min-height: 40vh;
 }
+.isOptimized{
+	background-color: #1e7e34;
+}
 
 .longGraph {
 	height: 35vh;
