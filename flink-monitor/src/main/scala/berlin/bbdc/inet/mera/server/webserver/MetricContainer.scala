@@ -152,8 +152,8 @@ class MetricContainer(model: Model) {
 
   def getMetricsOfTask(metricKey: MetricKey, since: Long): TaskMetrics = TaskMetrics(metricKey._1, getMetricSince(metricKey, since))
 
-  //TODO: Change to Option!
-  private def getMetricSince(metricKey: MetricKey, since: Long): List[MetricValue] = metricsBuffer(metricKey) filter { _._1 > since }
+  private def getMetricSince(metricKey: MetricKey, since: Long): List[MetricValue] =
+    metricsBuffer getOrElse(metricKey, List()) filter (_._1 > since)
 }
 
 object MetricContainer {
