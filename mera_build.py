@@ -4,9 +4,9 @@ import shutil
 import subprocess
 import timeit
 
-MERA_PATH  = '/home/kaichi/IdeaProjects/mera-monitor'
+MERA_PATH  = './'
 JOB_PATH   = MERA_PATH + '/use-cases/three-stage-wordcount'
-FLINK_PATH = '/home/kaichi/Documents/flink-mera'
+FLINK_PATH = os.environ['FLINK_PATH']
 
 # remove old mera-commons from cache
 Join = input('Remove ~/.ivy2/local/berlin.bbdc.inet/mera-commons_2.11? [y/n]\n')
