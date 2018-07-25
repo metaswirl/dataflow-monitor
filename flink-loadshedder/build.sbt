@@ -4,25 +4,20 @@ resolvers in ThisBuild ++= Seq(
   Resolver.mavenLocal
 )
 
-name         := "flink-loadshedder"
+name := "flink-loadshedder"
 organization := "berlin.bbdc.inet"
-version      := "0.1.0"
+version := "0.1.0"
 
 scalaVersion := "2.11.12"
-
 val Specs2Version = "4.0.2"
-
-val AkkaVersion = "2.5.11"
+val AkkaVersion = "2.4.20"
 val flinkVersion = "1.4.2"
-
-lazy val commons = ProjectRef(file("../mera-commons"), "mera-commons")
-
-lazy val root = Project("flink-loadshedder", file(".")).dependsOn(commons)
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % AkkaVersion,
   "org.apache.flink" %% "flink-scala" % flinkVersion % "provided",
   "org.apache.flink" %% "flink-streaming-scala" % flinkVersion % "provided",
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
-  "org.specs2" %% "specs2-mock" % Specs2Version % "test"
+  "org.specs2" %% "specs2-mock" % Specs2Version % "test",
+  "berlin.bbdc.inet" % "mera-commons_2.11" % "0.1.0"
 )

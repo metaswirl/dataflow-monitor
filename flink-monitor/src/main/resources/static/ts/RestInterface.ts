@@ -7,6 +7,9 @@ import $ = require("jquery");
 const pathToOperators: string = "http://127.0.0.1:12345/data/operators";
 const pathToMetrics: string = "http://127.0.0.1:12345/data/metrics";
 const pathToTopology: string = "http://127.0.0.1:12345/data/topology";
+const pathToOptimize:string = "http://127.0.0.1:12345/optimize";
+const pathToInit:string = "http://127.0.0.1:12345/data/metrics/tasks/init";
+let isOptimized:boolean = false;
 
 let initMetrics: Array<MetricListObject> = [];
 
@@ -21,9 +24,25 @@ export function initMetricForTasks(metric: any, taskIds: Array<string>, resoluti
     if(resolutionTime >= 5){
         setInitMetrics(listPost);
     }
-    return $.post("http://127.0.0.1:12345/data/metrics/tasks/init", JSON.stringify(postObj))
+    return $.post(pathToInit, JSON.stringify(postObj))
 }
 
+export function optimizeLoad() {
+    let postObj = {
+        isOptimized: isOptimized
+    };
+    if(isOptimized){
+        isOptimized = false
+    }
+    else{
+        isOptimized = true
+    }
+    return $.post(pathToOptimize, JSON.stringify(postObj))
+}
+
+export function getIsOptimized() {
+    return isOptimized;
+}
 export function getInitMetrics() {
     return initMetrics;
 }
@@ -37,10 +56,14 @@ export function updateInitMetrics(value: Array<MetricListObject>) {
     initMetrics = value;
 }
 
-//TODO: REWRITE TO DIFFER BETWEEN OPERATOR OR TASK
+// ToDo: REWRITE TO DIFFER BETWEEN OPERATOR OR TASK
 export function getDataFromMetrics(metricId: string, taskId: string, since: number) {
-
-    let encodedURI = "http://127.0.0.1:12345/data/metrics/task?metricId=" + encodeURIComponent(metricId) + "&taskId=" + encodeURIComponent(taskId) + "&since=" + since;
+    let encodedURI = "http://127.0.0.1:12345/data/metrics/task?metricId="
+        + encodeURIComponent(metricId)
+        + "&taskId="
+        + encodeURIComponent(taskId)
+        + "&since="
+        + since;
     return $.getJSON(encodedURI);
 }
 

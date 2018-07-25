@@ -1,4 +1,11 @@
-import {getInitMetrics, getMetrics, getTopology, initMetricForTasks} from "./RestInterface";
+import {
+    getInitMetrics,
+    getIsOptimized,
+    getMetrics,
+    getTopology,
+    initMetricForTasks,
+    optimizeLoad
+} from "./RestInterface";
 import {Metric, MetricPostObject} from "./datastructure";
 import {setSeries} from "./LinePlot";
 
@@ -51,6 +58,17 @@ $("#taskoroperator").on("change", function () {
 });
 $("#initButton").on("click", function () {
     initMetricOnAction();
+});
+$("#optimizeBtn").on("click", function () {
+    let isoptimizedLoad = optimizeLoad();
+    isoptimizedLoad.done(function () {
+        if(getIsOptimized()){
+            $("#optimizeBtn").addClass("isOptimized")
+        }
+        else{
+            $("#optimizeBtn").removeClass("isOptimized")
+        }
+    })
 });
 
 function initMetricOnAction() {

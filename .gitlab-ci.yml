@@ -1,0 +1,72 @@
+stages:
+  - clean
+  - init1
+  - init2
+  - test
+  - build
+  - e2e-test
+
+remove existing dependencies:
+  stage: clean
+  script: 
+    - rm -rf ~/.ivy2/local/berlin.bbdc.inet/mera-commons_2.11
+    - rm -rf ~/.ivy2/local/berlin.bbdc.inet/flink-loadshedder_2.11
+
+publishLocal commons:
+  stage: init1
+  script:
+    - cd mera-commons
+    - sbt clean publishLocal
+
+publishLocal loadshedder:
+  stage: init2
+  script:
+    - cd flink-loadshedder
+    - sbt clean publishLocal
+
+test monitor:
+  stage: test
+  script:
+    - cd flink-monitor
+    - sbt clean test
+
+test commons:
+  stage: test
+  script:
+    - cd mera-commons 
+    - sbt clean test
+
+test three-stage-wordcount:
+  stage: test
+  script:
+    - cd use-cases/three-stage-wordcount
+    - sbt clean test
+
+test loadshedder:
+  stage: test
+  script:
+    - cd flink-loadshedder
+    - sbt clean test
+
+build monitor:
+  stage: build
+  only:
+    - master
+  script:
+    - python3 mera_build.py -f 
+    - cp flink-reporter/target/scala-2.11/flink-reporter-assembly-0.1.jar /var/nfs/general
+    - cp flink-monitor/target/scala-2.11/mera-assembly-0.2.jar /var/nfs/general
+    - cp flink-loadshedder/target/scala-2.11/flink-loadshedder-assembly-0.1.0.jar /var/nfs/general
+    - cp use-cases/three-stage-wordcount/target/scala-2.11/ThreeStageWordCount-assembly-0.1.jar /var/nfs/general
+
+end-to-end test:
+  stage: e2e-test
+  only:
+    - master
+  script:
+    - mkdir -p flink
+    - cp /var/nfs/general/flink-dist.gz ./flink
+    - cd flink
+    - tar zxvf flink-dist.gz
+    - cd ..
+    - python3 mera_run.py --libJar /var/nfs/general/flink-reporter-assembly-0.1.jar --jobJar /var/nfs/general/ThreeStageWordCount-assembly-0.1.jar --monitorJar /var/nfs/general/mera-assembly-0.2.jar --flinkDir flink/

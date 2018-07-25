@@ -89,6 +89,9 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
     var pathToOperators = "http://127.0.0.1:12345/data/operators";
     var pathToMetrics = "http://127.0.0.1:12345/data/metrics";
     var pathToTopology = "http://127.0.0.1:12345/data/topology";
+    var pathToOptimize = "http://127.0.0.1:12345/optimize";
+    var pathToInit = "http://127.0.0.1:12345/data/metrics/tasks/init";
+    var isOptimized = false;
     var initMetrics = [];
     exports.getOperators = $.getJSON(pathToOperators);
     exports.getMetrics = $.getJSON(pathToMetrics);
@@ -100,9 +103,26 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         if (resolutionTime >= 5) {
             setInitMetrics(listPost);
         }
-        return $.post("http://127.0.0.1:12345/data/metrics/tasks/init", JSON.stringify(postObj));
+        return $.post(pathToInit, JSON.stringify(postObj));
     }
     exports.initMetricForTasks = initMetricForTasks;
+    function optimizeLoad() {
+        var postObj = {
+            isOptimized: isOptimized
+        };
+        if (isOptimized) {
+            isOptimized = false;
+        }
+        else {
+            isOptimized = true;
+        }
+        return $.post(pathToOptimize, JSON.stringify(postObj));
+    }
+    exports.optimizeLoad = optimizeLoad;
+    function getIsOptimized() {
+        return isOptimized;
+    }
+    exports.getIsOptimized = getIsOptimized;
     function getInitMetrics() {
         return initMetrics;
     }
@@ -116,9 +136,14 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         initMetrics = value;
     }
     exports.updateInitMetrics = updateInitMetrics;
-    //TODO: REWRITE TO DIFFER BETWEEN OPERATOR OR TASK
+    // ToDo: REWRITE TO DIFFER BETWEEN OPERATOR OR TASK
     function getDataFromMetrics(metricId, taskId, since) {
-        var encodedURI = "http://127.0.0.1:12345/data/metrics/task?metricId=" + encodeURIComponent(metricId) + "&taskId=" + encodeURIComponent(taskId) + "&since=" + since;
+        var encodedURI = "http://127.0.0.1:12345/data/metrics/task?metricId="
+            + encodeURIComponent(metricId)
+            + "&taskId="
+            + encodeURIComponent(taskId)
+            + "&since="
+            + since;
         return $.getJSON(encodedURI);
     }
     exports.getDataFromMetrics = getDataFromMetrics;
@@ -280,6 +305,17 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
     });
     $("#initButton").on("click", function () {
         initMetricOnAction();
+    });
+    $("#optimizeBtn").on("click", function () {
+        var isoptimizedLoad = RestInterface_2.optimizeLoad();
+        isoptimizedLoad.done(function () {
+            if (RestInterface_2.getIsOptimized()) {
+                $("#optimizeBtn").addClass("isOptimized");
+            }
+            else {
+                $("#optimizeBtn").removeClass("isOptimized");
+            }
+        });
     });
     function initMetricOnAction() {
         var metric = $("#metrics").val().toString();
