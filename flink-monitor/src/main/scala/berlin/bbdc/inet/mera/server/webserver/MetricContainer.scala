@@ -9,7 +9,6 @@ import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.{List, Map, Seq}
-import scala.collection.mutable.ListBuffer
 
 class MetricContainer(model: Model) {
 
@@ -63,11 +62,9 @@ class MetricContainer(model: Model) {
     */
   def metricsList: Vector[String] = model.tasks.values.flatMap(_.metrics.keys).toVector.distinct
 
-  def getInitMetric: List[InitializedMetric] = {
-    var list = new ListBuffer[InitializedMetric]()
-    metricsFutures foreach { case (key, value) => list += InitializedMetric(key._1, key._2, value._2) }
-    list.toList
-  }
+  def getInitMetric: List[InitializedMetric] =
+    metricsFutures map { case (key, value) => InitializedMetric(key._1, key._2, value._2)} toList
+
 
   def postInitMetric(message: TaskInitMessage): String = {
     message.metricId match {
