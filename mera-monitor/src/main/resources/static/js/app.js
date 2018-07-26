@@ -8,7 +8,17 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-define("datastructure", ["require", "exports"], function (require, exports) {
+define("constants", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.inOutPoolResolution = 2;
+    exports.nodeRadius = 5;
+    exports.arcRadius = {
+        inner: exports.nodeRadius + 1,
+        outer: this.inner * 2
+    };
+});
+define("datastructure", ["require", "exports", "d3"], function (require, exports, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Operator = /** @class */ (function () {
@@ -17,6 +27,9 @@ define("datastructure", ["require", "exports"], function (require, exports) {
         return Operator;
     }());
     exports.Operator = Operator;
+    var colorScaleBuffer = d3.scaleLinear()
+        .domain([0, 1.1])
+        .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
     var Task = /** @class */ (function () {
         function Task(id, cx, cy) {
             this.id = id;
@@ -78,13 +91,33 @@ define("datastructure", ["require", "exports"], function (require, exports) {
         return Value;
     }());
     exports.Value = Value;
-    var Lineoptions = /** @class */ (function () {
-        function Lineoptions(color) {
+    var LineOptions = /** @class */ (function () {
+        function LineOptions(color) {
             this.color = color;
         }
-        return Lineoptions;
+        return LineOptions;
     }());
-    exports.Lineoptions = Lineoptions;
+    exports.LineOptions = LineOptions;
+    var QueueElement = /** @class */ (function () {
+        function QueueElement(side, value, taskId) {
+            switch (side) {
+                case "outQueue" /* right */:
+                    this.value = value;
+                    this.endAngle = (1 - value) * Math.PI;
+                    this.color = colorScaleBuffer(value);
+                    this.id = taskId + "_" + "outQueue";
+                    break;
+                case "inQueue" /* left */:
+                    this.value = value;
+                    this.endAngle = (1 + value) * Math.PI;
+                    this.color = colorScaleBuffer(value);
+                    this.id = taskId + "_" + "inQueue";
+                    break;
+            }
+        }
+        return QueueElement;
+    }());
+    exports.QueueElement = QueueElement;
 });
 //Helper for Class RestInterface
 define("RestInterface", ["require", "exports", "datastructure", "jquery"], function (require, exports, datastructure_1, $) {
@@ -169,6 +202,16 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
         title: {
             text: 'Selected Metric'
         },
+        lang: {
+            noData: "Please Init Metric"
+        },
+        noData: {
+            style: {
+                fontWeight: 'bold',
+                fontSize: '15px',
+                color: '#303030'
+            }
+        },
         xAxis: {
             type: 'datetime',
             tickPixelInterval: 150
@@ -191,10 +234,10 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
             }
         },
         legend: {
-            enabled: false
+            enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         }
     };
     var LinePlot = Highcharts.chart('linePlot', ChartOptions);
@@ -206,10 +249,10 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
                 var selMetric = new datastructure_2.Metric(task, metricListObject.metricId, metricListObject.resolution);
                 var lastCall;
                 if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
-                    var dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
-                    var dataIndex = dataPerTask.length - 1;
+                    var dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId);
+                    var dataIndex = dataPerTask.data.length - 1;
                     if (dataIndex >= 0) {
-                        lastCall = dataPerTask[dataIndex].x;
+                        lastCall = dataPerTask.data[dataIndex].x;
                         metricListObject.since = lastCall;
                     }
                 }
@@ -221,7 +264,7 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
     }, 5000);
     function setSeries(selectedMetric, since) {
         RestInterface_1.getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
-            var options = new datastructure_2.Lineoptions(exports.colorScaleLines(selectedMetric.taskId).toString());
+            var options = new datastructure_2.LineOptions(exports.colorScaleLines(selectedMetric.taskId).toString());
             var line = new datastructure_2.LinePlotData(selectedMetric.taskId, selectedMetric.taskId + "_" + selectedMetric.metricId, options);
             result.values.forEach(function (point) {
                 var value = new datastructure_2.Value(point[0], point[1]);
@@ -342,20 +385,17 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
         });
     }
 });
-define("node", ["require", "exports", "d3"], function (require, exports, d3) {
+define("node", ["require", "exports", "d3", "constants"], function (require, exports, d3, constants_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var arcOut = d3.arc()
-        .innerRadius(6)
-        .outerRadius(12)
+        .innerRadius(constants_1.arcRadius.inner)
+        .outerRadius(constants_1.arcRadius.outer)
         .startAngle(1 * Math.PI);
     var arcIn = d3.arc()
-        .innerRadius(6)
-        .outerRadius(12)
+        .innerRadius(constants_1.arcRadius.inner)
+        .outerRadius(constants_1.arcRadius.outer)
         .startAngle(1 * Math.PI);
-    var colorScaleBuffer = d3.scaleLinear()
-        .domain([0, 1.1])
-        .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
     function drawNode(point, posx, posy, d) {
         var svg = point, g = svg.append("g")
             .attr("transform", "translate(" + posx + "," + posy + ")");
@@ -393,26 +433,26 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
             d3.selectAll(".inQueue")
                 .data(nodes)
                 .datum(function (d) {
-                return { endAngle: (1 + d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+                return d;
             })
                 .style("fill", function (d) {
                 return d.color;
             })
                 .transition()
-                .duration(500)
+                .duration(1000)
                 .attrTween("d", arcInTween);
         }
         else {
             d3.selectAll(".outQueue")
                 .data(nodes)
                 .datum(function (d) {
-                return { endAngle: (1 - d.value) * Math.PI, color: colorScaleBuffer(d.value) };
+                return d;
             })
                 .style("fill", function (d) {
                 return d.color;
             })
                 .transition()
-                .duration(500)
+                .duration(1000)
                 .attrTween("d", arcOutTween);
         }
     }
@@ -434,7 +474,7 @@ define("node", ["require", "exports", "d3"], function (require, exports, d3) {
         };
     }
 });
-define("longGraph", ["require", "exports", "RestInterface", "datastructure", "LinePlot", "node", "d3"], function (require, exports, RestInterface_3, datastructure_4, LinePlot_2, node_1, d3) {
+define("longGraph", ["require", "exports", "RestInterface", "datastructure", "LinePlot", "node", "constants", "d3"], function (require, exports, RestInterface_3, datastructure_4, LinePlot_2, node_1, constants_2, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var margin = { top: 10, right: 20, bottom: 60, left: 20 };
@@ -456,7 +496,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
     };
     //Variables for Debug
     var xScale = d3.scaleLinear();
-    var xLabel = d3.scaleOrdinal();
+    var xLabel = d3.scaleLinear();
     var yScales = [];
     var graphSvg = d3.select("#longGraph")
         .attr("width", longGraph.width)
@@ -500,10 +540,10 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             .attr("transform", function (d, i) {
             var textElem = this;
             if (i == 0) {
-                return "translate(" + textElem.getBBox().width * 0.4 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
+                return "translate(" + textElem.getBBox().width * 0.43 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
             }
             else if (i == yScales.length - 1) {
-                return "translate(" + textElem.getBBox().width * -0.4 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
+                return "translate(" + textElem.getBBox().width * -0.43 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
             }
             else {
                 return "translate(" + 0 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
@@ -532,7 +572,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             .selectAll(".node")
             .data(taskList)
             .enter().append("circle")
-            .attr("r", 5)
+            .attr("r", constants_2.nodeRadius)
             .attr("class", "node")
             .attr("cx", function (d) {
             return xScale(d.cx);
@@ -555,46 +595,38 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         });
         //Init Metrics for in and out - Queue
         var initList = getInitList(taskList);
-        RestInterface_3.initMetricForTasks("buffers.inPoolUsage", initList, 1).done(function () {
+        RestInterface_3.initMetricForTasks("buffers.inPoolUsage", initList, constants_2.inOutPoolResolution).done(function () {
             setInterval(function () {
                 updateInputQueue(initList);
-            }, 1000);
+            }, constants_2.inOutPoolResolution * 1000);
         });
-        RestInterface_3.initMetricForTasks("buffers.outPoolUsage", initList, 1).done(function () {
+        RestInterface_3.initMetricForTasks("buffers.outPoolUsage", initList, constants_2.inOutPoolResolution).done(function () {
             setInterval(function () {
                 updateOutputQueue(initList);
-            }, 1000);
+            }, constants_2.inOutPoolResolution * 1000);
         });
     });
     // Helper Functions
     function updateInputQueue(data) {
-        var inputValList = [];
+        var queueElements = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - 1200).done(function (result) {
-                var point = result.values[0];
-                var inputVal = {
-                    taskId: item + "_" + "inQueue",
-                    value: point[1]
-                };
-                inputValList.push(inputVal);
-                if (inputValList.length == data.length) {
-                    node_1.updateNode(inputValList, true);
+            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (constants_2.inOutPoolResolution + 100)).done(function (result) {
+                var queueElement = new datastructure_4.QueueElement("inQueue" /* left */, result.values[0][1], item);
+                queueElements.push(queueElement);
+                if (queueElements.length == data.length) {
+                    node_1.updateNode(queueElements, true);
                 }
             });
         });
     }
     function updateOutputQueue(data) {
-        var inputValList = [];
+        var queueElements = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - 1200).done(function (result) {
-                var point = result.values[0];
-                var inputVal = {
-                    taskId: item + "_" + "outQueue",
-                    value: point[1]
-                };
-                inputValList.push(inputVal);
-                if (inputValList.length == data.length) {
-                    node_1.updateNode(inputValList, false);
+            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (constants_2.inOutPoolResolution + 100)).done(function (result) {
+                var queueElement = new datastructure_4.QueueElement("outQueue" /* right */, result.values[0][1], item);
+                queueElements.push(queueElement);
+                if (queueElements.length == data.length) {
+                    node_1.updateNode(queueElements, false);
                 }
             });
         });

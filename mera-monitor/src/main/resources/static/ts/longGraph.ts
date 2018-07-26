@@ -1,7 +1,8 @@
 import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
-import {Cardinality, Task} from "./datastructure";
+import {Cardinality, QueueElement, Task} from "./datastructure";
 import {colorScaleLines} from "./LinePlot";
 import {drawNode, updateNode} from "./node";
+import {inOutPoolResolution, nodeRadius, sides} from "./constants";
 import d3 = require("d3");
 
 
@@ -24,7 +25,7 @@ let shortGraphCanvas = {
 };
 //Variables for Debug
 let xScale = d3.scaleLinear();
-let xLabel = d3.scaleOrdinal();
+let xLabel = d3.scaleLinear();
 let yScales = [];
 let graphSvg = d3.select("#longGraph")
     .attr("width", longGraph.width)
@@ -73,10 +74,10 @@ getTopology.done(function (result) {
         .attr("transform", function (d, i) {
             let textElem: any = this;
             if (i == 0) {
-                return "translate(" + textElem.getBBox().width * 0.4 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
+                return "translate(" + textElem.getBBox().width * 0.43 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
             }
             else if (i == yScales.length - 1) {
-                return "translate(" + textElem.getBBox().width * -0.4 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
+                return "translate(" + textElem.getBBox().width * -0.43 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
             }
             else {
                 return "translate(" + 0 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
@@ -111,7 +112,7 @@ getTopology.done(function (result) {
         .selectAll(".node")
         .data(taskList)
         .enter().append("circle")
-        .attr("r", 5)
+        .attr("r", nodeRadius)
         .attr("class", "node")
         .attr("cx", function (d: Task) {
             return xScale(d.cx)
@@ -120,7 +121,7 @@ getTopology.done(function (result) {
             return yScales[d.cx](d.cy)
         })
         .style("fill", function (d: Task) {
-            return nodeColor(d.id)
+            return nodeColor(d.id) as string
         });
     //Draw Node Overlay
     graphSvg
@@ -134,47 +135,39 @@ getTopology.done(function (result) {
         });
     //Init Metrics for in and out - Queue
     let initList:Array<string> = getInitList(taskList);
-    initMetricForTasks("buffers.inPoolUsage", initList, 1).done(function () {
+    initMetricForTasks("buffers.inPoolUsage", initList, inOutPoolResolution).done(function () {
         setInterval(function () {
             updateInputQueue(initList)
-        },1000);
+        },inOutPoolResolution * 1000);
     });
-    initMetricForTasks("buffers.outPoolUsage", initList, 1).done(function () {
+    initMetricForTasks("buffers.outPoolUsage", initList, inOutPoolResolution).done(function () {
         setInterval(function () {
             updateOutputQueue(initList)
-        },1000);
+        },inOutPoolResolution * 1000);
     });
 });
 
 // Helper Functions
 function updateInputQueue(data:Array<string>) {
-    let inputValList:Array<object> = [];
+    let queueElements:Array<QueueElement> = [];
     data.forEach(function (item) {
-        getDataFromMetrics("buffers.inPoolUsage", item, Date.now()-1200).done(function (result) {
-            let point = result.values[0];
-            let inputVal = {
-                taskId: item + "_" + "inQueue",
-                value: point[1]
-            };
-            inputValList.push(inputVal);
-            if (inputValList.length == data.length){
-                updateNode(inputValList, true)
+        getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (inOutPoolResolution + 100)).done(function (result) {
+            let queueElement = new QueueElement(sides.left, result.values[0][1], item);
+            queueElements.push(queueElement);
+            if (queueElements.length == data.length){
+                updateNode(queueElements, true)
             }
         });
     });
 }
 function updateOutputQueue(data:Array<string>) {
-    let inputValList:Array<object> = [];
+    let queueElements:Array<QueueElement> = [];
     data.forEach(function (item) {
-        getDataFromMetrics("buffers.outPoolUsage", item, Date.now()-1200).done(function (result) {
-            let point = result.values[0];
-            let inputVal = {
-                taskId: item + "_" + "outQueue",
-                value: point[1]
-            };
-            inputValList.push(inputVal);
-            if (inputValList.length == data.length){
-                updateNode(inputValList, false)
+        getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (inOutPoolResolution + 100)).done(function (result) {
+            let queueElement = new QueueElement(sides.right, result.values[0][1], item);
+            queueElements.push(queueElement);
+            if (queueElements.length == data.length){
+                updateNode(queueElements, false)
             }
         });
     });

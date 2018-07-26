@@ -2,10 +2,10 @@
 	height: 10vh;
 }
 .longGraph {
-	height: 35vh;
+	height: 55vh;
 }
 .linePlot {
-	height: 45vh;
+	height: 25vh;
 }
 .modal-content {
 	min-height: 70vh;
@@ -15,9 +15,8 @@
 }
 .isOptimized{
 	background-color: #1e7e34;
+	color: #1b1e21;
 }
-
-
 
 .selectorPlot {
 	height: 5vh;
@@ -58,5 +57,5 @@ circle {
 }
 
 text {
-	font-size: 0.5rem;
+	font-size: 0.7rem;
 }

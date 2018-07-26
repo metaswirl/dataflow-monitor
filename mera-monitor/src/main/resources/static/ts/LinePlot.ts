@@ -1,9 +1,10 @@
 import {getDataFromMetrics, getInitMetrics, updateInitMetrics} from "./RestInterface";
-import {Options} from "./highcharts";
-import {Lineoptions, LinePlotData, Metric, MetricListObject, Value} from "./datastructure";
+import {Options, SeriesObject} from "./highcharts";
+import {LineOptions, LinePlotData, Metric, MetricListObject, Value} from "./datastructure";
 import Highcharts = require("./highcharts");
-import $  = require("jquery");
+import $ = require("jquery");
 import d3 = require("d3");
+
 
 export let colorScaleLines = d3.scaleOrdinal(d3["schemeCategory20c"]);
 let ChartOptions:Options = {
@@ -19,6 +20,16 @@ let ChartOptions:Options = {
     },
     title: {
         text: 'Selected Metric'
+    },
+    lang:{
+        noData: "Please Init Metric"
+    },
+    noData: {
+        style: {
+            fontWeight: 'bold',
+            fontSize: '15px',
+            color: '#303030'
+        }
     },
     xAxis: {
         type: 'datetime',
@@ -42,10 +53,10 @@ let ChartOptions:Options = {
         }
     },
     legend: {
-        enabled: false
+        enabled: true
     },
     exporting: {
-        enabled: false
+        enabled: true
     }
 };
 
@@ -60,10 +71,10 @@ setInterval(function () {
             let selMetric = new Metric(task, metricListObject.metricId, metricListObject.resolution);
             let lastCall;
             if (LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) != undefined) {
-                let dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId).data;
-                let dataIndex = dataPerTask.length - 1;
+                let dataPerTask = LinePlot.get(selMetric.taskId + "_" + selMetric.metricId) as SeriesObject;
+                let dataIndex = dataPerTask.data.length - 1;
                 if (dataIndex >= 0) {
-                    lastCall = dataPerTask[dataIndex].x;
+                    lastCall = dataPerTask.data[dataIndex].x;
                     metricListObject.since = lastCall;
                 }
             }
@@ -76,7 +87,7 @@ setInterval(function () {
 
 export function setSeries(selectedMetric: Metric, since: number) {
     getDataFromMetrics(selectedMetric.metricId, selectedMetric.taskId, since).done(function (result) {
-        let options = new Lineoptions(colorScaleLines(selectedMetric.taskId).toString());
+        let options = new LineOptions(colorScaleLines(selectedMetric.taskId).toString());
         let line = new LinePlotData(selectedMetric.taskId, selectedMetric.taskId + "_" + selectedMetric.metricId, options);
         result.values.forEach(function (point) {
             let value = new Value(point[0],point[1]);
