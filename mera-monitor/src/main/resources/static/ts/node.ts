@@ -1,6 +1,6 @@
 import d3 = require("d3");
 import {QueueElement, Task} from "./datastructure";
-import {arcRadius} from "./constants";
+import {arcRadius, inOutPoolResolution} from "./constants";
 
 let arcOut = d3.arc()
     .innerRadius(arcRadius.inner)
@@ -57,7 +57,7 @@ export function updateNode(nodes:Array<QueueElement>, isInput:boolean) {
                 return d.color;
             })
             .transition()
-            .duration(1000)
+            .duration(inOutPoolResolution * 1000)
             .attrTween("d", arcInTween);
     }
     else {
@@ -70,7 +70,7 @@ export function updateNode(nodes:Array<QueueElement>, isInput:boolean) {
                 return d.color;
             })
             .transition()
-            .duration(1000)
+            .duration(inOutPoolResolution * 1000)
             .attrTween("d", arcOutTween);
     }
 
