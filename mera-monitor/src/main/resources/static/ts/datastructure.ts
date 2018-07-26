@@ -1,8 +1,14 @@
+import d3 = require("d3");
+import {sides} from "./constants";
+
 export class Operator {
     name: string;
     tasks: Array<Task>
     //cy equals tasks index
 }
+let colorScaleBuffer =  d3.scaleLinear()
+    .domain([0, 1.1])
+    .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
 
 export class Task {
     constructor(id:string, cx:number, cy:number){
@@ -57,14 +63,14 @@ export class MetricListObject extends MetricPostObject {
 }
 
 export class LinePlotData {
-    constructor(name:string, id:string, options:Lineoptions){
+    constructor(name:string, id:string, options:LineOptions){
         this.name = name;
         this.id = id;
         this.options = options
     }
     name: string;
     id: string;
-    options: Lineoptions;
+    options: LineOptions;
     data: Array<Value> = [];
 }
 
@@ -76,10 +82,32 @@ export class Value {
     x: number;
     y: number
 }
-export class Lineoptions{
+export class LineOptions{
     constructor(color:string){
         this.color = color
     }
     color: string;
+}
+export class QueueElement {
+    constructor(side:sides, value:number, taskId:string) {
+        switch (side) {
+            case sides.right:
+                this.value = value;
+                this.endAngle = (1 - value) * Math.PI;
+                this.color = colorScaleBuffer(value);
+                this.id = taskId + "_" + "outQueue";
+                break;
+            case sides.left:
+                this.value = value;
+                this.endAngle = (1 + value) * Math.PI;
+                this.color = colorScaleBuffer(value);
+                this.id = taskId + "_" + "inQueue";
+                break;
+        }
+    }
+    id:string;
+    endAngle: number;
+    value:number;
+    color:string;
 }
 

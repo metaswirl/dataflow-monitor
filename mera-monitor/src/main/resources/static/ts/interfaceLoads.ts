@@ -72,7 +72,7 @@ $("#optimizeBtn").on("click", function () {
 
 function initMetricOnAction() {
     let metric = $("#metrics").val().toString();
-    let Ids:Array<string> = $("#Ids").val();
+    let Ids: any = $("#Ids").val();
     let resolutionString: any = $("input[name=resolutionselect]:checked").val();
     let resolution = parseInt(resolutionString);
     let post = initMetricForTasks(metric, Ids, resolution);
