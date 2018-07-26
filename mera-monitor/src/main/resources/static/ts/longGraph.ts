@@ -25,7 +25,7 @@ let shortGraphCanvas = {
 };
 //Variables for Debug
 let xScale = d3.scaleLinear();
-let xLabel = d3.scaleLinear();
+let xLabel = d3.scaleOrdinal();
 let yScales = [];
 let graphSvg = d3.select("#longGraph")
     .attr("width", longGraph.width)

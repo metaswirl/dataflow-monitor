@@ -12,10 +12,11 @@ define("constants", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.inOutPoolResolution = 2;
-    exports.nodeRadius = 5;
+    exports.nodeRadius = 7.5;
+    var nodeBorder = 1;
     exports.arcRadius = {
-        inner: exports.nodeRadius + 1,
-        outer: this.inner * 2
+        inner: exports.nodeRadius + nodeBorder,
+        outer: (exports.nodeRadius + nodeBorder) * 2
     };
 });
 define("datastructure", ["require", "exports", "d3"], function (require, exports, d3) {
@@ -439,7 +440,7 @@ define("node", ["require", "exports", "d3", "constants"], function (require, exp
                 return d.color;
             })
                 .transition()
-                .duration(1000)
+                .duration(constants_1.inOutPoolResolution * 1000)
                 .attrTween("d", arcInTween);
         }
         else {
@@ -452,7 +453,7 @@ define("node", ["require", "exports", "d3", "constants"], function (require, exp
                 return d.color;
             })
                 .transition()
-                .duration(1000)
+                .duration(constants_1.inOutPoolResolution * 1000)
                 .attrTween("d", arcOutTween);
         }
     }
@@ -496,7 +497,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
     };
     //Variables for Debug
     var xScale = d3.scaleLinear();
-    var xLabel = d3.scaleLinear();
+    var xLabel = d3.scaleOrdinal();
     var yScales = [];
     var graphSvg = d3.select("#longGraph")
         .attr("width", longGraph.width)
