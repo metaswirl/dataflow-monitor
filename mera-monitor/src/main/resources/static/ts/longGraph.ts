@@ -3,6 +3,7 @@ import {Cardinality, QueueElement, Task} from "./datastructure";
 import {colorScaleLines} from "./LinePlot";
 import {drawNode, updateNode} from "./node";
 import {inOutPoolResolution, nodeRadius, sides} from "./constants";
+import {drawNodeLink} from "./node_links";
 import d3 = require("d3");
 
 
@@ -24,9 +25,9 @@ let shortGraphCanvas = {
     height: shortGraph.height - margin.top - margin.bottom
 };
 //Variables for Debug
-let xScale = d3.scaleLinear();
+export let xScale = d3.scaleLinear();
 let xLabel = d3.scaleOrdinal();
-let yScales = [];
+export let yScales = [];
 let graphSvg = d3.select("#longGraph")
     .attr("width", longGraph.width)
     .attr("height", longGraph.height)
@@ -101,6 +102,17 @@ getTopology.done(function (result) {
                 dr = 0;
             return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
         });
+    //Draw the LineOverlay
+    graphSvg
+        .append("g")
+        .attr("class", "lineOverlays")
+        .selectAll("lineOverlays")
+        .data(cardinality)
+        .enter().append(function (d: Cardinality) {
+        let obj = d3.select(this);
+        return drawNodeLink(obj, d)
+    });
+
 
     //Prepare Data as Tasklist
     let taskList:Array<Task> = createTaskList(result);
@@ -126,8 +138,8 @@ getTopology.done(function (result) {
     //Draw Node Overlay
     graphSvg
         .append("g")
-        .attr("class", "overlays")
-        .selectAll("overlay")
+        .attr("class", "nodeOverlays")
+        .selectAll("nodeOverlays")
         .data(taskList)
         .enter().append(function (d: Task) {
         let obj = d3.select(this);
