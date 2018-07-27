@@ -13,7 +13,7 @@ define("constants", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.inOutPoolResolution = 2;
     exports.nodeRadius = 7.5;
-    exports.sendRecieveIndicator = 50;
+    exports.sendRecieveIndicator = 60;
     var nodeBorder = 1;
     exports.arcRadius = {
         inner: exports.nodeRadius + nodeBorder,
@@ -55,6 +55,12 @@ define("datastructure", ["require", "exports", "d3"], function (require, exports
             this.source = source;
             this.target = target;
         }
+        Cardinality.prototype.reverse = function () {
+            var target = this.source;
+            this.source = this.target;
+            this.target = target;
+            return this;
+        };
         return Cardinality;
     }());
     exports.Cardinality = Cardinality;
@@ -476,46 +482,98 @@ define("node", ["require", "exports", "d3", "constants"], function (require, exp
         };
     }
 });
-define("node_links", ["require", "exports", "datastructure", "constants", "longGraph"], function (require, exports, datastructure_4, constants_2, longGraph_1) {
+define("node_links", ["require", "exports", "datastructure", "constants", "longGraph", "d3"], function (require, exports, datastructure_4, constants_2, longGraph_1, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function drawNodeLink(obj, link, level) {
-        var alpha = Math.atan((link.target.cy - link.source.cy) / (link.target.cx - link.source.cx));
-        var beta = Math.atan((link.target.cx - link.source.cx) / (link.target.cy - link.source.cy));
         var svg = obj;
         var g = svg.append("g");
-        var outputStreamMax = g.append("path")
-            .data(link)
+        var percentToLength = d3.scaleLinear()
+            .range([constants_2.arcRadius.outer, constants_2.sendRecieveIndicator])
+            .domain([0, 100]);
+        var outputStream = svg.append("g");
+        outputStream.append("path")
+            .attr("class", "outStreamFull")
+            .datum(link)
             .attr("id", function (d) {
-            return d.source.id + "inputStreamMax";
+            return d.source.id + "outputStreamFull" + d.target.id;
         })
             .attr("d", function (d) {
-            var sx = new datastructure_4.Value(longGraph_1.xScale(d.source.cx), longGraph_1.yScales[d.source.cx](d.target.cy));
-            console.log(sx, d);
-            return "M" + longGraph_1.xScale(d.source.cx) + "," + longGraph_1.yScales[d.source.cx](d.target.cy) + "A" + 0 + "," + 0 + " 0 0,1 " + calcFilling(alpha).x + "," + calcFilling(alpha).y;
+            var mT = calcFilling(d, false);
+            return "M" + longGraph_1.xScale(d.source.cx) + ","
+                + longGraph_1.yScales[d.source.cx](d.source.cy)
+                + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
         });
-        var inputStreamMax = g.append("path")
-            .data(link)
+        outputStream.append("path")
+            .attr("class", "outStreamLink")
+            .datum(link)
             .attr("id", function (d) {
-            return d.target.id + "inputStreamMax";
+            return d.source.id + "outputSteamLink" + d.target.id;
         })
             .attr("d", function (d) {
-            return "M" + longGraph_1.xScale(d.source.cx) + "," + longGraph_1.yScales[d.source.cx](d.target.cy) + "A" + 0 + "," + 0 + " 0 0,1 " + calcFilling(beta).x + "," + calcFilling(beta).y;
+            var mT = calcFilling(d, false, percentToLength(60));
+            return "M" + longGraph_1.xScale(d.source.cx) + ","
+                + longGraph_1.yScales[d.source.cx](d.source.cy)
+                + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
+        });
+        var inputStreamMax = svg.append("g");
+        inputStreamMax.append("path")
+            .attr("class", "inStreamFull")
+            .datum(link.reverse())
+            .attr("id", function (d) {
+            return d.source.id + "inputStreamFull" + d.target.id;
+        })
+            .attr("d", function (d) {
+            var mT = calcFilling(d, true);
+            return "M" + longGraph_1.xScale(d.source.cx) + ","
+                + longGraph_1.yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
+        });
+        inputStreamMax.append("path")
+            .attr("class", "inStreamLink")
+            .datum(link)
+            .attr("id", function (d) {
+            return d.source.id + "inputStreamLink" + d.target.id;
+        })
+            .attr("d", function (d) {
+            var mT = calcFilling(d, true, percentToLength(5));
+            return "M" + longGraph_1.xScale(d.source.cx) + ","
+                + longGraph_1.yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
         });
         return g.node();
     }
     exports.drawNodeLink = drawNodeLink;
     //Helper Functions
-    function calcFilling(angle, level) {
-        var mX;
-        var mY;
-        if (level != null) {
-            mX = (constants_2.sendRecieveIndicator * angle) / Math.sin(angle);
-            mY = (constants_2.sendRecieveIndicator * angle) / Math.cos(angle);
+    function calcFilling(link, reverse, level) {
+        var alpha = Math.atan((longGraph_1.yScales[link.target.cx](link.target.cy) - longGraph_1.yScales[link.source.cx](link.source.cy)) / (longGraph_1.xScale(link.target.cx) - longGraph_1.xScale(link.source.cx)));
+        var mX = longGraph_1.xScale(link.source.cx);
+        var mY = longGraph_1.yScales[link.source.cx](link.source.cy);
+        if (reverse) {
+            if (level != null) {
+                mX -= (level) * Math.cos(alpha);
+                mY -= (level) * Math.sin(alpha);
+            }
+            else {
+                mX -= (constants_2.sendRecieveIndicator) * Math.cos(alpha);
+                mY -= (constants_2.sendRecieveIndicator) * Math.sin(alpha);
+            }
         }
         else {
-            mX = (constants_2.sendRecieveIndicator) / Math.sin(angle);
-            mY = (constants_2.sendRecieveIndicator) / Math.cos(angle);
+            if (level != null) {
+                mX += (level) * Math.cos(alpha);
+                mY += (level) * Math.sin(alpha);
+            }
+            else {
+                mX += (constants_2.sendRecieveIndicator) * Math.cos(alpha);
+                mY += (constants_2.sendRecieveIndicator) * Math.sin(alpha);
+            }
         }
         var value = new datastructure_4.Value(mX, mY);
         return value;

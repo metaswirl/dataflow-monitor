@@ -38,6 +38,12 @@ export class Cardinality {
         this.source = source;
         this.target = target;
     }
+    reverse():Cardinality{
+        let target = this.source;
+        this.source = this.target;
+        this.target = target;
+        return this
+    }
     source: Task;
     target: Task
 }
