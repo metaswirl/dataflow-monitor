@@ -28,34 +28,39 @@ circle {
 	stroke: #fff;
 	stroke-width: 2px;
 }
+.bg-light{
+	background-color: white !important;
+}
 
 .link {
 	fill: none;
 	stroke: #999;
 	stroke-width: 0.5px;
 }
-
-.line1, .line2, .line3 {
+.outStreamFull{
 	fill: none;
-	stroke-width: 3px
-}
+	stroke: #55BF3B;
+	stroke-width: 5px;
 
-.line1 {
-	stroke: green;
 }
+.outStreamLink{
+	fill: none;
+	stroke: #800610;
+	stroke-width: 5px;
 
-.line2 {
-	stroke: blue;
 }
+.inStreamFull{
+	fill: none;
+	stroke: #55BF3B;
+	stroke-width: 5px;
 
-.line3 {
-	stroke: red;
 }
+.inStreamLink{
+	fill: none;
+	stroke: #800610;
+	stroke-width: 2px;
 
-.line3:hover {
-	stroke: green;
 }
-
 text {
 	font-size: 0.7rem;
 }

@@ -4,7 +4,7 @@ export const enum sides{
 }
 export const inOutPoolResolution = 2;
 export const nodeRadius = 7.5;
-export const sendRecieveIndicator = 50;
+export const sendRecieveIndicator = 60;
 
 const nodeBorder = 1;
 export const arcRadius = {

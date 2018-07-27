@@ -1,48 +1,102 @@
 import {Cardinality, Value} from "./datastructure";
-import {sendRecieveIndicator} from "./constants";
+import {arcRadius, sendRecieveIndicator} from "./constants";
 import {xScale, yScales} from "./longGraph";
+import d3 = require("d3");
+
 
 export function drawNodeLink(obj, link:Cardinality, level?:number) {
-    let alpha = Math.atan((link.target.cy - link.source.cy) / (link.target.cx - link.source.cx));
-    let beta = Math.atan((link.target.cx - link.source.cx) / (link.target.cy - link.source.cy));
     let svg = obj;
     let g = svg.append("g");
+    let percentToLength = d3.scaleLinear()
+        .range([arcRadius.outer, sendRecieveIndicator])
+        .domain([0,100]);
 
-    let outputStreamMax = g.append("path")
-        .data(link)
-        .attr("id", function (d: Cardinality) {
-            return d.source.id + "inputStreamMax"
-        })
-        .attr("d", function (d) {
-            let sx = new Value(xScale(d.source.cx),yScales[d.source.cx](d.target.cy));
-            console.log(sx, d);
-            return "M" + xScale(d.source.cx) + "," + yScales[d.source.cx](d.target.cy) + "A" + 0 + "," + 0 + " 0 0,1 " + calcFilling(alpha).x + "," + calcFilling(alpha).y;
-        });
+    let outputStream = svg.append("g");
+        outputStream.append("path")
+            .attr("class", "outStreamFull")
+            .datum(link)
+            .attr("id", function (d: Cardinality) {
+                return d.source.id + "outputStreamFull" + d.target.id
+            })
+            .attr("d", function (d:Cardinality) {
+                let mT = calcFilling(d, false);
+                return "M" + xScale(d.source.cx) + ","
+                    + yScales[d.source.cx](d.source.cy)
+                    + "A" + 0 + "," + 0 + " 0 0,1 "
+                    + mT.x + ","
+                    + mT.y;
+            });
+        outputStream.append("path")
+            .attr("class", "outStreamLink")
+            .datum(link)
+            .attr("id", function (d: Cardinality) {
+              return d.source.id + "outputSteamLink" + d.target.id
+            })
+            .attr("d", function (d:Cardinality) {
+                let mT = calcFilling(d, false, percentToLength(60));
+                return "M" + xScale(d.source.cx) + ","
+                    + yScales[d.source.cx](d.source.cy)
+                    + "A" + 0 + "," + 0 + " 0 0,1 "
+                    + mT.x + ","
+                    + mT.y;
+            });
 
-    let inputStreamMax = g.append("path")
-        .data(link)
-        .attr("id", function (d: Cardinality) {
-            return d.target.id + "inputStreamMax"
-        })
-        .attr("d", function (d: Cardinality) {
-            return "M" + xScale(d.source.cx) + "," + yScales[d.source.cx](d.target.cy) + "A" + 0 + "," + 0 + " 0 0,1 " + calcFilling(beta).x + "," + calcFilling(beta).y
-        });
+    let inputStreamMax = svg.append("g");
+        inputStreamMax.append("path")
+            .attr("class", "inStreamFull")
+            .datum(link.reverse())
+            .attr("id", function (d: Cardinality) {
+                return d.source.id + "inputStreamFull" + d.target.id
+            })
+            .attr("d", function (d: Cardinality) {
+                let mT = calcFilling(d, true);
+                return "M" + xScale(d.source.cx) + ","
+                    + yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
+                    + mT.x + ","
+                    + mT.y
+            });
+        inputStreamMax.append("path")
+            .attr("class", "inStreamLink")
+            .datum(link)
+            .attr("id", function (d: Cardinality) {
+                return d.source.id + "inputStreamLink" + d.target.id
+            })
+            .attr("d", function (d: Cardinality) {
+                let mT = calcFilling(d, true, percentToLength(5));
+                return "M" + xScale(d.source.cx) + ","
+                    + yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
+                    + mT.x + ","
+                    + mT.y
+            });
 
     return g.node();
 
 }
 
 //Helper Functions
-function calcFilling(angle:number, level?:number):Value {
-    let mX;
-    let mY;
-    if(level != null){
-        mX = (sendRecieveIndicator * angle) / Math.sin(angle);
-        mY = (sendRecieveIndicator * angle) / Math.cos(angle);
+function calcFilling(link:Cardinality, reverse:Boolean, level?:number):Value {
+    let alpha = Math.atan((yScales[link.target.cx](link.target.cy) - yScales[link.source.cx](link.source.cy)) / (xScale(link.target.cx) - xScale(link.source.cx)));
+    let mX = xScale(link.source.cx);
+    let mY = yScales[link.source.cx](link.source.cy);
+    if (reverse){
+        if(level != null){
+            mX -= (level) * Math.cos(alpha);
+            mY -= (level) * Math.sin(alpha);
+        }
+        else{
+            mX -= (sendRecieveIndicator) * Math.cos(alpha);
+            mY -= (sendRecieveIndicator) * Math.sin(alpha);
+        }
     }
     else{
-        mX = (sendRecieveIndicator) / Math.sin(angle);
-        mY = (sendRecieveIndicator) / Math.cos(angle);
+        if(level != null){
+            mX += (level) * Math.cos(alpha);
+            mY += (level) * Math.sin(alpha);
+        }
+        else{
+            mX += (sendRecieveIndicator) * Math.cos(alpha);
+            mY += (sendRecieveIndicator) * Math.sin(alpha);
+        }
     }
     let value = new Value(mX, mY);
     return value
