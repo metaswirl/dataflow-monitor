@@ -1,3 +1,6 @@
+[![build status](https://gitlab.inet.tu-berlin.de/flink/mera-monitor/badges/master/build.svg)](https://gitlab.inet.tu-berlin.de/flink/mera-monitor/pipelines)
+[![coverage report](https://gitlab.inet.tu-berlin.de/flink/mera-monitor/badges/master/coverage.svg)](https://flink.gitlab.inet.tu-berlin.de/mera-monitor)
+
 # Usage
 
 For now we only support a single node setup
@@ -6,6 +9,21 @@ Requirements:
 - Flink 1.4.2
 - Scala >=2.11 (tested for 2.11)
 - sbt
+- gurobi (for the optimizer only)
+
+## Building 
+
+Build everything with:
+
+    sbt clean assembly
+
+Run the monitor with
+
+    sbt monitor/run
+
+Or use the short-hand
+
+    sbt "monitor/runMain berlin.bbdc.inet.mera.monitor.Starter"
 
 ## Configuring Flink
 
