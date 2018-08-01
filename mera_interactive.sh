@@ -4,7 +4,7 @@ if [ -z ${FLINK_DIR+x} ]; then
     echo "\$FLINK_DIR must be set!"
     exit 1
 fi
-if [ -z ${MEAR_DIR+x} ]; then
+if [ -z ${MERA_DIR+x} ]; then
     echo "\$MERA_DIR must be set!"
     exit 1
 fi

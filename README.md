@@ -42,7 +42,8 @@ Before using the monitor, your version of Flink first has to be instrumented.
 
         cat <<EOF >> $FLINK_PATH/conf/flink-conf.yaml
         metrics.reporters: monitor
-        metrics.reporter.monitor.class: berlin.bbdc.inet.flinkPlugin.FlinkMetricPusher
+        metrics.reporter.monitor.class: berlin.bbdc.inet.mera.reporter.FlinkMetricPusher
+        metrics.reporter.monitor.interval: 500 MILLISECONDS
         EOF 
 
 ## Running the monitor

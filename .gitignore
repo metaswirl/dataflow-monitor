@@ -24,3 +24,8 @@ __pycache__/
 
 # vim
 *.swp
+*.swo
+
+# local folders
+/_*
+artifacts/

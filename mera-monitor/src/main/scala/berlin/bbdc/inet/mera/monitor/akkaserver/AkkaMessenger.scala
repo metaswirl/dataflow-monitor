@@ -40,7 +40,7 @@ class AkkaMessenger(model: Model) extends Actor {
       processMetricUpdate(d)
     case m: LoadShedderRegistration =>
       LoadShedderManager.registerLoadShedder(m)
-
+    case _ => LOG.warn("Could not parse message!")
   }
 
   override def postStop(): Unit = {
