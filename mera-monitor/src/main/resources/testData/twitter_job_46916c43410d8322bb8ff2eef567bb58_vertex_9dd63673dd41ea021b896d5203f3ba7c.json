@@ -1,0 +1,103 @@
+{
+  "id": "9dd63673dd41ea021b896d5203f3ba7c",
+  "name": "Filter",
+  "parallelism": 5,
+  "now": 1533237066461,
+  "subtasks": [
+    {
+      "subtask": 0,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272716,
+      "end-time": -1,
+      "duration": 3793745,
+      "metrics": {
+        "read-bytes": 7951,
+        "read-bytes-complete": true,
+        "write-bytes": 7977,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 1,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272719,
+      "end-time": -1,
+      "duration": 3793742,
+      "metrics": {
+        "read-bytes": 8035,
+        "read-bytes-complete": true,
+        "write-bytes": 8061,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 2,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272720,
+      "end-time": -1,
+      "duration": 3793741,
+      "metrics": {
+        "read-bytes": 8287,
+        "read-bytes-complete": true,
+        "write-bytes": 8313,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 3,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen113:43935",
+      "start-time": 1533233272720,
+      "end-time": -1,
+      "duration": 3793741,
+      "metrics": {
+        "read-bytes": 7531,
+        "read-bytes-complete": true,
+        "write-bytes": 7557,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 4,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen114:42794",
+      "start-time": 1533233272725,
+      "end-time": -1,
+      "duration": 3793736,
+      "metrics": {
+        "read-bytes": 8056,
+        "read-bytes-complete": true,
+        "write-bytes": 8082,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    }
+  ]
+}

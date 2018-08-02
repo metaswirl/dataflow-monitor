@@ -13,7 +13,7 @@ class ModelTest extends Specification with Mockito {
       val gaugeSummary = mock[GaugeSummary]
       val meterSummary = mock[MeterSummary]
 
-      val task = new Task(operator, 100, "localhost")
+      val task = new Task(operator, 100, Some("localhost"))
       task.metrics += ("counter" -> counterSummary)
       task.metrics += ("gauge" -> gaugeSummary)
       task.metrics += ("meter" -> meterSummary)

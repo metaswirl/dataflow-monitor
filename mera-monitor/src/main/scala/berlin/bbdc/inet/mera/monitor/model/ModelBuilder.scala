@@ -8,8 +8,9 @@ class ModelBuilder {
   var operators: List[Operator] = List()
   var taskEdges: List[TaskEdge] = List()
 
-  def addSuccessor(name: String, parallelism: Int, commType: CommType, isLoadShedder: Boolean): Unit = {
-    val op = new Operator(name, parallelism, commType, isLoadShedder)
+  def addSuccessor(name: String, parallelism: Int, commType: CommType, isLoadShedder: Boolean,
+                   taskToHostMapping : Option[Map[Int, String]]=None): Unit = {
+    val op = new Operator(name, parallelism, commType, isLoadShedder, taskToHostMapping)
     operators match {
       case h :: t =>
         connectOperator(h, op)

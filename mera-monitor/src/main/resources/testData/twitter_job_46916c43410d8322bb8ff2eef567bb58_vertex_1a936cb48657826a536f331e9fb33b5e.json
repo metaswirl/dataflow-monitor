@@ -1,0 +1,65 @@
+{
+  "id": "1a936cb48657826a536f331e9fb33b5e",
+  "name": "Flat Map",
+  "parallelism": 3,
+  "now": 1533237066549,
+  "subtasks": [
+    {
+      "subtask": 0,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272727,
+      "end-time": -1,
+      "duration": 3793822,
+      "metrics": {
+        "read-bytes": 13295,
+        "read-bytes-complete": true,
+        "write-bytes": 13256,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 1,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272730,
+      "end-time": -1,
+      "duration": 3793819,
+      "metrics": {
+        "read-bytes": 13169,
+        "read-bytes-complete": true,
+        "write-bytes": 13130,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 2,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272730,
+      "end-time": -1,
+      "duration": 3793819,
+      "metrics": {
+        "read-bytes": 13526,
+        "read-bytes-complete": true,
+        "write-bytes": 13487,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    }
+  ]
+}
