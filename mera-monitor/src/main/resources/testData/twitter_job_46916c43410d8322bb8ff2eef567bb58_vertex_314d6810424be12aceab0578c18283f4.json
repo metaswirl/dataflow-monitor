@@ -1,0 +1,27 @@
+{
+  "id": "314d6810424be12aceab0578c18283f4",
+  "name": "Sink: Unnamed",
+  "parallelism": 1,
+  "now": 1533237066715,
+  "subtasks": [
+    {
+      "subtask": 0,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272732,
+      "end-time": -1,
+      "duration": 3793983,
+      "metrics": {
+        "read-bytes": 39821,
+        "read-bytes-complete": true,
+        "write-bytes": 0,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    }
+  ]
+}

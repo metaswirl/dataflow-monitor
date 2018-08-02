@@ -1,0 +1,46 @@
+{
+  "id": "aa0083b97ffaad66a1e3b93651ba4449",
+  "name": "Map",
+  "parallelism": 2,
+  "now": 1533237066632,
+  "subtasks": [
+    {
+      "subtask": 0,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272731,
+      "end-time": -1,
+      "duration": 3793901,
+      "metrics": {
+        "read-bytes": 19800,
+        "read-bytes-complete": true,
+        "write-bytes": 19774,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    },
+    {
+      "subtask": 1,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272732,
+      "end-time": -1,
+      "duration": 3793900,
+      "metrics": {
+        "read-bytes": 20073,
+        "read-bytes-complete": true,
+        "write-bytes": 20047,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    }
+  ]
+}
