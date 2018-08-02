@@ -1,15 +1,15 @@
 {
-  "jid": "3ec2f0e614309e9f734ffcbf7fe63af8",
+  "jid": "46916c43410d8322bb8ff2eef567bb58",
   "name": "Twitter Processor",
   "isStoppable": true,
   "state": "RUNNING",
-  "start-time": 1524730269223,
+  "start-time": 1533233272637,
   "end-time": -1,
-  "duration": 3164743,
-  "now": 1524733433966,
+  "duration": 3793603,
+  "now": 1533237066240,
   "timestamps": {
-    "CREATED": 1524730269223,
-    "RUNNING": 1524730269265,
+    "CREATED": 1533233272637,
+    "RUNNING": 1533233272680,
     "FAILING": 0,
     "FAILED": 0,
     "CANCELLING": 0,
@@ -21,13 +21,13 @@
   },
   "vertices": [
     {
-      "id": "bc764cd8ddf7a0cff126f51c16239658",
-      "name": "Source: Custom Source",
+      "id": "cbc357ccb763df2852fee8c4fc7d55f2",
+      "name": "Source: Custom Source -> Timestamps/Watermarks",
       "parallelism": 1,
       "status": "RUNNING",
-      "start-time": 1524730269292,
+      "start-time": 1533233272701,
       "end-time": -1,
-      "duration": 3164674,
+      "duration": 3793539,
       "tasks": {
         "CREATED": 0,
         "SCHEDULED": 0,
@@ -42,52 +42,22 @@
       "metrics": {
         "read-bytes": 0,
         "read-bytes-complete": true,
-        "write-bytes": 515571826,
+        "write-bytes": 33917,
         "write-bytes-complete": true,
         "read-records": 0,
         "read-records-complete": true,
-        "write-records": 106411,
+        "write-records": 0,
         "write-records-complete": true
       }
     },
     {
-      "id": "0a448493b4782967b150582570326227",
-      "name": "Timestamps/Watermarks",
-      "parallelism": 1,
-      "status": "RUNNING",
-      "start-time": 1524730269299,
-      "end-time": -1,
-      "duration": 3164667,
-      "tasks": {
-        "CREATED": 0,
-        "SCHEDULED": 0,
-        "DEPLOYING": 0,
-        "RUNNING": 1,
-        "FINISHED": 0,
-        "CANCELING": 0,
-        "CANCELED": 0,
-        "FAILED": 0,
-        "RECONCILING": 0
-      },
-      "metrics": {
-        "read-bytes": 515571826,
-        "read-bytes-complete": true,
-        "write-bytes": 516628059,
-        "write-bytes-complete": true,
-        "read-records": 106411,
-        "read-records-complete": true,
-        "write-records": 106411,
-        "write-records-complete": true
-      }
-    },
-    {
-      "id": "ea632d67b7d595e5b851708ae9ad79d6",
+      "id": "9dd63673dd41ea021b896d5203f3ba7c",
       "name": "Filter",
       "parallelism": 5,
       "status": "RUNNING",
-      "start-time": 1524730269305,
+      "start-time": 1533233272716,
       "end-time": -1,
-      "duration": 3164661,
+      "duration": 3793524,
       "tasks": {
         "CREATED": 0,
         "SCHEDULED": 0,
@@ -100,24 +70,24 @@
         "RECONCILING": 0
       },
       "metrics": {
-        "read-bytes": 516628059,
+        "read-bytes": 33917,
         "read-bytes-complete": true,
-        "write-bytes": 127375111,
+        "write-bytes": 34047,
         "write-bytes-complete": true,
-        "read-records": 106411,
+        "read-records": 0,
         "read-records-complete": true,
-        "write-records": 22249,
+        "write-records": 0,
         "write-records-complete": true
       }
     },
     {
-      "id": "6d2677a0ecc3fd8df0b72ec675edf8f4",
+      "id": "1a936cb48657826a536f331e9fb33b5e",
       "name": "Flat Map",
       "parallelism": 3,
       "status": "RUNNING",
-      "start-time": 1524730269310,
+      "start-time": 1533233272727,
       "end-time": -1,
-      "duration": 3164656,
+      "duration": 3793513,
       "tasks": {
         "CREATED": 0,
         "SCHEDULED": 0,
@@ -130,24 +100,24 @@
         "RECONCILING": 0
       },
       "metrics": {
-        "read-bytes": 127375111,
+        "read-bytes": 34047,
         "read-bytes-complete": true,
-        "write-bytes": 1827760,
+        "write-bytes": 33930,
         "write-bytes-complete": true,
-        "read-records": 22249,
+        "read-records": 0,
         "read-records-complete": true,
-        "write-records": 11261,
+        "write-records": 0,
         "write-records-complete": true
       }
     },
     {
-      "id": "ddb598ad156ed281023ba4eebbe487e3",
+      "id": "aa0083b97ffaad66a1e3b93651ba4449",
       "name": "Map",
       "parallelism": 2,
       "status": "RUNNING",
-      "start-time": 1524730269332,
+      "start-time": 1533233272731,
       "end-time": -1,
-      "duration": 3164634,
+      "duration": 3793509,
       "tasks": {
         "CREATED": 0,
         "SCHEDULED": 0,
@@ -160,24 +130,24 @@
         "RECONCILING": 0
       },
       "metrics": {
-        "read-bytes": 1827760,
+        "read-bytes": 33930,
         "read-bytes-complete": true,
-        "write-bytes": 1663801,
+        "write-bytes": 33857,
         "write-bytes-complete": true,
-        "read-records": 11261,
+        "read-records": 0,
         "read-records-complete": true,
-        "write-records": 11261,
+        "write-records": 0,
         "write-records-complete": true
       }
     },
     {
-      "id": "46f8730428df9ecd6d7318a02bdc405e",
+      "id": "314d6810424be12aceab0578c18283f4",
       "name": "Sink: Unnamed",
       "parallelism": 1,
       "status": "RUNNING",
-      "start-time": 1524730269342,
+      "start-time": 1533233272732,
       "end-time": -1,
-      "duration": 3164624,
+      "duration": 3793508,
       "tasks": {
         "CREATED": 0,
         "SCHEDULED": 0,
@@ -190,11 +160,11 @@
         "RECONCILING": 0
       },
       "metrics": {
-        "read-bytes": 1663801,
+        "read-bytes": 33857,
         "read-bytes-complete": true,
         "write-bytes": 0,
         "write-bytes-complete": true,
-        "read-records": 11261,
+        "read-records": 0,
         "read-records-complete": true,
         "write-records": 0,
         "write-records-complete": true
@@ -205,7 +175,7 @@
     "CREATED": 0,
     "SCHEDULED": 0,
     "DEPLOYING": 0,
-    "RUNNING": 6,
+    "RUNNING": 5,
     "FINISHED": 0,
     "CANCELING": 0,
     "CANCELED": 0,
@@ -213,11 +183,11 @@
     "RECONCILING": 0
   },
   "plan": {
-    "jid": "3ec2f0e614309e9f734ffcbf7fe63af8",
+    "jid": "46916c43410d8322bb8ff2eef567bb58",
     "name": "Twitter Processor",
     "nodes": [
       {
-        "id": "46f8730428df9ecd6d7318a02bdc405e",
+        "id": "314d6810424be12aceab0578c18283f4",
         "parallelism": 1,
         "operator": "",
         "operator_strategy": "",
@@ -225,7 +195,7 @@
         "inputs": [
           {
             "num": 0,
-            "id": "ddb598ad156ed281023ba4eebbe487e3",
+            "id": "aa0083b97ffaad66a1e3b93651ba4449",
             "ship_strategy": "REBALANCE",
             "exchange": "pipelined_bounded"
           }
@@ -233,7 +203,7 @@
         "optimizer_properties": {}
       },
       {
-        "id": "ddb598ad156ed281023ba4eebbe487e3",
+        "id": "aa0083b97ffaad66a1e3b93651ba4449",
         "parallelism": 2,
         "operator": "",
         "operator_strategy": "",
@@ -241,7 +211,7 @@
         "inputs": [
           {
             "num": 0,
-            "id": "6d2677a0ecc3fd8df0b72ec675edf8f4",
+            "id": "1a936cb48657826a536f331e9fb33b5e",
             "ship_strategy": "REBALANCE",
             "exchange": "pipelined_bounded"
           }
@@ -249,7 +219,7 @@
         "optimizer_properties": {}
       },
       {
-        "id": "6d2677a0ecc3fd8df0b72ec675edf8f4",
+        "id": "1a936cb48657826a536f331e9fb33b5e",
         "parallelism": 3,
         "operator": "",
         "operator_strategy": "",
@@ -257,7 +227,7 @@
         "inputs": [
           {
             "num": 0,
-            "id": "ea632d67b7d595e5b851708ae9ad79d6",
+            "id": "9dd63673dd41ea021b896d5203f3ba7c",
             "ship_strategy": "REBALANCE",
             "exchange": "pipelined_bounded"
           }
@@ -265,7 +235,7 @@
         "optimizer_properties": {}
       },
       {
-        "id": "ea632d67b7d595e5b851708ae9ad79d6",
+        "id": "9dd63673dd41ea021b896d5203f3ba7c",
         "parallelism": 5,
         "operator": "",
         "operator_strategy": "",
@@ -273,7 +243,7 @@
         "inputs": [
           {
             "num": 0,
-            "id": "0a448493b4782967b150582570326227",
+            "id": "cbc357ccb763df2852fee8c4fc7d55f2",
             "ship_strategy": "REBALANCE",
             "exchange": "pipelined_bounded"
           }
@@ -281,27 +251,11 @@
         "optimizer_properties": {}
       },
       {
-        "id": "0a448493b4782967b150582570326227",
+        "id": "cbc357ccb763df2852fee8c4fc7d55f2",
         "parallelism": 1,
         "operator": "",
         "operator_strategy": "",
-        "description": "Timestamps/Watermarks",
-        "inputs": [
-          {
-            "num": 0,
-            "id": "bc764cd8ddf7a0cff126f51c16239658",
-            "ship_strategy": "FORWARD",
-            "exchange": "pipelined_bounded"
-          }
-        ],
-        "optimizer_properties": {}
-      },
-      {
-        "id": "bc764cd8ddf7a0cff126f51c16239658",
-        "parallelism": 1,
-        "operator": "",
-        "operator_strategy": "",
-        "description": "Source: Custom Source",
+        "description": "Source: Custom Source -&gt; Timestamps/Watermarks",
         "optimizer_properties": {}
       }
     ]

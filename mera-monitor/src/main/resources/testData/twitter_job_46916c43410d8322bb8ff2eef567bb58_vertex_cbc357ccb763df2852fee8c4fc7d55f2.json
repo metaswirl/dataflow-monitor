@@ -1,0 +1,27 @@
+{
+  "id": "cbc357ccb763df2852fee8c4fc7d55f2",
+  "name": "Source: Custom Source -> Timestamps/Watermarks",
+  "parallelism": 1,
+  "now": 1533237066376,
+  "subtasks": [
+    {
+      "subtask": 0,
+      "status": "RUNNING",
+      "attempt": 0,
+      "host": "loadgen112:35980",
+      "start-time": 1533233272701,
+      "end-time": -1,
+      "duration": 3793675,
+      "metrics": {
+        "read-bytes": 0,
+        "read-bytes-complete": true,
+        "write-bytes": 39860,
+        "write-bytes-complete": true,
+        "read-records": 0,
+        "read-records-complete": true,
+        "write-records": 0,
+        "write-records-complete": true
+      }
+    }
+  ]
+}
