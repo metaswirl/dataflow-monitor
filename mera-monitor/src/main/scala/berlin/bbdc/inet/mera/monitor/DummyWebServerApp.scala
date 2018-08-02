@@ -12,8 +12,7 @@ object DummyWebServerApp extends App {
   val webServerPort = ConfigFactory.load.getInt("webserver.port")
   LOG.info(s"DummyWebServer: $webServerHost:$webServerPort")
 
-  val builder = new DummyModelBuilder
-  val model = builder.getModelFromJson("testData/twitter_model.json")
+  val model = DummyModelBuilder.getModelFromJson("testData")
   val metricContainer = new DummyMetricContainer(model)
 
   val webServer = new WebServer(metricContainer, webServerHost, webServerPort)

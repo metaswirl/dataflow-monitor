@@ -51,7 +51,7 @@ class MetricContainer(model: Model) {
       .operators(id)
       .tasks
       .map(t => {
-        TasksOfOperator(t.id, t.input.map(_.source.id), t.output.map(_.target.id))
+        TasksOfOperator(t.id, t.host.getOrElse("UNKNOWN"), t.input.map(_.source.id), t.output.map(_.target.id))
       })
 
     model.operators.map(x => OperatorTopology(x._1, getTasksOfOperator(x._1))).toList
@@ -164,7 +164,7 @@ object MetricContainer {
 
 }
 
-case class TasksOfOperator(id: String, input: List[String], output: List[String])
+case class TasksOfOperator(id: String, host: String, input: List[String], output: List[String])
 
 case class OperatorTopology(name: String, tasks: Seq[TasksOfOperator])
 
