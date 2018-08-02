@@ -109,6 +109,7 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
     } else if (initPhase) {
       initPhase = false
       mfw.writeStartOptimization()
+      model.runtimeStatus.optimizerStarted = true
     }
     //TODO: this is just a test solution because optimizer is not ready yet
     LOG.debug("Send new values to all loadshedders")

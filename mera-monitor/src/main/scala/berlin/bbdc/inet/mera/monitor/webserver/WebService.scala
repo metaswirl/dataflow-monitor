@@ -61,6 +61,12 @@ trait WebService {
           }
         }
       } ~
+      // health check
+      path ("health") {
+        get {
+          completeJson(metricContainer.getRuntimeStatus)
+        }
+      } ~
       // Returns swagger json
       path("swagger") {
         get {
