@@ -65,6 +65,7 @@ class MetricContainer(model: Model) {
   def getInitMetric: List[InitializedMetric] =
     metricsFutures map { case (key, value) => InitializedMetric(key._1, key._2, value._2)} toList
 
+  def getRuntimeStatus = model.runtimeStatus
 
   def postInitMetric(message: TaskInitMessage): String = {
     message.metricId match {

@@ -81,6 +81,8 @@ class Operator(val id: String, val parallelism: Int, val commType : CommType, va
   }
 }
 
+case class RuntimeStatus(val running : Boolean = true, var receivedFirstMetrics : Boolean = false, var optimizerStarted : Boolean = false)
+
 //TODO: operators cannot be a map since the keys will overlap
 case class Model(n :Int, operators : ListMap[String, Operator], taskEdges : List[TaskEdge]) {
   // Assuming single sink
@@ -89,6 +91,7 @@ case class Model(n :Int, operators : ListMap[String, Operator], taskEdges : List
   val sink: Operator = operators.values.filter(_.successor.isEmpty).head
   val src: Operator = operators.values.filter(_.predecessor.isEmpty).head
   val tasks: Map[String,Task] = operators.values.flatMap(_.tasks).map(x => {x.id -> x}).toMap
+  val runtimeStatus = new RuntimeStatus
 
   override def toString: String = {
     val op = operators.values.map("\n" + _.toString)
