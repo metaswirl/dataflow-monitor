@@ -1,15 +1,17 @@
 package berlin.bbdc.inet.mera.usecases.template.utils
 
-import java.io.{DataInputStream, InputStream, OutputStream}
-import java.net.InetSocketAddress
+import java.io._
+import java.net.{InetAddress, InetSocketAddress, Socket}
 import java.nio.charset.Charset
 import java.nio.file.Path
 import java.nio.file.Files
 import java.util
+import java.util.stream.Collectors
 
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 import scala.io.BufferedSource
+import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 
 class ParameterReceiverHTTP(getter: =>Int, setter: Int=>Unit, portFilePath: Option[Path] = None, port: Int=0) {
   val server : HttpServer = HttpServer.create(new InetSocketAddress(port), 0)
@@ -26,6 +28,8 @@ class ParameterReceiverHTTP(getter: =>Int, setter: Int=>Unit, portFilePath: Opti
       if (! Files.exists(path.toAbsolutePath)) {
         Files.createFile(path.toAbsolutePath)
       }
+      val line = util.Arrays.asList(s"${InetAddress.getLocalHost().getHostName()}:${getPort}") //localhost
+      Files.write(path.toAbsolutePath, line, Charset.forName("UTF-8"))
     }
   }
 
@@ -44,7 +48,7 @@ private class MyHTTPHandler(getter: =>Int, setter: Int=>Unit) extends HttpHandle
   }
 
   def handleGet(he: HttpExchange): Unit = {
-    val response = getter.toString
+    val response = JsonUtils.toJson(new Delay(getter))
     he.sendResponseHeaders(200, response.length)
     val out = he.getResponseBody
     out.write(response.getBytes)
@@ -52,10 +56,18 @@ private class MyHTTPHandler(getter: =>Int, setter: Int=>Unit) extends HttpHandle
   }
 
   def handlePost(he: HttpExchange, is: InputStream): Unit = {
-    val dis = new DataInputStream(is)
-    val newDuration = dis.readInt()
-    setter(newDuration)
-    is.close()
+    val result : String = new BufferedReader(new InputStreamReader(is))
+      .lines().collect(Collectors.joining(""))
+    try {
+      val newDelay: Int = JsonUtils.fromJson[Delay](result).delay
+      is.close()
+      setter(newDelay)
+    } catch {
+      case _: Throwable => println("Could not parse " + result)
+                he.sendResponseHeaders(400, -1)
+    }
     he.sendResponseHeaders(200, -1)
   }
 }
+
+case class Delay(delay: Int)

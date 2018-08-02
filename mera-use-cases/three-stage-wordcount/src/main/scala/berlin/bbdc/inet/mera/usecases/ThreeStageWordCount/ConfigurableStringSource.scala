@@ -6,6 +6,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.Gauge
 import org.apache.flink.streaming.api.functions.source.{RichSourceFunction, SourceFunction}
 import java.nio.file.Paths
+import org.apache.flink.api.java.utils.ParameterTool
 
 import berlin.bbdc.inet.mera.usecases.template.utils.ParameterReceiverHTTP
 import com.typesafe.config.ConfigFactory
@@ -70,10 +71,15 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
     gen.start()
     port += getRuntimeContext.getIndexOfThisSubtask
     val rc = this.getRuntimeContext
-    val portFilePath = Some(Paths.get(ConfigFactory.load().getString("dirs.state"),
-      rc.getTaskName + "-" + rc.getIndexOfThisSubtask))
-    paramReceiver = new ParameterReceiverHTTP(getRate, setRate, portFilePath)
-    paramReceiver.start()
+    getRuntimeContext().getExecutionConfig().getGlobalJobParameters() match {
+      case param: ParameterTool =>
+        val stateDir = param.getRequired("dirs.state");
+        val portFilePath = Some(Paths.get(stateDir,
+          "source-" + rc.getTaskName + "-" + rc.getIndexOfThisSubtask))
+        paramReceiver = new ParameterReceiverHTTP(getRate, setRate, portFilePath)
+        paramReceiver.start()
+      case _ => throw new ClassCastException
+    }
     getRuntimeContext.getMetricGroup().gauge[Int,Gauge[Int]]("backlog", new Gauge[Int] {
       override def getValue: Int = {
         val c = queue.size()

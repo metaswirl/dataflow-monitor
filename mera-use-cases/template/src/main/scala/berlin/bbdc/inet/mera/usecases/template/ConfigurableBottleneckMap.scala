@@ -7,6 +7,7 @@ import berlin.bbdc.inet.mera.usecases.template.utils.ParameterReceiverHTTP
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.configuration.Configuration
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.java.utils.ParameterTool
 
 class ConfigurableBottleneckMap[T](var delay: Long = 0) extends RichMapFunction[T, T] with Serializable {
   var receiver : ParameterReceiverHTTP = _
@@ -14,10 +15,15 @@ class ConfigurableBottleneckMap[T](var delay: Long = 0) extends RichMapFunction[
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
     val rc = this.getRuntimeContext
-    val portFilePath = Some(Paths.get(ConfigFactory.load().getString("dirs.state"),
-                            rc.getTaskName + "-" + rc.getIndexOfThisSubtask))
-    receiver = new ParameterReceiverHTTP(getDelay, setDelay, portFilePath)
-    receiver.start()
+    getRuntimeContext().getExecutionConfig().getGlobalJobParameters() match {
+      case param : ParameterTool =>
+        val stateDir = param.getRequired("dirs.state");
+        val portFilePath = Some(Paths.get(stateDir,
+          "bottleneck-" + rc.getTaskName + "-" + rc.getIndexOfThisSubtask))
+        receiver = new ParameterReceiverHTTP(getDelay, setDelay, portFilePath)
+        receiver.start()
+      case _ => throw new ClassCastException
+    }
   }
 
   override def close(): Unit = {

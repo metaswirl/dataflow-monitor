@@ -1,0 +1,28 @@
+---
+- name: stop mera
+  hosts: jobmanager
+  tasks:
+    - shell: "pkill -U {{ ansible_env.USER }} -f mera-monitor"
+      register: p
+      failed_when: "p.rc != -15 and p.rc != 0"
+      # no idea, why pkill returns a -15...
+
+- name: stop task managers
+  hosts: cluster
+  vars:
+    taskmanager_sh: "{{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}/bin/taskmanager.sh"
+  tasks: 
+    - name: stop flink
+      shell: "nohup {{ taskmanager_sh }} stop"
+      register: ps
+    - debug: var=ps.stdout_lines
+
+- name: stop job manager
+  hosts: jobmanager
+  vars:
+    jobmanager_sh: "{{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}/bin/jobmanager.sh"
+  tasks:
+    - name: stop jobmanager
+      shell: "{{ jobmanager_sh }} stop cluster"
+      register: ps
+    - debug: var=ps.stdout_lines

@@ -83,6 +83,7 @@ trait FlinkMetricManager extends MetricReporter {
 class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
   val config: Config = ConfigFactory.load("flinkPlugin.conf")
   val actorSystem = ActorSystem("AkkaMetric", config)
+  LOG.info(s"Sending metrics to $jobManagerIpAddress")
   val master: ActorSelection = actorSystem.actorSelection(f"akka.tcp://AkkaMessenger@$jobManagerIpAddress:2552/user/master")
 
   override def open(config: MetricConfig): Unit = {
@@ -100,7 +101,7 @@ class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
 
   def report(): Unit = {
     // TODO: What happens when MetricServer is not up? Are messages cached or not dropped?
-    LOG.info("reporting")
+    LOG.debug("reporting")
     var ls : List[GaugeItem] = List()
     for (g <- gauges) {
       try {
@@ -117,7 +118,7 @@ class FlinkMetricPusher() extends Scheduled with FlinkMetricManager {
         .filter(_.contains("mean"))
         .map(_.get("mean").map(GaugeItem(key, _)).get)
     }.toList
-    val d = MetricUpdate(System.currentTimeMillis(),
+    val d = MetricUpdate(
       counters.map(t => CounterItem(t._1, t._2.getCount))(collection.breakOut),
       meters.map(t => MeterItem(t._1, t._2.getCount, t._2.getRate))(collection.breakOut),
       histograms.map(t => HistItem(t._1, t._2.getCount, t._2.getStatistics.getMin, t._2.getStatistics.getMax, t._2.getStatistics.getMean))(collection.breakOut),

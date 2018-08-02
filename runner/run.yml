@@ -1,0 +1,51 @@
+---
+- name: run flink
+  hosts: jobmanager
+  vars:
+    flink_dir: "{{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}"
+    mera_dir: "{{ nfs_dir }}/mera-artifacts/mera-{{ mera_commit_id }}"
+    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
+    job_param: "--dirs.output {{ exp_dir }}/output --dirs.state {{ state_dir }}"
+  tasks:
+    - shell: "nohup {{ flink_dir }}/bin/flink run -q -d {{ mera_dir }}/{{ job_jar }} {{ job_param }} &"
+      register: p
+    - debug: var=p.cmd
+    # too complicated...
+    # https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/rest_api.html
+    #- uri: 
+    #    url: "localhost:{{ flink_port }}/jars/upload"
+    #    method: POST
+    #    return_content: yes
+    #    HEADER_Content-Type: "application/x-java-archive"
+    #    body: "{{ lookup('file', job_jar) | to_json }}"
+
+- name: run bottleneck manager
+  hosts: jobmanager
+  vars:
+    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
+    exp_base_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/"
+  tasks:
+    - shell: "python3 {{ exp_base_dir }}/bottleneck_manager.py -s {{ state_dir }} -e {{ exp_base_dir }}/experiment.json > {{ exp_dir }}/bottleneck_manager.stdout 2> {{ exp_dir }}/bottleneck_manager.stderr"
+      args:
+        chdir: "{{ exp_dir }}"
+
+#    # probably it makes more sense to store these somewhere else
+# We could just assume that this is killed with the taskmanagers/jobmanager?!
+
+#- name: cancel flink job
+#  hosts: jobmanager
+#  vars:
+#    flink_dir: "{{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}"
+#    mera_dir: "{{ nfs_dir }}/mera-artifacts/mera-{{ mera_commit_id }}"
+#    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
+#    job_param: "--dirs.output={{ exp_dir }}/output --dirs.state={{ state_dir }}"
+#  tasks:
+#    - name: list flink jobs
+#      shell: "{{ flink_dir }}/bin/flink list"
+#      register: p
+#    - set_fact:
+#        jobid: "{{ p.stdout | regex_search( regexp, '\\1' )}}"
+#      vars:
+#        regexp: 'value= : [0-9a-z]+ : '
+#    - debug:
+#        var: jobid

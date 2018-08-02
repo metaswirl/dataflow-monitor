@@ -18,6 +18,8 @@ object Dependencies {
   val qosLogback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val specs2Core = "org.specs2" %% "specs2-core" % specs2Version % "test"
   val specs2Mock = "org.specs2" %% "specs2-mock" % specs2Version % "test"
+  val apacheHttpComponentsCore =  "org.apache.httpcomponents" % "httpcomponents-core" % "4.4.10"
+  val apacheHttpComponentsClient = "org.apache.httpcomponents" % "httpclient" % httpClientVersion
   val dropwizardMetrics = "io.dropwizard.metrics" % "metrics-core" % "3.1.0"
   val typesafeLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0"
   val typesafeAkkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
@@ -25,19 +27,18 @@ object Dependencies {
   val typesafeAkkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
   val typesafeAkkaHttpTestkit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test"
   val typesafeAkkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
-  val typesafeAkkaremote = "com.typesafe.akka" %% "akka-remote" % akkaVersion
-  val apacheHttpComponents = "org.apache.httpcomponents" % "httpclient" % httpClientVersion
+  val typesafeAkkaRemote = "com.typesafe.akka" %% "akka-remote" % akkaVersion
 
   val flinkProvidedDependencies: Seq[ModuleID] = Seq(
     flinkScala, flinkStreamScala
   ).map(_ % "provided")
   val testDependencies: Seq[ModuleID] = Seq(
-    specs2Mock
+    specs2Core, specs2Mock
   )
   val monitorDependencies: Seq[ModuleID] = Seq(
     typesafeLogging, typesafeAkkaHttp, typesafeAkkaHttpTestkit,
-    typesafeAkkaStream, typesafeAkkaremote, typesafeAkkaActor,
-    qosLogback, dropwizardMetrics, apacheHttpComponents, jackson,
+    typesafeAkkaStream, typesafeAkkaRemote, typesafeAkkaActor,
+    qosLogback, dropwizardMetrics, apacheHttpComponentsClient, jackson,
   ) ++ testDependencies
 
   // WARNING: Don't risk overlap between Flink's dependencies and your own
@@ -47,7 +48,7 @@ object Dependencies {
   val useCaseDependencies: Seq[ModuleID] = Seq(
   ) ++ flinkProvidedDependencies ++ testDependencies
   val templateDependencies: Seq[ModuleID] = Seq(
-    typesafeConfig % "provided"
+    apacheHttpComponentsCore
   ) ++ flinkProvidedDependencies ++ testDependencies
   val loadshedderDependencies: Seq[ModuleID] = Seq(
     typesafeAkkaActorOld % "provided"

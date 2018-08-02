@@ -1,0 +1,20 @@
+---
+- name: copy and cleanup after stopping flink
+  hosts: jobmanager
+  vars:
+    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment }}/{{ run }}/"
+    flink_dir: "{{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}"
+  tasks:
+    - name: copy logs
+      copy: src="{{ flink_dir }}/log/" dest="{{ exp_dir }}/flink_logs" directory_mode=yes
+    - name: remove old log files 
+      file: path="{{flink_dir}}/log/" state=absent
+      ignore_errors: yes
+    - name: recreate log dir
+      file: path="{{flink_dir}}/log/" state=directory
+
+- name: remove temporary folder
+  hosts: jobmanager
+  tasks:
+    - name: remove state dir
+      file: path="{{ state_dir }}/" state=absent
