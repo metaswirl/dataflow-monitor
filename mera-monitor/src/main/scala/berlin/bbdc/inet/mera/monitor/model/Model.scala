@@ -9,7 +9,7 @@ import scala.collection.immutable.ListMap
 /* TODO: Separate data from traversal
  */
 
-class Task(val parent: Operator, val number: Int, val host: String) {
+class Task(val parent: Operator, val number: Int, val host: Option[String]) {
   val id = s"${parent.id}.$number"
 
   var input: List[TaskEdge] = List()
@@ -58,9 +58,12 @@ object CommType extends Enumeration {
   val POINTWISE, ALL_TO_ALL, UNCONNECTED = Value
 }
 
-class Operator(val id: String, val parallelism: Int, val commType : CommType, val isLoadShedder : Boolean) {
+class Operator(val id: String, val parallelism: Int, val commType : CommType, val isLoadShedder : Boolean,
+               taskToHostMapping : Option[Map[Int, String]]=None) {
   //TODO: Fix for cluster
-  val tasks: List[Task] = List.range(0, parallelism).map(new Task(this, _, "localhost"))
+  val tasks: List[Task] = List.range(0, parallelism).map((subTask : Int) =>
+    new Task(this, subTask, taskToHostMapping.map(_(subTask)))
+  )
 
   var predecessor: List[Operator] = List()
 

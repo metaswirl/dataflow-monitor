@@ -4,27 +4,17 @@ import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 import berlin.bbdc.inet.mera.monitor.metrics.CounterSummary
 import berlin.bbdc.inet.mera.monitor.model.Model
 import berlin.bbdc.inet.mera.monitor.model.ModelBuilder
-import berlin.bbdc.inet.mera.monitor.topology.Job
-import berlin.bbdc.inet.mera.monitor.topology.TopologyServer
+import berlin.bbdc.inet.mera.monitor.topology._
+import scala.reflect.ClassTag
 
 import scala.io.Source
 
-class DummyModelBuilder {
-
-  def getModelFromJson(path: String): Model = {
-    val model = buildModelFromJson(path)
-    fillMetrics(model)
+object DummyModelBuilder {
+  def getModelFromJson(dirPath: String): Model = {
+    val topoServer = new TopologyServer("", 0, new MockFlinkClient(dirPath))
+    val models = topoServer.buildModels()
+    fillMetrics(models.head._2)
   }
-
-  private def buildModelFromJson(path: String) = {
-    val jobJson = Source.fromURL(getClass.getClassLoader.getResource(path))
-    val job = JsonUtils.fromJson[Job](jobJson.mkString)
-    val modelBuilder = new ModelBuilder
-    //iterate over vertices and for each add a new operator to the model
-    job.vertices foreach (v => modelBuilder.addSuccessor(v.name, v.parallelism, TopologyServer.findCommTypeById(v.id, job.plan), isLoadShedder = false))
-    modelBuilder.createModel(1000)
-  }
-
 
   def fillMetrics(model: Model): Model = {
     model.tasks.values.foreach(t => t.metrics +=
@@ -47,4 +37,25 @@ class DummyModelBuilder {
       ))
     model
   }
+}
+
+private class MockFlinkClient(dirPath: String) extends AbstractFlinkClient {
+  private val BASE_URL = dirPath + "/twitter"
+  private val BASE_ENDING = ".json"
+  private val JOBS_URL = BASE_URL + "_jobs" + BASE_ENDING
+  private def JOB_URL(jobId: String): String = BASE_URL + "_job_" + jobId + BASE_ENDING
+  private def VERTEX_URL(jobId: String, vertexId: String): String =
+    BASE_URL + "_job_" + jobId + "_vertex_" + vertexId + BASE_ENDING
+
+  override def getJobs(): AllJobs = getContent[AllJobs](JOBS_URL)
+
+  override def getJob(jobId: String): Job = getContent[Job](JOB_URL(jobId))
+
+  override def getFullVertex(jobId: String, vertexId: String): FullVertex =
+    getContent[FullVertex](VERTEX_URL(jobId, vertexId))
+
+  override def establishConnection(): Unit = {}
+
+  private def getContent[T:ClassTag](path: String): T =
+    JsonUtils.fromJson[T](Source.fromURL(getClass.getClassLoader.getResource(path)).mkString)
 }
