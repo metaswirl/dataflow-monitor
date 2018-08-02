@@ -68,6 +68,7 @@ class AkkaMessenger(model: Model) extends Actor {
         d.gauges.map(t => (MetricKey.buildKey(t.key), Gauge(t.value)))
     )
     if (traversalFuture.isEmpty) {
+      model.runtimeStatus.receivedFirstMetrics = true
       LOG.info("Started receiving metrics. Starting model traversal.")
       val schd: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
       traversalFuture = Option.apply(schd.scheduleAtFixedRate(modelTraversal, 5, 3, TimeUnit.SECONDS))
