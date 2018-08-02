@@ -1,6 +1,7 @@
 package berlin.bbdc.inet.mera.monitor.topology
 
 import java.net.ConnectException
+import java.util.concurrent.TimeUnit
 
 import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 import berlin.bbdc.inet.mera.monitor.model.CommType.CommType
@@ -30,6 +31,7 @@ class TopologyServer(hostname: String, port: Integer) {
 
   def buildModels(): Map[String, Model] = {
     var models = new mutable.HashMap[String, Model]
+    establishConnection()
     //get list of all running jobs. for each job build a model
     for (jid <- getJobList) {
       val jobJson: String = getRestContent(JOBS + "/" + jid + VERTICES)
@@ -48,11 +50,35 @@ class TopologyServer(hostname: String, port: Integer) {
     models.toMap
   }
 
+  private def establishConnection() = {
+    val client = HttpClientBuilder.create().build()
+    val request = new HttpGet(FLINK_URL)
+    var connected = false
+    while (!connected) {
+      try {
+        client.execute(request)
+        connected = true
+      } catch {
+        case _: HttpHostConnectException =>
+          LOG.warn("Could not connect to flink. Sleeping for three seconds.")
+          Thread.sleep(3000)
+      }
+    }
+  }
+
   private def getJobList: List[String] = {
     //get current jobs from Flink
-    val allJobsJson = getRestContent(JOBS)
+    var allJobsJson = getRestContent(JOBS)
     //map to intermediate object
-    val allJobs: AllJobs = JsonUtils.fromJson[AllJobs](allJobsJson)
+    var allJobs: AllJobs = JsonUtils.fromJson[AllJobs](allJobsJson)
+
+    while (allJobs.jobsRunning.size < 1) {
+      LOG.info(s"No job is running. Retrying in 5 seconds." )
+      Thread.sleep(5000)
+      allJobsJson = getRestContent(JOBS)
+      //map to intermediate object
+      allJobs = JsonUtils.fromJson[AllJobs](allJobsJson)
+    }
     LOG.info(s"Detected ${allJobs.jobsRunning.size} running jobs: ${allJobs.jobsRunning.toString}" )
     //sum all of them to a list
     allJobs.jobsRunning
