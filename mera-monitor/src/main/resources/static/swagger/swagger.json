@@ -168,7 +168,7 @@
     "OperatorTopology" : {
       "type" : "object",
       "properties" : {
-        "name" : {
+        "id" : {
           "type" : "string"
         },
         "tasks" : {
@@ -179,22 +179,27 @@
         }
       },
       "example" : {
-        "name" : "name",
+        "id" : "operator",
         "tasks" : [ {
+          "id" : "task1",
+          "address" : "localhost:4444",
           "output" : [ "output", "output" ],
-          "input" : [ "input", "input" ],
-          "name" : "name"
+          "input" : [ "input", "input" ]
         }, {
+          "id" : "task2",
+          "address" : "localhost:1234",
           "output" : [ "output", "output" ],
-          "input" : [ "input", "input" ],
-          "name" : "name"
+          "input" : [ "input", "input" ]
         } ]
       }
     },
     "TaskTopology" : {
       "type" : "object",
       "properties" : {
-        "name" : {
+        "id" : {
+          "type" : "string"
+        },
+        "address" : {
           "type" : "string"
         },
         "input" : {
@@ -211,9 +216,10 @@
         }
       },
       "example" : {
+        "id" : "taskX",
+        "address" : "localhost:1234",
         "output" : [ "output", "output" ],
-        "input" : [ "input", "input" ],
-        "name" : "name"
+        "input" : [ "input", "input" ]
       }
     },
     "Metric" : {
@@ -230,14 +236,14 @@
         }
       },
       "example" : {
+        "id" : "id",
         "values" : [ {
           "value" : 6.02745618307040320615897144307382404804229736328125,
           "timestamp" : 0.80082819046101150206595775671303272247314453125
         }, {
           "value" : 6.02745618307040320615897144307382404804229736328125,
           "timestamp" : 0.80082819046101150206595775671303272247314453125
-        } ],
-        "id" : "id"
+        } ]
       }
     },
     "Tuple" : {

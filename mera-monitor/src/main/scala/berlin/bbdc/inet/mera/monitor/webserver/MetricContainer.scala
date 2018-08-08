@@ -164,9 +164,9 @@ object MetricContainer {
 
 }
 
-case class TasksOfOperator(id: String, host: String, input: List[String], output: List[String])
+case class TasksOfOperator(id: String, address: String, input: List[String], output: List[String])
 
-case class OperatorTopology(name: String, tasks: Seq[TasksOfOperator])
+case class OperatorTopology(id: String, tasks: Seq[TasksOfOperator])
 
 case class TaskMetrics(taskId: String, values: List[MetricValue])
 
