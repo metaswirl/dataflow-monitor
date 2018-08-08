@@ -42,6 +42,7 @@ let shortGraphSvg = d3.select("#shortGraph")
 let nodeColor = colorScaleLines;
 
 getTopology.done(function (result) {
+    console.log(result);
     result.reverse();
 
     // xAxis prepare
@@ -150,12 +151,12 @@ getTopology.done(function (result) {
     initMetricForTasks("buffers.inPoolUsage", initList, inOutPoolResolution).done(function () {
         setInterval(function () {
             updateInputQueue(initList)
-        },inOutPoolResolution * 1000);
+        },(inOutPoolResolution * 1000));
     });
     initMetricForTasks("buffers.outPoolUsage", initList, inOutPoolResolution).done(function () {
         setInterval(function () {
             updateOutputQueue(initList)
-        },inOutPoolResolution * 1000);
+        },(inOutPoolResolution * 1000));
     });
 });
 
@@ -163,11 +164,13 @@ getTopology.done(function (result) {
 function updateInputQueue(data:Array<string>) {
     let queueElements:Array<QueueElement> = [];
     data.forEach(function (item) {
-        getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (inOutPoolResolution + 100)).done(function (result) {
-            let queueElement = new QueueElement(sides.left, result.values[0][1], item);
-            queueElements.push(queueElement);
-            if (queueElements.length == data.length){
-                updateNode(queueElements, true)
+        getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (inOutPoolResolution + 200)).done(function (result) {
+            if(result.values.length != 0){
+                let queueElement = new QueueElement(sides.left, result.values[0][1], item);
+                queueElements.push(queueElement);
+                if (queueElements.length == data.length){
+                    updateNode(queueElements, true)
+                }
             }
         });
     });
@@ -175,11 +178,13 @@ function updateInputQueue(data:Array<string>) {
 function updateOutputQueue(data:Array<string>) {
     let queueElements:Array<QueueElement> = [];
     data.forEach(function (item) {
-        getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (inOutPoolResolution + 100)).done(function (result) {
-            let queueElement = new QueueElement(sides.right, result.values[0][1], item);
-            queueElements.push(queueElement);
-            if (queueElements.length == data.length){
-                updateNode(queueElements, false)
+        getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (inOutPoolResolution + 200)).done(function (result) {
+            if(result.values.length != 0){
+                let queueElement = new QueueElement(sides.right, result.values[0][1], item);
+                queueElements.push(queueElement);
+                if (queueElements.length == data.length){
+                    updateNode(queueElements, false)
+                }
             }
         });
     });

@@ -616,6 +616,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
     //Color Axis
     var nodeColor = LinePlot_2.colorScaleLines;
     RestInterface_3.getTopology.done(function (result) {
+        console.log(result);
         result.reverse();
         // xAxis prepare
         exports.xScale.domain([0, result.length - 1]);
@@ -713,23 +714,25 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         RestInterface_3.initMetricForTasks("buffers.inPoolUsage", initList, constants_3.inOutPoolResolution).done(function () {
             setInterval(function () {
                 updateInputQueue(initList);
-            }, constants_3.inOutPoolResolution * 1000);
+            }, (constants_3.inOutPoolResolution * 1000));
         });
         RestInterface_3.initMetricForTasks("buffers.outPoolUsage", initList, constants_3.inOutPoolResolution).done(function () {
             setInterval(function () {
                 updateOutputQueue(initList);
-            }, constants_3.inOutPoolResolution * 1000);
+            }, (constants_3.inOutPoolResolution * 1000));
         });
     });
     // Helper Functions
     function updateInputQueue(data) {
         var queueElements = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (constants_3.inOutPoolResolution + 100)).done(function (result) {
-                var queueElement = new datastructure_5.QueueElement("inQueue" /* left */, result.values[0][1], item);
-                queueElements.push(queueElement);
-                if (queueElements.length == data.length) {
-                    node_1.updateNode(queueElements, true);
+            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (constants_3.inOutPoolResolution + 200)).done(function (result) {
+                if (result.values.length != 0) {
+                    var queueElement = new datastructure_5.QueueElement("inQueue" /* left */, result.values[0][1], item);
+                    queueElements.push(queueElement);
+                    if (queueElements.length == data.length) {
+                        node_1.updateNode(queueElements, true);
+                    }
                 }
             });
         });
@@ -737,11 +740,13 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
     function updateOutputQueue(data) {
         var queueElements = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (constants_3.inOutPoolResolution + 100)).done(function (result) {
-                var queueElement = new datastructure_5.QueueElement("outQueue" /* right */, result.values[0][1], item);
-                queueElements.push(queueElement);
-                if (queueElements.length == data.length) {
-                    node_1.updateNode(queueElements, false);
+            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (constants_3.inOutPoolResolution + 200)).done(function (result) {
+                if (result.values.length != 0) {
+                    var queueElement = new datastructure_5.QueueElement("outQueue" /* right */, result.values[0][1], item);
+                    queueElements.push(queueElement);
+                    if (queueElements.length == data.length) {
+                        node_1.updateNode(queueElements, false);
+                    }
                 }
             });
         });

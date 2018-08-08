@@ -73,6 +73,10 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
 
 }
 
+export function updateNodeLink(link:Cardinality, ) {
+
+}
+
 //Helper Functions
 function calcFilling(link:Cardinality, reverse:Boolean, level?:number):Value {
     let alpha = Math.atan((yScales[link.target.cx](link.target.cy) - yScales[link.source.cx](link.source.cy)) / (xScale(link.target.cx) - xScale(link.source.cx)));
