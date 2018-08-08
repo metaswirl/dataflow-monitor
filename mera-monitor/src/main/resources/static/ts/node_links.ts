@@ -13,13 +13,13 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
 
     let outputStream = svg.append("g");
         outputStream.append("path")
-            .attr("class", "outStreamFull")
+            .attr("class", "inStreamFull")
             .datum(link)
             .attr("id", function (d: Cardinality) {
-                return d.source.id + "outputStreamFull" + d.target.id
+                return d.target.id + "inputStreamFull" + d.source.id
             })
             .attr("d", function (d:Cardinality) {
-                let mT = calcFilling(d, false);
+                let mT = calcFilling(d, true);
                 return "M" + xScale(d.source.cx) + ","
                     + yScales[d.source.cx](d.source.cy)
                     + "A" + 0 + "," + 0 + " 0 0,1 "
@@ -27,13 +27,13 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
                     + mT.y;
             });
         outputStream.append("path")
-            .attr("class", "outStreamLink")
+            .attr("class", "inStreamLink")
             .datum(link)
             .attr("id", function (d: Cardinality) {
-              return d.source.id + "outputSteamLink" + d.target.id
+              return d.target.id + "inputSteamLink" + d.source.id
             })
             .attr("d", function (d:Cardinality) {
-                let mT = calcFilling(d, false, percentToLength(60));
+                let mT = calcFilling(d, true, percentToLength(60));
                 return "M" + xScale(d.source.cx) + ","
                     + yScales[d.source.cx](d.source.cy)
                     + "A" + 0 + "," + 0 + " 0 0,1 "
@@ -43,26 +43,26 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
 
     let inputStreamMax = svg.append("g");
         inputStreamMax.append("path")
-            .attr("class", "inStreamFull")
+            .attr("class", "outStreamFull")
             .datum(link.reverse())
             .attr("id", function (d: Cardinality) {
-                return d.source.id + "inputStreamFull" + d.target.id
+                return d.source.id + "outputStreamFull" + d.target.id
             })
             .attr("d", function (d: Cardinality) {
-                let mT = calcFilling(d, true);
+                let mT = calcFilling(d, false);
                 return "M" + xScale(d.source.cx) + ","
                     + yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
                     + mT.x + ","
                     + mT.y
             });
         inputStreamMax.append("path")
-            .attr("class", "inStreamLink")
+            .attr("class", "outStreamLink")
             .datum(link)
             .attr("id", function (d: Cardinality) {
-                return d.source.id + "inputStreamLink" + d.target.id
+                return d.source.id + "outputStreamLink" + d.target.id
             })
             .attr("d", function (d: Cardinality) {
-                let mT = calcFilling(d, true, percentToLength(5));
+                let mT = calcFilling(d, false, percentToLength(5));
                 return "M" + xScale(d.source.cx) + ","
                     + yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
                     + mT.x + ","

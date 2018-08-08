@@ -1,5 +1,5 @@
 import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
-import {Cardinality, QueueElement, Task} from "./datastructure";
+import {Cardinality, getXValue, QueueElement, setTaskByName, Task} from "./datastructure";
 import {colorScaleLines} from "./LinePlot";
 import {drawNode, updateNode} from "./node";
 import {inOutPoolResolution, nodeRadius, sides} from "./constants";
@@ -42,8 +42,18 @@ let shortGraphSvg = d3.select("#shortGraph")
 let nodeColor = colorScaleLines;
 
 getTopology.done(function (result) {
-    console.log(result);
     result.reverse();
+    let hierachy = getHierachy(result);
+    let yScalePerMaschine = [];
+    hierachy.forEach(function (machine, i) {
+       let maxNumberOfTasksPerMachine = Math.max.apply(Math, machine.values.map(function(o) { return o.values.length; }));
+       let yScale = d3.scaleLinear()
+           .domain([0, maxNumberOfTasksPerMachine])
+           .range([(canvas.height/hierachy.length) * i, canvas.height/hierachy.length]);
+       yScalePerMaschine.push(yScale);
+    });
+    
+
 
     // xAxis prepare
     xScale.domain([0, result.length - 1]);
@@ -52,7 +62,7 @@ getTopology.done(function (result) {
     let labels = [];
     let labelRange = [];
     result.forEach(function (item, i) {
-        labels.push(item.name);
+        labels.push(item.id);
         labelRange.push(xScale(i));
     });
     xLabel.domain(labels);
@@ -65,6 +75,7 @@ getTopology.done(function (result) {
         yScale.range([0, canvas.height]);
         yScales.push(yScale);
     });
+
 
     //Draw X-Axis
     shortGraphSvg
@@ -88,6 +99,7 @@ getTopology.done(function (result) {
 
     //Prepare Cardinality List
     let cardinality = getLinks(result);
+
 
     //Draw the Links
     graphSvg
@@ -190,7 +202,7 @@ function updateOutputQueue(data:Array<string>) {
     });
 }
 
-function getInitList(data:Array<Task>) {
+function getInitList(data:Array<Task>):Array<string> {
     let initList:Array<string> = [];
     data.forEach(function (item) {
         initList.push(item.id);
@@ -198,7 +210,7 @@ function getInitList(data:Array<Task>) {
     return initList;
 }
 
-function createTaskList(input) {
+function createTaskList(input):Array<Task> {
     let listOfTasks:Array<Task> = [];
     input.forEach(function (item, i) {
         item.tasks.forEach(function (t, j) {
@@ -209,18 +221,63 @@ function createTaskList(input) {
     return listOfTasks;
 }
 
-function getLinks(dataset) {
-    let links: Array<object> = [];
+function getLinks(dataset):Array<Cardinality> {
+    let links: Array<Cardinality> = [];
     for (let i = 1; i < dataset.length; i++) {
         dataset[i].tasks.forEach(function (task, j) {
             task.input.forEach(function (input, k) {
-                let source = new Task(input, i-1, k);
-                let target = new Task(task.id, i, j);
+                let target = new Task(input, i-1, k, dataset[i-1].name);
+                let source = new Task(task.id, i, j, dataset[i].name, task.host);
                 let cardinality = new Cardinality(source, target);
                 links.push(cardinality);
             })
         })
     }
     return links;
+}
+function getLinks2(dataset):Array<Cardinality> {
+    let links:Array<Cardinality> = [];
+
+
+
+    return links
+
+}
+function getHierachy(dataset:Array<object>) {
+    let listToOrder:Array<Task> = [];
+
+    dataset.forEach(function (operator) {
+        operator.tasks.forEach(function (task, i) {
+            let listTask = new Task(task.id, getXValue(operator.name), undefined, operator.name, task.host, task.input);
+            setTaskByName(listTask);
+            listToOrder.push(listTask);
+        })
+    });
+
+    let entries = d3.nest()
+        .key(function (d:Task) {
+            return d.address
+        })
+        .key(function (d:Task) {
+            return d.operator
+        })
+        .entries(listToOrder);
+
+    let entriesAsObject = d3.nest()
+        .key(function (d:Task) {
+            return d.address
+        })
+        .key(function (d:Task) {
+            return d.id
+        })
+        .rollup(function (v) {
+            return v.length
+        })
+        .map(listToOrder);
+    console.log(entries);
+    console.log(entriesAsObject);
+
+
+return entries;
 }
 

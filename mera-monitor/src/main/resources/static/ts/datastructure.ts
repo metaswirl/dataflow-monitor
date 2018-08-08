@@ -6,19 +6,65 @@ export class Operator {
     tasks: Array<Task>
     //cy equals tasks index
 }
+let machineCount = d3.map();
+let xValues = d3.map();
+let taskMap = d3.map();
+
+export function getTaskByName(key:string) {
+    if(taskMap.has(key)){
+        return taskMap.get(key)
+    }
+    else{
+        console.log("Task not in Map")
+    }
+}
+export function setTaskByName(value:Task){
+    if(taskMap.has(value.id)){
+        console.log("Already in Map")
+    }
+    else{
+        taskMap.set(value.id, value);
+    }
+}
+
+export function getXValue(key:string) {
+    if(xValues.has(key)){
+        return xValues.get(key)
+    }
+    else{
+        xValues.set(key, xValues.size());
+        return xValues.get(key)
+    }
+}
+
+export function getMachineCount(key:string) {
+    if(machineCount.has(key)){
+        return machineCount.get(key)
+    }
+    else{
+        machineCount.set(key, (machineCount.size()));
+        return machineCount.get(key)
+    }
+}
+
 let colorScaleBuffer =  d3.scaleLinear()
     .domain([0, 1.1])
     .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
 
 export class Task {
-    constructor(id:string, cx:number, cy:number){
+    constructor(id:string, cx:number, cy:number, operator?:string, address?:string, input?:Array<string>){
      this.id = id;
      this.cx = cx;
      this.cy = cy;
+     this.operator = operator;
+     this.address = address;
+     this.input = input;
     }
     id: string;
     cx: number;
     cy: number;
+    address?: string;
+    operator?:string;
     input?: Array<string>;
     output?: Array<string>
 }
