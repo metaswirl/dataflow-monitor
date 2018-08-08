@@ -29,14 +29,58 @@ define("datastructure", ["require", "exports", "d3"], function (require, exports
         return Operator;
     }());
     exports.Operator = Operator;
+    var machineCount = d3.map();
+    var xValues = d3.map();
+    var taskMap = d3.map();
+    function getTaskByName(key) {
+        if (taskMap.has(key)) {
+            return taskMap.get(key);
+        }
+        else {
+            console.log("Task not in Map");
+        }
+    }
+    exports.getTaskByName = getTaskByName;
+    function setTaskByName(value) {
+        if (taskMap.has(value.id)) {
+            console.log("Already in Map");
+        }
+        else {
+            taskMap.set(value.id, value);
+        }
+    }
+    exports.setTaskByName = setTaskByName;
+    function getXValue(key) {
+        if (xValues.has(key)) {
+            return xValues.get(key);
+        }
+        else {
+            xValues.set(key, xValues.size());
+            return xValues.get(key);
+        }
+    }
+    exports.getXValue = getXValue;
+    function getMachineCount(key) {
+        if (machineCount.has(key)) {
+            return machineCount.get(key);
+        }
+        else {
+            machineCount.set(key, (machineCount.size()));
+            return machineCount.get(key);
+        }
+    }
+    exports.getMachineCount = getMachineCount;
     var colorScaleBuffer = d3.scaleLinear()
         .domain([0, 1.1])
         .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
     var Task = /** @class */ (function () {
-        function Task(id, cx, cy) {
+        function Task(id, cx, cy, operator, address, input) {
             this.id = id;
             this.cx = cx;
             this.cy = cy;
+            this.operator = operator;
+            this.address = address;
+            this.input = input;
         }
         return Task;
     }());
@@ -493,13 +537,13 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
             .domain([0, 100]);
         var outputStream = svg.append("g");
         outputStream.append("path")
-            .attr("class", "outStreamFull")
+            .attr("class", "inStreamFull")
             .datum(link)
             .attr("id", function (d) {
-            return d.source.id + "outputStreamFull" + d.target.id;
+            return d.target.id + "inputStreamFull" + d.source.id;
         })
             .attr("d", function (d) {
-            var mT = calcFilling(d, false);
+            var mT = calcFilling(d, true);
             return "M" + longGraph_1.xScale(d.source.cx) + ","
                 + longGraph_1.yScales[d.source.cx](d.source.cy)
                 + "A" + 0 + "," + 0 + " 0 0,1 "
@@ -507,13 +551,13 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
                 + mT.y;
         });
         outputStream.append("path")
-            .attr("class", "outStreamLink")
+            .attr("class", "inStreamLink")
             .datum(link)
             .attr("id", function (d) {
-            return d.source.id + "outputSteamLink" + d.target.id;
+            return d.target.id + "inputSteamLink" + d.source.id;
         })
             .attr("d", function (d) {
-            var mT = calcFilling(d, false, percentToLength(60));
+            var mT = calcFilling(d, true, percentToLength(60));
             return "M" + longGraph_1.xScale(d.source.cx) + ","
                 + longGraph_1.yScales[d.source.cx](d.source.cy)
                 + "A" + 0 + "," + 0 + " 0 0,1 "
@@ -522,26 +566,26 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
         });
         var inputStreamMax = svg.append("g");
         inputStreamMax.append("path")
-            .attr("class", "inStreamFull")
+            .attr("class", "outStreamFull")
             .datum(link.reverse())
             .attr("id", function (d) {
-            return d.source.id + "inputStreamFull" + d.target.id;
+            return d.source.id + "outputStreamFull" + d.target.id;
         })
             .attr("d", function (d) {
-            var mT = calcFilling(d, true);
+            var mT = calcFilling(d, false);
             return "M" + longGraph_1.xScale(d.source.cx) + ","
                 + longGraph_1.yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
                 + mT.x + ","
                 + mT.y;
         });
         inputStreamMax.append("path")
-            .attr("class", "inStreamLink")
+            .attr("class", "outStreamLink")
             .datum(link)
             .attr("id", function (d) {
-            return d.source.id + "inputStreamLink" + d.target.id;
+            return d.source.id + "outputStreamLink" + d.target.id;
         })
             .attr("d", function (d) {
-            var mT = calcFilling(d, true, percentToLength(5));
+            var mT = calcFilling(d, false, percentToLength(5));
             return "M" + longGraph_1.xScale(d.source.cx) + ","
                 + longGraph_1.yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
                 + mT.x + ","
@@ -616,15 +660,23 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
     //Color Axis
     var nodeColor = LinePlot_2.colorScaleLines;
     RestInterface_3.getTopology.done(function (result) {
-        console.log(result);
         result.reverse();
+        var hierachy = getHierachy(result);
+        var yScalePerMaschine = [];
+        hierachy.forEach(function (machine, i) {
+            var maxNumberOfTasksPerMachine = Math.max.apply(Math, machine.values.map(function (o) { return o.values.length; }));
+            var yScale = d3.scaleLinear()
+                .domain([0, maxNumberOfTasksPerMachine])
+                .range([(canvas.height / hierachy.length) * i, canvas.height / hierachy.length]);
+            yScalePerMaschine.push(yScale);
+        });
         // xAxis prepare
         exports.xScale.domain([0, result.length - 1]);
         exports.xScale.range([0, canvas.width]);
         var labels = [];
         var labelRange = [];
         result.forEach(function (item, i) {
-            labels.push(item.name);
+            labels.push(item.id);
             labelRange.push(exports.xScale(i));
         });
         xLabel.domain(labels);
@@ -773,8 +825,8 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         var _loop_1 = function (i) {
             dataset[i].tasks.forEach(function (task, j) {
                 task.input.forEach(function (input, k) {
-                    var source = new datastructure_5.Task(input, i - 1, k);
-                    var target = new datastructure_5.Task(task.id, i, j);
+                    var target = new datastructure_5.Task(input, i - 1, k, dataset[i - 1].name);
+                    var source = new datastructure_5.Task(task.id, i, j, dataset[i].name, task.host);
                     var cardinality = new datastructure_5.Cardinality(source, target);
                     links.push(cardinality);
                 });
@@ -784,6 +836,42 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             _loop_1(i);
         }
         return links;
+    }
+    function getLinks2(dataset) {
+        var links = [];
+        return links;
+    }
+    function getHierachy(dataset) {
+        var listToOrder = [];
+        dataset.forEach(function (operator) {
+            operator.tasks.forEach(function (task, i) {
+                var listTask = new datastructure_5.Task(task.id, datastructure_5.getXValue(operator.name), undefined, operator.name, task.host, task.input);
+                datastructure_5.setTaskByName(listTask);
+                listToOrder.push(listTask);
+            });
+        });
+        var entries = d3.nest()
+            .key(function (d) {
+            return d.address;
+        })
+            .key(function (d) {
+            return d.operator;
+        })
+            .entries(listToOrder);
+        var entriesAsObject = d3.nest()
+            .key(function (d) {
+            return d.address;
+        })
+            .key(function (d) {
+            return d.id;
+        })
+            .rollup(function (v) {
+            return v.length;
+        })
+            .map(listToOrder);
+        console.log(entries);
+        console.log(entriesAsObject);
+        return entries;
     }
 });
 //# sourceMappingURL=app.js.map
