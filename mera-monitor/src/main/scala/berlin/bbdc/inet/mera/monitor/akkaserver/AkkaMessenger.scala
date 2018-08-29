@@ -51,7 +51,12 @@ class AkkaMessenger(model: Model) extends Actor {
   }
 
   private def initModelWriter(model: Model): ModelFileWriter = {
-    val folder: String = s"/tmp/mera_${System.currentTimeMillis()}"
+    val path = ConfigFactory.load().getString("dirs.metrics")
+    val folder: String = if (path.length > 0) {
+        path
+      } else {
+        s"/tmp/mera_${System.currentTimeMillis()}"
+      }
     LOG.debug("Writing info to " + folder)
     val mfw = ModelFileWriter(folder, writeMetrics = true)
     mfw.writeGraph(model)
@@ -59,9 +64,10 @@ class AkkaMessenger(model: Model) extends Actor {
   }
 
   private def processMetricUpdate(d: MetricUpdate): Unit = {
-    mfw.updateMetrics(d.timestamp, d.counters.map(t => (t.key, t.count.toDouble)) ++
+    val now = System.currentTimeMillis()
+    mfw.updateMetrics(now, d.counters.map(t => (t.key, t.count.toDouble)) ++
       d.meters.map(t => (t.key, t.rate)) ++ d.gauges.map(t => (t.key, t.value)))
-    modelUpdater.update(d.timestamp,
+    modelUpdater.update(now,
       d.counters.map(t => (MetricKey.buildKey(t.key), Counter(t.count))) ++
         d.meters.map(t => (MetricKey.buildKey(t.key), Meter(t.count, t.rate))) ++
         d.hists.map(t => (MetricKey.buildKey(t.key), Histogram(t.count, t.min, t.max, t.mean))) ++

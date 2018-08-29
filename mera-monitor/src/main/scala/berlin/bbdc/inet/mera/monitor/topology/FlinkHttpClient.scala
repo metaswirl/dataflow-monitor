@@ -33,8 +33,8 @@ class FlinkHttpClient(hostname: String, port: Int) extends AbstractFlinkClient  
   def getJobs(): AllJobs = {
     var allJobs = JsonUtils.fromJson[AllJobs](getRestContent(JOBS_URL))
     while (allJobs.jobsRunning.size < 1) {
-      LOG.info(s"No job is running. Retrying in 5 seconds." )
-      Thread.sleep(5000)
+      LOG.info(s"No job is running. Retrying in 3 seconds." )
+      Thread.sleep(3000)
       allJobs = JsonUtils.fromJson[AllJobs](getRestContent(JOBS_URL))
     }
     LOG.info(s"Detected ${allJobs.jobsRunning.size} running jobs: ${allJobs.jobsRunning.toString}" )

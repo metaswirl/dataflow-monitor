@@ -9,7 +9,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.util.Collector
 
 object Job extends JobTemplate {
-  val env = StreamExecutionEnvironment.getExecutionEnvironment
   env.disableOperatorChaining()
   env.getConfig.setLatencyTrackingInterval(500)
 

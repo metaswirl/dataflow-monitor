@@ -1,0 +1,21 @@
+{
+  "job_jar":"three-stage-word-count-0.1-SNAPSHOT.jar",
+  "reporter_jar":"mera-reporter-0.1-SNAPSHOT.jar",
+  "monitor_jar":"mera-monitor-0.1-SNAPSHOT.jar",
+  "mera_config": {
+    "org.slf4j.simpleLogger": {
+      "defaultLogLevel":"info"
+    },
+    "webserver": {
+      "host":"localhost",
+      "port":12345
+    },
+    "flink": {
+      "host":"localhost",
+      "port":8081
+    },
+    "akkaMessenger": {
+      "isCluster":"true"
+    }
+  }
+}

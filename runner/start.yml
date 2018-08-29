@@ -1,0 +1,42 @@
+---
+- name: start mera
+  hosts: jobmanager
+  vars:
+    mera_dir: "{{ nfs_dir }}/mera-artifacts/mera-{{ mera_commit_id }}"
+    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
+    mera_run_param: "-Ddirs.metrics={{ exp_dir }}"
+    mera_params: >
+      {% for k, v in mera_config.items() %}{% for k2, v2 in v.items() %}-D{{k}}.{{k2}}={{v2}} {% endfor %}{% endfor %}
+  tasks:
+    - shell: "nohup java {{ mera_run_param }} {{ mera_params | replace('\n', '') }} -jar {{ mera_dir }}/{{ monitor_jar }} > {{exp_dir}}/monitor.stdout 2> {{exp_dir}}/monitor.stderr &"
+      args:
+        chdir: "{{ exp_dir }}"
+
+- name: copy reporter 
+  hosts: jobmanager
+  vars:
+    flink_dir: "{{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}"
+    mera_dir: "{{ nfs_dir }}/mera-artifacts/mera-{{ mera_commit_id }}"
+  tasks:
+    - name: copy reporter
+      copy: src="{{ mera_dir }}/{{ reporter_jar }}" dest="{{ flink_dir }}/lib"
+
+- name: start task managers
+  hosts: cluster
+  vars:
+    taskmanager_sh: "nohup {{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}/bin/taskmanager.sh"
+  tasks:
+    - name: start taskmanager
+      shell: "{{ taskmanager_sh }} start"
+      register: ps
+    - debug: var=ps.stdout_lines
+
+- name: start job manager
+  hosts: jobmanager
+  vars:
+    jobmanager_sh: "nohup {{ nfs_dir }}/flink-deployments/flink-{{ flink_commit_id }}/bin/jobmanager.sh"
+  tasks:
+    - name: start jobmanager
+      shell: "{{ jobmanager_sh }} start cluster"
+      register: ps
+    - debug: var=ps.stdout_lines

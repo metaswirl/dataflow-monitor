@@ -1,10 +1,6 @@
 package berlin.bbdc.inet.mera.commons.message
 
-final case class MetricUpdate(timestamp: Long,
-                              counters: List[CounterItem],
-                              meters: List[MeterItem],
-                              hists: List[HistItem],
-                              gauges: List[GaugeItem])
+final case class MetricUpdate(counters: List[CounterItem], meters: List[MeterItem], hists: List[HistItem], gauges: List[GaugeItem])
 
 final case class CounterItem(key: String, count: Long)
 

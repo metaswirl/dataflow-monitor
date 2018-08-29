@@ -76,6 +76,8 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
   // Mera Actor
   lazy val master: ActorSelection = system.actorSelection(
     s"akka.tcp://${config.getString("mera.system")}@$jobManagerIpAddress:${config.getInt("mera.port")}/user/master")
+  private val LOG = LoggerFactory.getLogger(getClass)
+  LOG.info(s"found jobmanager at $jobManagerIpAddress${config.getInt("mera.port")}")
 
   // Local actor talking to Mera
   lazy val akkaMessenger: ActorRef = system.actorOf(AkkaMessenger.props(master), name = taskName)

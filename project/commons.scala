@@ -20,6 +20,7 @@ object Commons {
     assemblyMergeStrategy in assembly := {
       case PathList("META-INF", xs @ _*) => MergeStrategy.discard
       case "application.conf" => MergeStrategy.concat
+      case "reference.conf" => MergeStrategy.concat
       case x => MergeStrategy.first
     }
   )

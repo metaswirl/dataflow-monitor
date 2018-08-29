@@ -1,9 +1,11 @@
 package berlin.bbdc.inet.mera.usecases.template.utils
 
-import java.io.{BufferedReader, DataOutputStream, File, InputStreamReader}
+import java.io._
 import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Path, Paths}
+import java.util.stream.Collectors
 
+import berlin.bbdc.inet.mera.commons.tools.JsonUtils
 import org.specs2.mutable.Specification
 import org.specs2.mutable.BeforeAfter
 
@@ -18,12 +20,16 @@ class TestParameterReceiverHTTP extends Specification {
       // TODO: catch exceptions
       true must_== true
     }
-    "handle messages" >> {
+    "handle GET" >> {
       var number = 0
+      var returnedNumber = 0
+
       def setNumber(n: Int): Unit = {
         number = n
       }
+
       def getNumber() = number
+
       val server = new ParameterReceiverHTTP(getNumber, setNumber, None)
       server.start()
 
@@ -31,36 +37,49 @@ class TestParameterReceiverHTTP extends Specification {
       new URL(url).openConnection() match {
         case con: HttpURLConnection =>
           con.setRequestMethod("GET")
+          con.setDoOutput(false)
+          con.setDoInput(true)
           con.getResponseCode must_== 200
-
           con.getInputStream
-          val br = new BufferedReader(new InputStreamReader(con.getInputStream()))
-          val res = br.readLine().toInt
-          res must_== 0
+          val result: String = new BufferedReader(new InputStreamReader(con.getInputStream))
+            .lines().collect(Collectors.joining(""))
+          val res = JsonUtils.fromJson[Delay](result)
+          returnedNumber = res.delay
         case _ => throw new ClassCastException
       }
+      server.cancel()
       number must_== 0
+      returnedNumber must_== 0
+    }
 
+    "handle POST" >> {
+      var number = 0
+
+      def setNumber(n: Int): Unit = {
+        number = n
+      }
+
+      def getNumber() = number
+
+      val server = new ParameterReceiverHTTP(getNumber, setNumber, None)
+      server.start()
+
+      val newDelay = new Delay(100)
+      val newDelayJson = JsonUtils.toJson(newDelay)
+
+      val url = s"http://localhost:${server.getPort}/"
       new URL(url).openConnection() match {
         case con: HttpURLConnection =>
-          con.setRequestMethod("POST")
           con.setDoOutput(true)
-          new DataOutputStream(con.getOutputStream()).writeInt(100)
+          con.setRequestMethod("POST")
+
+          //con.setRequestProperty("Accept", "application/json");
+          val os = con.getOutputStream()
+          os.write(newDelayJson.getBytes)
+          os.close()
           con.getResponseCode must_== 200
         case _ => throw new ClassCastException
       }
-      number must_== 100
-
-      new URL(url).openConnection() match {
-        case con: HttpURLConnection =>
-          con.setRequestMethod("GET")
-          val br = new BufferedReader(new InputStreamReader(con.getInputStream()))
-          val res = br.readLine().toInt
-          res must_== 100
-        case _ => throw new ClassCastException
-      }
-
-      server.cancel()
       number must_== 100
     }
     "write port to file" >> {

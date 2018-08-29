@@ -1,0 +1,34 @@
+---
+- name: test access on all hosts
+  hosts: cluster
+  tasks: 
+    - name: check ssh and python
+      ping:
+    - name: check access to folder nfs_dir
+      stat: path="{{ nfs_dir }}/"
+
+- name: create folders
+  hosts: jobmanager
+  vars:
+    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
+  tasks:
+    - name: create experiment dir
+      file: path="{{ exp_dir }}/" state=directory
+    - name: create output dir
+      file: path="{{ exp_dir }}/output" state=directory
+    - name: create experiment log dir
+      file: path="{{ exp_dir }}/flink_logs" state=directory
+    - name: create state dir
+      file: path="{{ state_dir }}/" state=directory
+
+- name: copy files
+  hosts: jobmanager
+  vars:
+    exp_base_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/"
+  tasks:
+    - name: copy experiment.json
+      copy: src="config/experiment.json" dest="{{ exp_base_dir }}/"
+    - name: copy bottleneck_manager.py
+      copy: src="scripts/bottleneck_manager.py" dest="{{ exp_base_dir }}/"
+    - name: copy plot_metrics.py
+      copy: src="scripts/plot_metrics.py" dest="{{ exp_base_dir }}/"
