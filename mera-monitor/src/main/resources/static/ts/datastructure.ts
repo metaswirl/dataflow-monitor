@@ -93,6 +93,14 @@ export class Cardinality {
     source: Task;
     target: Task
 }
+export class CardinalityByString {
+    constructor(source:string, target:string) {
+        this.source = source;
+        this.target = target;
+    }
+    source: string;
+    target: string;
+}
 
 export class MetricPostObject {
     metricId: string;

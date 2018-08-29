@@ -31,7 +31,11 @@ circle {
 .bg-light{
 	background-color: white !important;
 }
-
+.divider{
+	fill: none;
+	stroke: #998991;
+	stroke-width: 2.5px;
+}
 .link {
 	fill: none;
 	stroke: #999;
