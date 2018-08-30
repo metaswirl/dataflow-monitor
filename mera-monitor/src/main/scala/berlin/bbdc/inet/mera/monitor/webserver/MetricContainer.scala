@@ -171,3 +171,5 @@ case class OperatorTopology(id: String, tasks: Seq[TasksOfOperator])
 case class TaskMetrics(taskId: String, values: List[MetricValue])
 
 case class InitializedMetric(taskId: String, metricId: String, resolution: Int)
+
+case class OptimizerStatus(running: Boolean)
