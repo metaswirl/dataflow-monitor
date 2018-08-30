@@ -2,6 +2,7 @@ import {
     getInitMetrics,
     getIsOptimized,
     getMetrics,
+    getOptimizeStatus,
     getTopology,
     initMetricForTasks,
     optimizeLoad
@@ -32,7 +33,9 @@ getTopology.done(function (result) {
         setOptions(optionsByTask, "Ids")
     }
 });
-
+window.onload = function(){
+  getOptimizeStatus();
+};
 $("#taskoroperator").on("change", function () {
     getTopology.done(function (result) {
         $("#Ids").empty();

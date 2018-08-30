@@ -39,6 +39,17 @@ export function optimizeLoad() {
     }
     return $.post(pathToOptimize, JSON.stringify(postObj))
 }
+export function getOptimizeStatus() {
+    $.get(pathToOptimize).done(function (result) {
+        isOptimized = result.running;
+        if(isOptimized){
+            $("#optimizeBtn").addClass("isOptimized")
+        }
+        else{
+            $("#optimizeBtn").removeClass("isOptimized")
+        }
+    })
+}
 
 export function getIsOptimized() {
     return isOptimized;

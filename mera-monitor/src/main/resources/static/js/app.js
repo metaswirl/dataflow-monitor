@@ -198,6 +198,18 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         return $.post(pathToOptimize, JSON.stringify(postObj));
     }
     exports.optimizeLoad = optimizeLoad;
+    function getOptimizeStatus() {
+        $.get(pathToOptimize).done(function (result) {
+            isOptimized = result.running;
+            if (isOptimized) {
+                $("#optimizeBtn").addClass("isOptimized");
+            }
+            else {
+                $("#optimizeBtn").removeClass("isOptimized");
+            }
+        });
+    }
+    exports.getOptimizeStatus = getOptimizeStatus;
     function getIsOptimized() {
         return isOptimized;
     }
@@ -365,6 +377,9 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
             setOptions(optionsByTask, "Ids");
         }
     });
+    window.onload = function () {
+        RestInterface_2.getOptimizeStatus();
+    };
     $("#taskoroperator").on("change", function () {
         RestInterface_2.getTopology.done(function (result) {
             $("#Ids").empty();
@@ -671,7 +686,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         });
         // xAxis prepare
         exports.xScale.domain([0, result.length - 1]);
-        exports.xScale.range([50, canvas.width]);
+        exports.xScale.range([0, canvas.width]);
         let labels = [];
         let labelRange = [];
         result.forEach(function (item, i) {
@@ -737,7 +752,8 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             let sx = exports.xScale(0), sy = yScale(d.maxNumber - 1), tx = exports.xScale(5), ty = yScale(d.maxNumber - 1), dr = 0;
             return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
         })
-            .attr("stroke-dasharray", "5,10,5");
+            .attr("stroke-dasharray", "5,10,5")
+            .attr("transform", "translate(" + 0 + "," + taskSpace / 2 + ")");
         dividers
             .enter()
             .append("text")
@@ -746,7 +762,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         })
             .attr("y", function (d) {
             let yScale = exports.yScalePerMaschine.get(d.machineId);
-            return yScale(d.maxNumber - 1) - 5;
+            return yScale(d.maxNumber - 1);
         })
             .text(function (d) {
             return d.machineId;
