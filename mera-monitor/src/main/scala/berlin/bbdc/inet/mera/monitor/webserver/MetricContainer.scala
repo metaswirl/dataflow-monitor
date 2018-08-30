@@ -57,6 +57,10 @@ class MetricContainer(model: Model) {
     model.operators.map(x => OperatorTopology(x._1, getTasksOfOperator(x._1))).toList
   }
 
+  def taskEdges: List[TaskEdgeWithId] =
+    model.taskEdges.map(e => TaskEdgeWithId(e.source.id, e.target.id, e.inF, e.outF))
+
+
   /**
     * Obtains list of all available metrics
     */
@@ -173,3 +177,6 @@ case class TaskMetrics(taskId: String, values: List[MetricValue])
 case class InitializedMetric(taskId: String, metricId: String, resolution: Int)
 
 case class OptimizerStatus(running: Boolean)
+
+case class TaskEdgeWithId(src: String, dst: String, inFraction: Double, outFraction: Double)
+

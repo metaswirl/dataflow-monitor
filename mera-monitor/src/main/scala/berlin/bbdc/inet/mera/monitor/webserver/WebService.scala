@@ -36,6 +36,11 @@ trait WebService {
           completeJson(metricContainer.metricsList)
         }
       } ~
+      path("data" / "edges") {
+        get {
+          completeJson(metricContainer.taskEdges)
+        }
+      } ~
       path("data" / "metrics" / "tasks" / "init") {
         get {
           completeJson(metricContainer.getInitMetric)
@@ -54,7 +59,7 @@ trait WebService {
         }
       } ~
       // Sets optimize button - current implementation only for the UI testing
-      path ("optimize") {
+      path("optimize") {
         post {
           entity(as[String]) { body =>
             complete(body)
@@ -65,7 +70,7 @@ trait WebService {
         }
       } ~
       // health check
-      path ("health") {
+      path("health") {
         get {
           completeJson(metricContainer.getRuntimeStatus)
         }
