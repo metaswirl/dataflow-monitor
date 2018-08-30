@@ -6,53 +6,25 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.Gauge
 import org.apache.flink.streaming.api.functions.source.{RichSourceFunction, SourceFunction}
 import java.nio.file.Paths
-import org.apache.flink.api.java.utils.ParameterTool
+import java.util.concurrent.atomic.AtomicReference
 
+import org.apache.flink.api.java.utils.ParameterTool
 import berlin.bbdc.inet.mera.usecases.template.utils.ParameterReceiverHTTP
 import com.typesafe.config.ConfigFactory
 
-class Generator(queue: ArrayBlockingQueue[String], rate : Long) extends Runnable {
-  //private var lines = scala.io.Source.fromFile( "/tmp/lines.txt" ).getLines.toList
-  private var thread: Future[_] = _
-  private var running = true
+import scala.math
 
-  def cancel() = {
-    running = false
-    thread.cancel(true)
-  }
-
-  def start() = {
-    thread = Executors.newSingleThreadExecutor().submit(this)
-  }
-
-  override def run(): Unit = {
-    var oldTime = System.currentTimeMillis()
-    var count = 0
-    while (running) {
-      if (count % 500 == 0 && count >= rate) {
-        val now = System.currentTimeMillis()
-        val waitTime = 1000 - (now - oldTime)
-        if (waitTime > 0) {
-          Thread.sleep(waitTime)
-        }
-        oldTime = now + waitTime
-        count = 0
-      }
-      queue.put("asd jlk qwe cxf zxggh")
-      count += 1
-    }
-  }
-}
-
+// TODO: Separate the string generator from the source and make the source generic
 class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port: Int) extends RichSourceFunction[String] {
   var running = true
-  var queue : ArrayBlockingQueue[String] = null
-  var gen : Generator = null
+  var queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
+  var queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
   var paramReceiver : ParameterReceiverHTTP = null
 
   var ReporterThread : Future[_] = null
   var genThread : Future[_] = null
   var rateReceiverThread: Future[_] = null
+  var rateTuple = setRateTuple(rate) // first elem: items second elem: time interval
 
   override def cancel(): Unit = {
     running = false
@@ -64,12 +36,60 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
     cancel()
   }
 
+  def setRateTuple(rate: Int): (Int, Int) = {
+    def gcd(a: Int, b: Int): Int =
+      if (b==0) a
+      else gcd(b, a%b)
+
+    val rateGcd = gcd(rate, 1000)
+    (rate/rateGcd, 1000/rateGcd)
+  }
+
+  def generateString(): String = {
+    // TODO
+    "asd jlk qwe cxf zxggh"
+  }
+
+  val generator = new Thread(new Runnable {
+    override def run() = {
+      val lowWaterMark: Int = (0.5 * queueCapacity).toInt
+      val highWaterMark: Int = (0.8 * queueCapacity).toInt
+
+      while (running) {
+        // normal rate
+        Thread.sleep(rateTuple._2)
+        val remCap = queue.remainingCapacity()
+        if (remCap > rateTuple._1) {
+          for (a <- 0 until rateTuple._1) {
+            queue.put(generateString)
+          }
+        } else {
+          // TODO: It should be possible to do this simpler
+          val x: Long = queueOverFlowCtr.get()
+          queueOverFlowCtr.set(x - rateTuple._1.toLong)
+        }
+        if (queueOverFlowCtr.get() > 0 && remCap < lowWaterMark) {
+          // catchup rate
+          val begin = System.currentTimeMillis()
+          while (running && queueOverFlowCtr.get() > 0 && queue.remainingCapacity() > highWaterMark) {
+            queue.put(generateString)
+            // TODO: It should be possible to do this simpler
+            val x: Long = queueOverFlowCtr.get()
+            queueOverFlowCtr.set(x - 1L)
+          }
+          // add items not generated during catchup
+          // TODO: It should be possible to do this simpler
+          val x: Long = queueOverFlowCtr.get()
+          queueOverFlowCtr.set(x + (((System.currentTimeMillis() - begin) / rateTuple._2) * rateTuple._1))
+        }
+      }
+    }
+  })
+
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    queue = new ArrayBlockingQueue[String](queueCapacity)
-    gen = new Generator(queue, rate)
-    gen.start()
     port += getRuntimeContext.getIndexOfThisSubtask
+    generator.start()
     val rc = this.getRuntimeContext
     getRuntimeContext().getExecutionConfig().getGlobalJobParameters() match {
       case param: ParameterTool =>
@@ -80,36 +100,22 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
         paramReceiver.start()
       case _ => throw new ClassCastException
     }
-    getRuntimeContext.getMetricGroup().gauge[Int,Gauge[Int]]("backlog", new Gauge[Int] {
-      override def getValue: Int = {
-        val c = queue.size()
-        c
-      }
+    getRuntimeContext.getMetricGroup().gauge[Long,Gauge[Long]]("backlog", new Gauge[Long] {
+      override def getValue: Long = queue.size().toLong + queueOverFlowCtr.get.toLong
     })
   }
+
   def setRate(r : Int): Unit = {
     rate = r
+    rateTuple = setRateTuple(r)
   }
   def getRate(): Int = {
     return rate
   }
 
   override def run(ctx: SourceFunction.SourceContext[String]): Unit = {
-    var oldTime = System.currentTimeMillis()
-    var count = 0
     while (running) {
-
-      // using the rate here gives me an upper bound of the source's output rate
-      // Maybe I do not need it?
-      if (count % 500 == 0 && count >= rate) {
-        while (1000 - (System.currentTimeMillis() - oldTime) > 0) {
-          Thread.sleep(Math.max(1000 - (System.currentTimeMillis() - oldTime), 0))
-        }
-        oldTime = System.currentTimeMillis()
-        count = 0
-      }
       ctx.collect(queue.take())
-      count += 1
     }
   }
 }
