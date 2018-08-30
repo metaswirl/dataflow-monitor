@@ -30,5 +30,3 @@
       copy: src="config/experiment.json" dest="{{ exp_base_dir }}/"
     - name: copy bottleneck_manager.py
       copy: src="scripts/bottleneck_manager.py" dest="{{ exp_base_dir }}/"
-    - name: copy plot_metrics.py
-      copy: src="scripts/plot_metrics.py" dest="{{ exp_base_dir }}/"
