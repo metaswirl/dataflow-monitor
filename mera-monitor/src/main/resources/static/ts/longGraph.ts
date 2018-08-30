@@ -73,7 +73,7 @@ getTopology.done(function (result) {
 
     // xAxis prepare
     xScale.domain([0, result.length -1]);
-    xScale.range([50, canvas.width]);
+    xScale.range([0, canvas.width]);
 
     let labels = [];
     let labelRange = [];
@@ -149,7 +149,8 @@ getTopology.done(function (result) {
                 dr = 0;
             return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
         })
-        .attr("stroke-dasharray", "5,10,5");
+        .attr("stroke-dasharray", "5,10,5")
+        .attr("transform", "translate(" + 0 + "," + taskSpace/2 + ")");
     dividers
         .enter()
         .append("text")
@@ -158,7 +159,7 @@ getTopology.done(function (result) {
         })
         .attr("y", function (d) {
             let yScale = yScalePerMaschine.get(d.machineId);
-            return yScale(d.maxNumber -1) - 5;
+            return yScale(d.maxNumber -1);
         })
         .text(function (d) {
             return d.machineId
