@@ -59,6 +59,9 @@ trait WebService {
           entity(as[String]) { body =>
             complete(body)
           }
+        } ~
+        get {
+          completeJson(new OptimizerStatus(true))
         }
       } ~
       // health check
