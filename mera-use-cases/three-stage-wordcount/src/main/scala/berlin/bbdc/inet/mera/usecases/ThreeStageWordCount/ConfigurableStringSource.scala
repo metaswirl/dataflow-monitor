@@ -10,9 +10,23 @@ import java.util.concurrent.atomic.AtomicReference
 
 import org.apache.flink.api.java.utils.ParameterTool
 import berlin.bbdc.inet.mera.usecases.template.utils.ParameterReceiverHTTP
-import com.typesafe.config.ConfigFactory
+import scala.io.Source
+import scala.util.Random
 
-import scala.math
+class LineGenerator {
+  /*
+    the average word is 10.26 characters long
+    selecting 20 words on average should produce around 200 characters per line
+    (this is what Dhalion used in their evaluation)
+   */
+  val words: Array[String] = Source.fromFile(getClass.getClassLoader.getResource("words.txt").getFile).getLines.toArray
+
+  def generate(): String = {
+    (0 until 20).map(_ => {
+      words(Random.nextInt(words.length))
+    }).mkString(" ")
+  }
+}
 
 // TODO: Separate the string generator from the source and make the source generic
 class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port: Int) extends RichSourceFunction[String] {
@@ -25,6 +39,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
   var genThread : Future[_] = null
   var rateReceiverThread: Future[_] = null
   var rateTuple = setRateTuple(rate) // first elem: items second elem: time interval
+  val generator = new LineGenerator
 
   override def cancel(): Unit = {
     running = false
@@ -45,12 +60,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
     (rate/rateGcd, 1000/rateGcd)
   }
 
-  def generateString(): String = {
-    // TODO
-    "asd jlk qwe cxf zxggh"
-  }
-
-  val generator = new Thread(new Runnable {
+  val producer = new Thread(new Runnable {
     override def run() = {
       val lowWaterMark: Int = (0.5 * queueCapacity).toInt
       val highWaterMark: Int = (0.8 * queueCapacity).toInt
@@ -61,7 +71,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
         val remCap = queue.remainingCapacity()
         if (remCap > rateTuple._1) {
           for (a <- 0 until rateTuple._1) {
-            queue.put(generateString)
+            queue.put(generator.generate())
           }
         } else {
           // TODO: It should be possible to do this simpler
@@ -72,7 +82,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
           // catchup rate
           val begin = System.currentTimeMillis()
           while (running && queueOverFlowCtr.get() > 0 && queue.remainingCapacity() > highWaterMark) {
-            queue.put(generateString)
+            queue.put(generator.generate())
             // TODO: It should be possible to do this simpler
             val x: Long = queueOverFlowCtr.get()
             queueOverFlowCtr.set(x - 1L)
@@ -89,7 +99,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
     port += getRuntimeContext.getIndexOfThisSubtask
-    generator.start()
+    producer.start()
     val rc = this.getRuntimeContext
     getRuntimeContext().getExecutionConfig().getGlobalJobParameters() match {
       case param: ParameterTool =>
