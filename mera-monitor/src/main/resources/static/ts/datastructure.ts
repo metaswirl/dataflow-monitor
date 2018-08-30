@@ -98,6 +98,12 @@ export class CardinalityByString {
         this.source = source;
         this.target = target;
     }
+    reverse(){
+        let target = this.source;
+        this.source = this.target;
+        this.target = target;
+        return this
+    }
     source: string;
     target: string;
 }

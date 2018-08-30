@@ -1,10 +1,10 @@
-import {Cardinality, Value} from "./datastructure";
+import {CardinalityByString, getTaskByName, Value} from "./datastructure";
 import {arcRadius, sendRecieveIndicator} from "./constants";
-import {xScale, yScales} from "./longGraph";
+import {xScale, yScalePerMaschine} from "./longGraph";
 import d3 = require("d3");
 
 
-export function drawNodeLink(obj, link:Cardinality, level?:number) {
+export function drawNodeLink(obj, link:CardinalityByString, level?:number) {
     let svg = obj;
     let g = svg.append("g");
     let percentToLength = d3.scaleLinear()
@@ -15,13 +15,13 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
         outputStream.append("path")
             .attr("class", "inStreamFull")
             .datum(link)
-            .attr("id", function (d: Cardinality) {
-                return d.target.id + "inputStreamFull" + d.source.id
+            .attr("id", function (d: CardinalityByString) {
+                return d.target + "inputStreamFull" + d.source
             })
-            .attr("d", function (d:Cardinality) {
-                let mT = calcFilling(d, true);
-                return "M" + xScale(d.source.cx) + ","
-                    + yScales[d.source.cx](d.source.cy)
+            .attr("d", function (d:CardinalityByString) {
+                let mT = calcFilling(d, false);
+                return "M" + xScale(getTaskByName(d.source).cx) + ","
+                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
                     + "A" + 0 + "," + 0 + " 0 0,1 "
                     + mT.x + ","
                     + mT.y;
@@ -29,13 +29,13 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
         outputStream.append("path")
             .attr("class", "inStreamLink")
             .datum(link)
-            .attr("id", function (d: Cardinality) {
-              return d.target.id + "inputSteamLink" + d.source.id
+            .attr("id", function (d: CardinalityByString) {
+              return d.target + "inputSteamLink" + d.source
             })
-            .attr("d", function (d:Cardinality) {
-                let mT = calcFilling(d, true, percentToLength(60));
-                return "M" + xScale(d.source.cx) + ","
-                    + yScales[d.source.cx](d.source.cy)
+            .attr("d", function (d:CardinalityByString) {
+                let mT = calcFilling(d, false, percentToLength(60));
+                return "M" + xScale(getTaskByName(d.source).cx) + ","
+                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
                     + "A" + 0 + "," + 0 + " 0 0,1 "
                     + mT.x + ","
                     + mT.y;
@@ -45,26 +45,28 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
         inputStreamMax.append("path")
             .attr("class", "outStreamFull")
             .datum(link.reverse())
-            .attr("id", function (d: Cardinality) {
-                return d.source.id + "outputStreamFull" + d.target.id
+            .attr("id", function (d: CardinalityByString) {
+                return d.source + "outputStreamFull" + d.target
             })
-            .attr("d", function (d: Cardinality) {
-                let mT = calcFilling(d, false);
-                return "M" + xScale(d.source.cx) + ","
-                    + yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
+            .attr("d", function (d: CardinalityByString) {
+                let mT = calcFilling(d, true);
+                return "M" + xScale(getTaskByName(d.source).cx) + ","
+                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
+                    + "A" + 0 + "," + 0 + " 0 0,1 "
                     + mT.x + ","
                     + mT.y
             });
         inputStreamMax.append("path")
             .attr("class", "outStreamLink")
             .datum(link)
-            .attr("id", function (d: Cardinality) {
-                return d.source.id + "outputStreamLink" + d.target.id
+            .attr("id", function (d: CardinalityByString) {
+                return d.source + "outputStreamLink" + d.target
             })
-            .attr("d", function (d: Cardinality) {
-                let mT = calcFilling(d, false, percentToLength(5));
-                return "M" + xScale(d.source.cx) + ","
-                    + yScales[d.source.cx](d.source.cy) + "A" + 0 + "," + 0 + " 0 0,1 "
+            .attr("d", function (d: CardinalityByString) {
+                let mT = calcFilling(d, true, percentToLength(5));
+                return "M" + xScale(getTaskByName(d.source).cx) + ","
+                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
+                    + "A" + 0 + "," + 0 + " 0 0,1 "
                     + mT.x + ","
                     + mT.y
             });
@@ -74,10 +76,10 @@ export function drawNodeLink(obj, link:Cardinality, level?:number) {
 }
 
 //Helper Functions
-function calcFilling(link:Cardinality, reverse:Boolean, level?:number):Value {
-    let alpha = Math.atan((yScales[link.target.cx](link.target.cy) - yScales[link.source.cx](link.source.cy)) / (xScale(link.target.cx) - xScale(link.source.cx)));
-    let mX = xScale(link.source.cx);
-    let mY = yScales[link.source.cx](link.source.cy);
+function calcFilling(link:CardinalityByString, reverse:Boolean, level?:number):Value {
+    let alpha = Math.atan((yScalePerMaschine.get(getTaskByName(link.target).address)(getTaskByName(link.target).cy) - yScalePerMaschine.get(getTaskByName(link.source).address)(getTaskByName(link.source).cy)) / (xScale(getTaskByName(link.target).cx) - xScale(getTaskByName(link.source).cx)));
+    let mX = xScale(getTaskByName(link.source).cx);
+    let mY = yScalePerMaschine.get(getTaskByName(link.source).address)(getTaskByName(link.source).cy);
     if (reverse){
         if(level != null){
             mX -= (level) * Math.cos(alpha);

@@ -9,12 +9,13 @@ import {
     Task
 } from "./datastructure";
 import {colorScaleLines} from "./LinePlot";
-import {updateNode} from "./node";
+import {drawNode, updateNode} from "./node";
 import {inOutPoolResolution, nodeRadius, sides} from "./constants";
+import {drawNodeLink} from "./node_links";
 import d3 = require("d3");
 
 
-let margin = {top: 10, right: 20, bottom: 60, left: 20};
+let margin = {top: 20, right: 20, bottom: 60, left: 20};
 let longGraph = {
     width: $(".longGraph").width(),
     height: $(".longGraph").height()
@@ -36,6 +37,7 @@ let sumOfTPE:number;
 export let xScale = d3.scaleLinear();
 let xLabel = d3.scaleOrdinal();
 export let yScales = [];
+export let yScalePerMaschine = d3.map();
 let graphSvg = d3.select("#longGraph")
     .attr("width", longGraph.width)
     .attr("height", longGraph.height)
@@ -48,15 +50,15 @@ let shortGraphSvg = d3.select("#shortGraph")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 //Color Axis
 let nodeColor = colorScaleLines;
-
 getTopology.done(function (result) {
     result.reverse();
+    console.log(result);
     let hierachy = getHierachy(result);
     sumOfTPE = maxNumberOfTPE.reduce((a,b) => a + b.maxNumber, 0);
     let taskSpace = canvas.height/sumOfTPE;
     let canvasStart:number = 0;
 
-    let yScalePerMaschine = d3.map();
+
     hierachy.forEach(function (machine) {
         let min = canvasStart;
         let max = canvasStart + (taskSpace * maxNumberOfTPE.find(host => host.machineId === machine.key).maxNumber);
@@ -65,7 +67,6 @@ getTopology.done(function (result) {
                 .range([min, max]);
        yScalePerMaschine.set(machine.key, yScale);
        canvasStart = max;
-       console.log(canvasStart);
     });
     
 
@@ -77,7 +78,7 @@ getTopology.done(function (result) {
     let labels = [];
     let labelRange = [];
     result.forEach(function (item, i) {
-        labels.push(item.name);
+        labels.push(item.id);
         labelRange.push(xScale(i));
     });
     xLabel.domain(labels);
@@ -113,38 +114,8 @@ getTopology.done(function (result) {
         });
 
     //Prepare Cardinality List
-    let cardinality = getLinks(result);
     let cardinalityByName = getLinksByName(result);
-    //Draw Machine Divider
-    let dividers = graphSvg
-        .append("g")
-        .attr("class", "dividers")
-        .selectAll("divider")
-        .data(maxNumberOfTPE);
-        dividers
-            .enter()
-            .append("path")
-            .attr("class","divider")
-            .attr("d", function(d){
-                let yScale = yScalePerMaschine.get(d.machineId);
-                let sx = xScale(0), sy = yScale(d.maxNumber - 1),
-                    tx = xScale(0.3), ty = yScale(d.maxNumber - 1),
-                    dr = 0;
-                return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
-            });
-        dividers
-            .enter()
-            .append("text")
-            .attr("x", function (d) {
-                return xScale(0);
-            })
-            .attr("y", function (d) {
-                let yScale = yScalePerMaschine.get(d.machineId);
-                return yScale(d.maxNumber -1) - 10;
-            })
-            .text(function (d) {
-                return d.machineId
-            });
+
     //Draw the Links
     graphSvg
         .append("g")
@@ -161,17 +132,47 @@ getTopology.done(function (result) {
                 dr = 0;
             return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
         });
-
+//Draw Machine Divider
+    let dividers = graphSvg
+        .append("g")
+        .attr("class", "dividers")
+        .selectAll("divider")
+        .data(maxNumberOfTPE);
+    dividers
+        .enter()
+        .append("path")
+        .attr("class","divider")
+        .attr("d", function(d){
+            let yScale = yScalePerMaschine.get(d.machineId);
+            let sx = xScale(0), sy = yScale(d.maxNumber - 1),
+                tx = xScale(5), ty = yScale(d.maxNumber - 1),
+                dr = 0;
+            return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
+        })
+        .attr("stroke-dasharray", "5,10,5");
+    dividers
+        .enter()
+        .append("text")
+        .attr("x", function () {
+            return xScale(0);
+        })
+        .attr("y", function (d) {
+            let yScale = yScalePerMaschine.get(d.machineId);
+            return yScale(d.maxNumber -1) - 5;
+        })
+        .text(function (d) {
+            return d.machineId
+        });
     //Draw the LineOverlay
-    /*graphSvg
+    graphSvg
         .append("g")
         .attr("class", "lineOverlays")
         .selectAll("lineOverlays")
-        .data(cardinality)
-        .enter().append(function (d: Cardinality) {
+        .data(cardinalityByName)
+        .enter().append(function (d: CardinalityByString) {
         let obj = d3.select(this);
         return drawNodeLink(obj, d)
-    });*/
+    });
 
 
     //Prepare Data as Tasklist
@@ -197,15 +198,15 @@ getTopology.done(function (result) {
             return nodeColor(d.id) as string
         });
     //Draw Node Overlay
-    /*graphSvg
+    graphSvg
         .append("g")
         .attr("class", "nodeOverlays")
         .selectAll("nodeOverlays")
         .data(taskList)
         .enter().append(function (d: Task) {
         let obj = d3.select(this);
-        return drawNode(obj, xScale(d.cx), yScales[d.cx](d.cy), d);
-        });*/
+        return drawNode(obj, xScale(d.cx), yScalePerMaschine.get(getTaskByName(d.id).address)(getTaskByName(d.id).cy), d);
+        });
     //Init Metrics for in and out - Queue
     let initList:Array<string> = getInitList(taskList);
     initMetricForTasks("buffers.inPoolUsage", initList, inOutPoolResolution).done(function () {
@@ -302,7 +303,7 @@ function getHierachy(dataset:Array<object>) {
 
     dataset.forEach(function (operator) {
         operator.tasks.forEach(function (task, i) {
-            let listTask = new Task(task.id, getXValue(operator.name), undefined, operator.name, task.host, task.input);
+            let listTask = new Task(task.id, getXValue(operator.id), undefined, operator.id, task.address, task.input);
             listToOrder.push(listTask);
         })
     });

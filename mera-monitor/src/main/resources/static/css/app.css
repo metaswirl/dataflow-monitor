@@ -34,35 +34,35 @@ circle {
 .divider{
 	fill: none;
 	stroke: #998991;
-	stroke-width: 2.5px;
+	stroke-width: 3px;
 }
 .link {
 	fill: none;
-	stroke: #999;
-	stroke-width: 0.5px;
+	stroke: rgba(10, 10, 10, 0.6);
+	stroke-width: 1.5px;
 }
 .outStreamFull{
 	fill: none;
-	stroke: #55BF3B;
+	stroke: rgba(67, 123, 191, 0.7);
 	stroke-width: 5px;
 
 }
 .outStreamLink{
 	fill: none;
-	stroke: #800610;
+	stroke: #fff;
 	stroke-width: 5px;
 
 }
 .inStreamFull{
 	fill: none;
-	stroke: #55BF3B;
+	stroke: rgba(67, 123, 191, 0.7);
 	stroke-width: 5px;
 
 }
 .inStreamLink{
 	fill: none;
-	stroke: #800610;
-	stroke-width: 2px;
+	stroke: #fff;
+	stroke-width: 3.5px;
 
 }
 text {
