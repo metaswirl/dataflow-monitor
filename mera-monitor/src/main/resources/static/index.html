@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Mera Monitor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/grid-light.css">
     <link rel="stylesheet" href="css/app.css">
     <script src="frameworks/d3.js"></script>
     <script src="frameworks/jquery/jquery-3.3.1.js"></script>
-    <script src="frameworks/bootstrap/bootstrap.bundle.js"></script>
+    <script src="frameworks/bootstrap/bootstrap.min.js"></script>
     <script src="frameworks/require/require.js"></script>
-    <script src="js/app.js"></script>
-
-
-
 </head>
 <body>
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" href="#">
+        <img src="img/mera-monitor_logo.png" width="60" height="30" class="d-inline-block align-top" alt="">
+    </a>
+    <form class="form-inline">
+        <button class="btn btn-outline-primary" type="button" data-toggle="modal" data-target="#initMetric">Init Metric</button>
+        <button class="btn btn-outline-primary" type="button" id="optimizeBtn">Optimize</button>
+    </form>
+</nav>
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
@@ -29,7 +33,6 @@
             <div class="row">
                 <div class="col-sm-12 longGraph">
                     <svg id="longGraph"></svg>
-                    <script src=""></script>
                 </div>
             </div>
         </div>
@@ -40,14 +43,9 @@
                 <div class="col-sm-12 linePlot">
                     <div id="linePlot"></div>
                 </div>
-                <div class="col-sm-12 selectorPlot">
-                    <button class="btn btn-primary" data-toggle="modal" data-target="#initMetric">Init Metric</button>
-                    <button class="btn btn-primary" id="optimizeBtn">Optimize</button>
-                </div>
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="initMetric" tabindex="-1" role="dialog" aria-labelledby="initMetricLabel"
          aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -60,7 +58,6 @@
                 </div>
                 <div class="modal-body">
                     <p>Select values for the initialization of metrics.</p>
-
                     <div class="row">
                         <div class="col-sm-6">
                             <select class="form-control" name="metrics" id="metrics"></select>
@@ -77,7 +74,7 @@
                         <div class="col-sm-12">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="resolutionselect" id="time5s"
-                                       value="5">
+                                       value="5" checked>
                                 <label class="form-check-label" for="time5s">5sec</label>
                             </div>
                             <div class="form-check form-check-inline">
@@ -104,5 +101,6 @@
     </div>
 </div>
 <script type="text/javascript" src="js/requireConfig.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

@@ -1,19 +1,15 @@
 import d3 = require("d3");
-import {Task} from "./datastructure";
+import {QueueElement, Task} from "./datastructure";
+import {arcRadius, inOutPoolResolution} from "./constants";
 
 let arcOut = d3.arc()
-    .innerRadius(6)
-    .outerRadius(12)
+    .innerRadius(arcRadius.inner)
+    .outerRadius(arcRadius.outer)
     .startAngle(1 * Math.PI);
 let arcIn = d3.arc()
-    .innerRadius(6)
-    .outerRadius(12)
+    .innerRadius(arcRadius.inner)
+    .outerRadius(arcRadius.outer)
     .startAngle(1 * Math.PI);
-let colorScaleBuffer =  d3.scaleLinear()
-    .domain([0, 1.1])
-    .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
-
-
 
 export function drawNode(point, posx:number , posy:number, d:Task) {
     let svg = point,
@@ -32,9 +28,7 @@ export function drawNode(point, posx:number , posy:number, d:Task) {
         .style("stroke", "black")
         .attr("d", arcIn)
         .attr("class", "outQueue")
-        .attr("id", encodeURIComponent(d.name + "-" + "outQueue"));
-
-
+        .attr("id", encodeURIComponent(d.id + "-" + "outQueue"));
 
     let inQueueOutline = g.append("path")
         .datum({endAngle: 2 * Math.PI})
@@ -48,35 +42,35 @@ export function drawNode(point, posx:number , posy:number, d:Task) {
         .style("stroke", "black")
         .attr("d", arcOut)
         .attr("class", "inQueue")
-        .attr("id", encodeURIComponent(d.name + "-" + "inQueue"));
+        .attr("id", encodeURIComponent(d.id + "-" + "inQueue"));
     return g.node();
 
 }
-export function updateNode(nodes:Array<object>, isInput:boolean) {
+export function updateNode(nodes:Array<QueueElement>, isInput:boolean) {
     if(isInput){
         d3.selectAll(".inQueue")
             .data(nodes)
             .datum(function (d) {
-                return {endAngle: (1 + d.value) * Math.PI, color: colorScaleBuffer(d.value)}
+                return d
             })
             .style("fill", function (d) {
                 return d.color;
             })
             .transition()
-            .duration(500)
+            .duration(inOutPoolResolution * 1000)
             .attrTween("d", arcInTween);
     }
     else {
         d3.selectAll(".outQueue")
             .data(nodes)
             .datum(function (d) {
-                return {endAngle: (1 - d.value) * Math.PI, color: colorScaleBuffer(d.value)}
+                return d
             })
             .style("fill", function (d) {
                 return d.color;
             })
             .transition()
-            .duration(500)
+            .duration(inOutPoolResolution * 1000)
             .attrTween("d", arcOutTween);
     }
 
