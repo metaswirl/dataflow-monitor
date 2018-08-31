@@ -26,8 +26,8 @@
     exp_base_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/"
   tasks:
     - shell: "python3 {{ exp_base_dir }}/bottleneck_manager.py -s {{ state_dir }} -e {{ exp_base_dir }}/experiment.json > {{ exp_dir }}/bottleneck_manager.stdout 2> {{ exp_dir }}/bottleneck_manager.stderr"
-#       args:
-#         chdir: "{{ exp_dir }}"
+      args:
+        chdir: "{{ exp_dir }}"
 
 #    # probably it makes more sense to store these somewhere else
 # We could just assume that this is killed with the taskmanagers/jobmanager?!
