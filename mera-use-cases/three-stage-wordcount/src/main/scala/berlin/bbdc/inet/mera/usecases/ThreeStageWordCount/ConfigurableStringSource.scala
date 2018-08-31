@@ -44,13 +44,13 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
   var running = true
   lazy val queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
   lazy val queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
+  lazy val generator: LineGenerator = new LineGenerator()
   var paramReceiver : ParameterReceiverHTTP = null
 
   var ReporterThread : Future[_] = null
   var genThread : Future[_] = null
   var rateReceiverThread: Future[_] = null
-  var rateTuple: (Int, Int) = (0, 0) // first elem: items second elem: time interval
-  lazy val generator: LineGenerator = new LineGenerator()
+  var rateTuple: (Int, Int) = null // first elem: items second elem: time interval
 
   override def cancel(): Unit = {
     running = false
