@@ -40,6 +40,7 @@ class LineGenerator {
 
 // TODO: Separate the string generator from the source and make the source generic
 class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port: Int) extends RichSourceFunction[String] {
+  // TODO: remove null values
   var running = true
   var queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
   var queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
@@ -48,8 +49,8 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
   var ReporterThread : Future[_] = null
   var genThread : Future[_] = null
   var rateReceiverThread: Future[_] = null
-  var rateTuple = setRateTuple(rate) // first elem: items second elem: time interval
-  val generator = new LineGenerator
+  var rateTuple: (Int, Int) = (0, 0) // first elem: items second elem: time interval
+  var generator: LineGenerator = null
 
   override def cancel(): Unit = {
     running = false
@@ -107,6 +108,8 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
   })
 
   override def open(parameters: Configuration): Unit = {
+    rateTuple = setRateTuple(rate)
+    generator = new LineGenerator()
     super.open(parameters)
     port += getRuntimeContext.getIndexOfThisSubtask
     producer.start()
