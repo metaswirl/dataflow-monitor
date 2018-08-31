@@ -70,8 +70,6 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
   // ratio between number of items and drop rate
   var dropRatio: Long = 0
 
-  var now: Long = lastTimestamp
-
   var taskName = ""
 
   private val config = ConfigFactory.load()

@@ -50,7 +50,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
   var genThread : Future[_] = null
   var rateReceiverThread: Future[_] = null
   var rateTuple: (Int, Int) = (0, 0) // first elem: items second elem: time interval
-  var generator: LineGenerator = null
+  lazy val generator: LineGenerator = new LineGenerator()
 
   override def cancel(): Unit = {
     running = false
@@ -109,7 +109,6 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
 
   override def open(parameters: Configuration): Unit = {
     rateTuple = setRateTuple(rate)
-    generator = new LineGenerator()
     super.open(parameters)
     port += getRuntimeContext.getIndexOfThisSubtask
     producer.start()
