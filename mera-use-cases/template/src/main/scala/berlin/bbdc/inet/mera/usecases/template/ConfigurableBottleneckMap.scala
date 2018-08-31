@@ -8,6 +8,7 @@ import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.configuration.Configuration
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.java.utils.ParameterTool
+import org.apache.flink.metrics.Gauge
 
 class ConfigurableBottleneckMap[T](var delay: Long = 0) extends RichMapFunction[T, T] with Serializable {
   var receiver : ParameterReceiverHTTP = _
@@ -24,6 +25,9 @@ class ConfigurableBottleneckMap[T](var delay: Long = 0) extends RichMapFunction[
         receiver.start()
       case _ => throw new ClassCastException
     }
+    getRuntimeContext.getMetricGroup().gauge[Long,Gauge[Long]]("bottleneckDelay", new Gauge[Long] {
+      override def getValue: Long = delay
+    })
   }
 
   override def close(): Unit = {

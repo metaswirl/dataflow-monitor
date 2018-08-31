@@ -1,5 +1,7 @@
 package berlin.bbdc.inet.mera.loadshedder
 
+import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
+
 import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.ActorSelection
@@ -21,6 +23,7 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.configuration.GlobalConfiguration
 import org.apache.flink.configuration.JobManagerOptions
+import org.apache.flink.metrics.Gauge
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
 
@@ -56,6 +59,7 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
 
   // count of forwarded items
   var count = 0L
+  var numberOfRecords = Long.MaxValue
 
   // count of dropped items
   var dropCount = 0L
@@ -86,35 +90,49 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
     super.open(parameters)
     taskName = getRuntimeContext.getTaskName + "." + getRuntimeContext.getIndexOfThisSubtask.toString
     registerLoadShedder()
+    getRuntimeContext.getMetricGroup().gauge[Long,Gauge[Long]]("dropCount", new Gauge[Long] {
+      override def getValue: Long = dropCount
+    })
+    // schedule resetting the counter every second
+    val schd: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    schd.scheduleAtFixedRate(new Runnable {
+      override def run(): Unit = reset
+    }, 0, 1, TimeUnit.SECONDS)
   }
 
   def setDropRate(value: Int): Unit = {
     newDropRate = value
   }
 
+  def reset() = {
+    synchronized {
+      dropRate = newDropRate
+      numberOfRecords = count // could be average across multiple windows
+      count = 0
+    }
+  }
+
   override def flatMap(value: T, out: Collector[T]): Unit = {
-    // shortcut, do nothing when no drop is configured
-    if (newDropRate <= 0 && dropRate <= 0) {
-      out.collect(value)
+    /* shortcut, do nothing when no drop is configured
+       methods:
+        a) count number of records per time window
+           TODO: generate average from last m time window
+           a1) sample every nth packet.
+               Disadvantage: could be to regular.
+           a2) drop each packet with a probability 1/n
+               Disadvantage: could be to costly in terms of performance
+           a3) drop every n/k packet with the probability 1/(n*k)
+        b) drop items at the beginning of the time window
+    */
+    // TODO: Is the synchronized really necessary?
+    synchronized {
+      count += 1
+    }
+    if (dropRate > 0 && count % (numberOfRecords / dropRate) == 0) {
+      dropCount += 1
       return
     }
-    // for performance reasons we take new timestamps only every 1000 items
-    // TODO: replace this check with a timer (e.g. java.utilTimer)
-    if (count % 1000 == 0) now = System.currentTimeMillis()
-
-    if (now - lastTimestamp > 1000) {
-      lastTimestamp = now
-      dropCount = 0
-      dropRate = newDropRate
-    }
-    count += 1
-
-    // drop the first n items in a time window
-    if (dropCount < dropRate) {
-      dropCount += 1
-    } else {
-      out.collect(value)
-    }
+    out.collect(value)
   }
 
   private def registerLoadShedder(): Unit = {
