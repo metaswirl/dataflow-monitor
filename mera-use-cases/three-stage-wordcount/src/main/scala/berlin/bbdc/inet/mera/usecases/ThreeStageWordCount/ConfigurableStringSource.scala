@@ -42,8 +42,8 @@ class LineGenerator {
 class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port: Int) extends RichSourceFunction[String] {
   // TODO: remove null values
   var running = true
-  var queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
-  var queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
+  lazy val queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
+  lazy val queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
   var paramReceiver : ParameterReceiverHTTP = null
 
   var ReporterThread : Future[_] = null
