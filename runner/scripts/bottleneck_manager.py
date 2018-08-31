@@ -91,9 +91,9 @@ class BottleneckManager:
         bns_in_job = set([b[K_BN_NODE] for b in bottlenecks])
         bns_parsed = set([k for k in bn_addresses])
         if len(bns_in_job - bns_parsed) > 0:
-            logging.debug(str(bns_in_job))
-            logging.debug(str(bns_parsed))
-            logging.debug(str(bns_in_job - bns_parsed))
+            logging.debug("bottlenecks in config " + str(bns_in_job))
+            logging.debug("bottlenecks as can be learned from files " + str(bns_parsed))
+            logging.debug("difference " + str(bns_in_job - bns_parsed))
             raise BottleneckException("Not all bottlenecks could be registered. ")
 
         for bottleneck in sorted(bottlenecks, key=lambda x: x[K_BN_START]):
