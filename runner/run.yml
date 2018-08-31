@@ -19,13 +19,13 @@
     #    HEADER_Content-Type: "application/x-java-archive"
     #    body: "{{ lookup('file', job_jar) | to_json }}"
 
- - name: run bottleneck manager
-   hosts: jobmanager
-   vars:
-     exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
-     exp_base_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/"
-   tasks:
-     - shell: "python3 {{ exp_base_dir }}/bottleneck_manager.py -s {{ state_dir }} -e {{ exp_base_dir }}/experiment.json > {{ exp_dir }}/bottleneck_manager.stdout 2> {{ exp_dir }}/bottleneck_manager.stderr"
+- name: run bottleneck manager
+  hosts: jobmanager
+  vars:
+    exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
+    exp_base_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/"
+  tasks:
+    - shell: "python3 {{ exp_base_dir }}/bottleneck_manager.py -s {{ state_dir }} -e {{ exp_base_dir }}/experiment.json > {{ exp_dir }}/bottleneck_manager.stdout 2> {{ exp_dir }}/bottleneck_manager.stderr"
 #       args:
 #         chdir: "{{ exp_dir }}"
 
