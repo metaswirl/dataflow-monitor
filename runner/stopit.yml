@@ -1,0 +1,5 @@
+---
+- name: run an experiment
+  hosts: jobmanager
+- include: stop.yml
+- include: teardown.yml
