@@ -7,7 +7,7 @@
     exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
     job_param: "--dirs.output {{ exp_dir }}/output --dirs.state {{ state_dir }}"
   tasks:
-    - shell: "nohup {{ flink_dir }}/bin/flink run -q -d {{ mera_dir }}/{{ job_jar }} {{ job_param }} &"
+    - shell: "nohup {{ flink_dir }}/bin/flink run -q -d {{ mera_dir }}/{{ job_jar }} {{ job_param }} > {{ exp_dir }}/flink.out {{ exp_dir }}/flink.err &"
       register: p
     - debug: var=p.cmd
     # too complicated...
