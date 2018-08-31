@@ -67,6 +67,9 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
   // drop rate that will become active in the next time window
   var newDropRate: Int = dropRate
 
+  // ratio between number of items and drop rate
+  var dropRatio: Long = 0
+
   var now: Long = lastTimestamp
 
   var taskName = ""
@@ -93,11 +96,12 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
     getRuntimeContext.getMetricGroup().gauge[Long,Gauge[Long]]("dropCount", new Gauge[Long] {
       override def getValue: Long = dropCount
     })
-    // schedule resetting the counter every second
-    val schd: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-    schd.scheduleAtFixedRate(new Runnable {
-      override def run(): Unit = reset
+    Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable {
+      override def run(): Unit = {
+        reset()
+      }
     }, 0, 1, TimeUnit.SECONDS)
+    // schedule resetting the counter every second
   }
 
   def setDropRate(value: Int): Unit = {
@@ -109,6 +113,7 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
       dropRate = newDropRate
       numberOfRecords = count // could be average across multiple windows
       count = 0
+      dropRatio=if (dropRate > 0) (numberOfRecords / dropRate) else 0
     }
   }
 
@@ -128,7 +133,7 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
     synchronized {
       count += 1
     }
-    if (dropRate > 0 && count % (numberOfRecords / dropRate) == 0) {
+    if (dropRatio > 0 && count % dropRatio == 0) {
       dropCount += 1
       return
     }

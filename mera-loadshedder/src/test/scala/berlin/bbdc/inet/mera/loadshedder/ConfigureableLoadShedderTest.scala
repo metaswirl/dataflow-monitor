@@ -8,27 +8,68 @@ import java.lang.Thread
 class ConfigurableLoadShedderTest extends Specification with Mockito {
 
   "Loadshedder" should {
+    "record count of seen records" in {
+      val mockCollector = mock[Collector[Int]]
+      val cls = new ConfigurableLoadShedder[Int]()
+
+      cls.flatMap(0, mockCollector)
+      cls.flatMap(0, mockCollector)
+
+      cls.count must_== 2
+    }
+    "reset should work if dropRate==0" in {
+      val mockCollector = mock[Collector[Int]]
+      val cls = new ConfigurableLoadShedder[Int]()
+      cls.flatMap(0, mockCollector)
+      cls.flatMap(0, mockCollector)
+      cls.reset()
+
+      cls.count must_== 0
+      cls.numberOfRecords must_== 2
+      cls.dropCount must_== 0
+      cls.dropRatio must_== 0
+    }
+    "reset should work if dropRate>0" in {
+      val mockCollector = mock[Collector[Int]]
+      val cls = new ConfigurableLoadShedder[Int]()
+      cls.flatMap(0, mockCollector)
+      cls.flatMap(0, mockCollector)
+      cls.setDropRate(1)
+      cls.reset()
+
+      cls.count must_== 0
+      cls.numberOfRecords must_== 2
+      cls.dropCount must_== 0
+      cls.dropRatio must_== 2
+    }
     "drop 1 item" in {
       val mockCollector = mock[Collector[Int]]
-      val cls = new ConfigurableLoadShedder[Int](1)
+      val cls = new ConfigurableLoadShedder[Int]()
+
+      // make the loadshedder assume the arrival rate is 2 item per second
+      cls.flatMap(0, mockCollector)
+      cls.flatMap(0, mockCollector)
+      cls.setDropRate(1)
+      cls.reset()
+
       cls.flatMap(1, mockCollector)
       cls.flatMap(2, mockCollector)
+      cls.flatMap(3, mockCollector)
 
-      there was no(mockCollector).collect(1)
-      there was one(mockCollector).collect(2)
+      cls.dropRatio must_== 2
+      there was one(mockCollector).collect(1)
+      there was no(mockCollector).collect(2)
+      there was one(mockCollector).collect(3)
     }
-  }
-
-  "Loadshedder" should {
     "drop 0 item" in {
       val mockCollector = mock[Collector[Int]]
       val cls = new ConfigurableLoadShedder[Int](0)
+
       cls.flatMap(1, mockCollector)
 
       there was one(mockCollector).collect(1)
     }
-  }
-  "Loadshedder" should {
+    /*
     "drop 1 item every time window" in {
       val mockCollector = mock[Collector[Int]]
       val cls = new ConfigurableLoadShedder[Int](1)
@@ -50,6 +91,7 @@ class ConfigurableLoadShedderTest extends Specification with Mockito {
       there was no(mockCollector).collect(3)
       there was one(mockCollector).collect(4)
     }
+    */
   }
 }
 
