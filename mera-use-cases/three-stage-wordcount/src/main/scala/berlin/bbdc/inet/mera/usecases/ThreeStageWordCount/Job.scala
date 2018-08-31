@@ -12,7 +12,11 @@ object Job extends JobTemplate {
   env.disableOperatorChaining()
   env.getConfig.setLatencyTrackingInterval(500)
 
+  val two = 1
+
   val text = env.addSource(new ConfigurableStringSource(10, 10000, 22300)).name("source").setParallelism(1).disableChaining()
+
+  val one = 1
 
   val counts = text.flatMap(new ConfigurableLoadShedder[String]())
                       .name("loadshedder0")

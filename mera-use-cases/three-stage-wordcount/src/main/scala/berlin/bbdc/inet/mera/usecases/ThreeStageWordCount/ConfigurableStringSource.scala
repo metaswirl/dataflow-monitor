@@ -42,15 +42,15 @@ class LineGenerator {
 class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port: Int) extends RichSourceFunction[String] {
   // TODO: remove null values
   var running = true
-  lazy val queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
-  lazy val queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
-  lazy val generator: LineGenerator = new LineGenerator()
   var paramReceiver : ParameterReceiverHTTP = null
 
   var ReporterThread : Future[_] = null
   var genThread : Future[_] = null
   var rateReceiverThread: Future[_] = null
-  var rateTuple: (Int, Int) = null // first elem: items second elem: time interval
+  var rateTuple: (Int, Int) = (0, 0) // first elem: items second elem: time interval
+  lazy val queue : ArrayBlockingQueue[String] = new ArrayBlockingQueue[String](queueCapacity)
+  lazy val queueOverFlowCtr: AtomicReference[Long] = new AtomicReference(0L)
+  lazy val generator: LineGenerator = new LineGenerator()
 
   override def cancel(): Unit = {
     running = false
@@ -71,7 +71,7 @@ class ConfigurableStringSource(var rate: Int, val queueCapacity : Int, var port:
     (rate/rateGcd, 1000/rateGcd)
   }
 
-  val producer = new Thread(new Runnable {
+  lazy val producer = new Thread(new Runnable {
     override def run() = {
       val lowWaterMark: Int = (0.5 * queueCapacity).toInt
       val highWaterMark: Int = (0.8 * queueCapacity).toInt
