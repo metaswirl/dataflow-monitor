@@ -10,7 +10,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 import org.apache.flink.api.java.utils.ParameterTool
 import berlin.bbdc.inet.mera.usecases.template.utils.ParameterReceiverHTTP
-import scala.io.Source
+
+import scala.io.{BufferedSource, Source}
 import scala.util.Random
 
 class LineGenerator {
@@ -19,7 +20,16 @@ class LineGenerator {
     selecting 20 words on average should produce around 200 characters per line
     (this is what Dhalion used in their evaluation)
    */
-  val words: Array[String] = Source.fromFile(getClass.getClassLoader.getResource("words.txt").getFile).getLines.toArray
+  var src: BufferedSource = _
+  try {
+    // In a perfect world, this would always work. But Flink drops the resource files
+    // TODO: figure out what Flink is doing with the resources
+    src = Source.fromFile(getClass.getClassLoader.getResource("words.txt").getFile)
+  } catch {
+    case e: java.io.FileNotFoundException =>
+      src = Source.fromFile("/nfs/general/datasets/words.txt")
+  }
+  val words: Array[String] = src.getLines.toArray
 
   def generate(): String = {
     (0 until 20).map(_ => {
