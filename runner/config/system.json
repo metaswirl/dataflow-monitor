@@ -16,6 +16,10 @@
     },
     "akkaMessenger": {
       "isCluster":"true"
+    },
+    "optimizer": {
+      "initPhaseDuration":10000,
+      "active":"false"
     }
   }
 }

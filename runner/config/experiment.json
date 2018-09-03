@@ -1,8 +1,11 @@
 {
   "bottlenecks":[
-    {"start":40, "node":"bottleneck-0", "delay":500},
-    {"start":70, "node":"bottleneck-0", "delay":1000}
+    {"start":100, "node":"bottleneck-0", "delay":1},
+    {"start":200, "node":"bottleneck-0", "delay":100},
+    {"start":300, "node":"bottleneck-0", "delay":200},
+    {"start":400, "node":"bottleneck-0", "delay":300},
+    {"start":500, "node":"bottleneck-0", "delay":400}
   ],
-  "duration":100,
+  "duration":600,
   "warmup":10
 }
