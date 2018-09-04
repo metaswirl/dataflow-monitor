@@ -11,7 +11,6 @@ import {
 import {colorScaleLines} from "./LinePlot";
 import {drawNode, updateNode} from "./node";
 import {inOutPoolResolution, nodeRadius, sides} from "./constants";
-import {drawNodeLink} from "./node_links";
 import d3 = require("d3");
 
 
@@ -165,7 +164,7 @@ getTopology.done(function (result) {
             return d.machineId
         });
     //Draw the LineOverlay
-    graphSvg
+    /*graphSvg
         .append("g")
         .attr("class", "lineOverlays")
         .selectAll("lineOverlays")
@@ -174,8 +173,7 @@ getTopology.done(function (result) {
         let obj = d3.select(this);
         return drawNodeLink(obj, d)
     });
-
-
+   */
     //Prepare Data as Tasklist
     let taskList:Array<Task> = createTaskList(result);
 

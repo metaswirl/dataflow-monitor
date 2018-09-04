@@ -2,7 +2,7 @@ export const enum sides{
     left = "inQueue",
     right = "outQueue",
 }
-export const inOutPoolResolution = 2;
+export const inOutPoolResolution = 20;
 export const nodeRadius = 7.5;
 export const sendRecieveIndicator = 60;
 
