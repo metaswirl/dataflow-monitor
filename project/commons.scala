@@ -9,6 +9,7 @@ object Commons {
     organization := "berlin.bbdc.inet",
     scalaVersion := "2.11.12",
     version := "0.1-SNAPSHOT",
+    test in assembly := {},
     resolvers ++= Seq(
       "Apache Development Snapshot Repository" at "https://repository.apache.org/content/repositories/snapshots/",
       "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
