@@ -4,13 +4,19 @@
   vars:
     mera_dir: "{{ nfs_dir }}/mera-artifacts/mera-{{ mera_commit_id }}"
     exp_dir: "{{ nfs_dir }}/experiments/{{ experiment}}/{{ run }}/"
-    mera_run_param: "-Ddirs.metrics={{ exp_dir }}"
-    mera_params: >
+    mera_run_param: "-Ddirs.metrics={{ exp_dir }} -Doptimizer.active={{ optimizer_active }}"
+    mera_conf_param: >
       {% for k, v in mera_config.items() %}{% for k2, v2 in v.items() %}-D{{k}}.{{k2}}={{v2}} {% endfor %}{% endfor %}
+    mera_param: "{{ mera_run_param }} {{ mera_conf_param | replace('\n', '') }}"
   tasks:
-    - shell: "nohup java {{ mera_run_param }} {{ mera_params | replace('\n', '') }} -jar {{ mera_dir }}/{{ monitor_jar }} > {{exp_dir}}/monitor.stdout 2> {{exp_dir}}/monitor.stderr &"
+    - shell: "nohup scala {{ mera_param }} berlin.bbdc.inet.mera.monitor.Starter > {{exp_dir}}/monitor.stdout 2> {{exp_dir}}/monitor.stderr &"
       args:
         chdir: "{{ exp_dir }}"
+      environment:
+        GUROBI_HOME: "/opt/gurobi752/linux64"
+        LD_LIBRARY_PATH: "/opt/gurobi752/linux64/lib"
+        PATH: "/opt/gurobi752/linux64/bin:{{ ansible_env.PATH }}"
+        CLASSPATH: "{{ mera_dir }}/{{ monitor_jar }}:/opt/gurobi752/linux64/lib/gurobi.jar"
 
 - name: copy reporter 
   hosts: jobmanager

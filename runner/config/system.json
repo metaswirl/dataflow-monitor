@@ -19,7 +19,8 @@
     },
     "optimizer": {
       "initPhaseDuration":10000,
-      "active":"false"
+      "queueAlmostEmpty":0.2,
+      "queueAlmostFull":0.8
     }
   }
 }
