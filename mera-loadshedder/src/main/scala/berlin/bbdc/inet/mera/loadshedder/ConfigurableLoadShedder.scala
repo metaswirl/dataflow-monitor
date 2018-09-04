@@ -94,6 +94,9 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
     getRuntimeContext.getMetricGroup().gauge[Long,Gauge[Long]]("dropCount", new Gauge[Long] {
       override def getValue: Long = dropCount
     })
+    getRuntimeContext.getMetricGroup().gauge[Int,Gauge[Int]]("dropRate", new Gauge[Int] {
+      override def getValue: Int = dropRate
+    })
     Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable {
       override def run(): Unit = {
         reset()
@@ -127,7 +130,7 @@ class ConfigurableLoadShedder[T](private var dropRate: Int = 0)
            a3) drop every n/k packet with the probability 1/(n*k)
         b) drop items at the beginning of the time window
     */
-    // TODO: Is the synchronized really necessary?
+    // TODO: Is the synchronized statement really necessary?
     synchronized {
       count += 1
     }
@@ -202,7 +205,7 @@ class AkkaMessenger(master: ActorSelection) extends Actor {
       LOG.info(s"Loadshedder ${m.id} registration confirmed")
       // register every 30s in case Mera was restarted
     case m: SendNewValue =>
-      LOG.debug(s"Loadshedder new value received for $flinkTaskName: ${m.value}")
+      LOG.info(s"Loadshedder new value received for $flinkTaskName: ${m.value}")
       setter(m.value)
   }
 }

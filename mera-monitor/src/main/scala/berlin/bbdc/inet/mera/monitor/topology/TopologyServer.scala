@@ -6,12 +6,14 @@ import berlin.bbdc.inet.mera.monitor.model.Model
 import berlin.bbdc.inet.mera.monitor.model.ModelBuilder
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
 
 class TopologyServer(hostname: String, port: Integer, cli: AbstractFlinkClient) {
   // So far there is no way to update the model. In the future we would like to update the model,
   // but this would require further changes to the ModelFileWriter etc.
+  val windowSize = ConfigFactory.load.getInt("model.windowSize")
 
   def buildModels(): Map[String, Model] = {
     var models = new mutable.HashMap[String, Model]
@@ -25,7 +27,7 @@ class TopologyServer(hostname: String, port: Integer, cli: AbstractFlinkClient) 
         modelBuilder.addSuccessor(v.name, v.parallelism, TopologyServer.findCommTypeById(v.id, job.plan),
           v.name contains "loadshedder", Some(getHostMappings(jid, v.id)))
       })
-      models += (jid -> modelBuilder.createModel(1000))
+      models += (jid -> modelBuilder.createModel(windowSize))
     }
 
     if (models.isEmpty) {

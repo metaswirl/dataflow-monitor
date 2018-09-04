@@ -1,10 +1,10 @@
 package berlin.bbdc.inet.mera.monitor.optimizer
 
 import berlin.bbdc.inet.mera.monitor.akkaserver.LoadShedderManager
-import berlin.bbdc.inet.mera.monitor.model.{Model, Operator, TaskEdge}
+import berlin.bbdc.inet.mera.monitor.model.{Model, ModelFileWriter, Operator, TaskEdge}
 import org.slf4j.{Logger, LoggerFactory}
 
-class LoadShedderOptimizer(val model : Model, val warmStart: Boolean=true) extends AbstractOptimizer  {
+class LoadShedderOptimizer(val model : Model, val mfw: ModelFileWriter, warmStart: Boolean=true) extends AbstractOptimizer  {
   import gurobi._
   val LOG: Logger = LoggerFactory.getLogger("LPSolver")
   var grbModelOption: Option[GRBModel] = None
@@ -20,8 +20,8 @@ class LoadShedderOptimizer(val model : Model, val warmStart: Boolean=true) exten
       import gurobi._
       new GRBModel(new GRBEnv()).update()
     } catch {
-      case _: Throwable => LOG.warn("Cannot optimize: Gurobi is not installed")
-        return false
+      case e: Throwable => LOG.error("Cannot optimize: Gurobi is not installed", e)
+                           return false
     }
     return true
   }
@@ -76,23 +76,23 @@ class LoadShedderOptimizer(val model : Model, val warmStart: Boolean=true) exten
       val number = x.get(GRB.DoubleAttr.X)
       if (name.contains("dropRate")) {
         val newName = name.replace("dropRate_", "")
-        LOG.debug(number.toString)
-        LoadShedderManager.sendNewValue(newName, number.toInt)
+        model.tasks(newName).dropRate = number
+        LoadShedderManager.sendNewValue(newName, Math.ceil(number).toInt)
       } else if (name.contains("rate")) {
         val newName = name.replace("rate_", "")
-        LOG.info(s"$newName: $number; ${model.tasks(newName).capacity}")
         if (number > model.tasks(newName).capacity) {
-          LOG.warn(s"$number > ${model.tasks(newName).capacity}")
+          LOG.warn(s"rate is above capacity! $number > ${model.tasks(newName).capacity}")
         }
       }
       result = s"$result\n$name = $number"
     })
+    mfw.updateInferredMetrics(model)
 
     // TODO: Hide this away, only use in debug
-    val fname = s"/tmp/grb_${System.currentTimeMillis()}.lp"
-    grbModel.write(fname)
-    import java.nio.file.{Files, Paths, StandardOpenOption}
-    Files.write(Paths.get(fname), result.getBytes, StandardOpenOption.APPEND)
+    // val fname = s"/tmp/grb_${System.currentTimeMillis()}.lp"
+    // grbModel.write(fname)
+    // import java.nio.file.{Files, Paths, StandardOpenOption}
+    // Files.write(Paths.get(fname), result.getBytes, StandardOpenOption.APPEND)
   }
 
   // TODO: Break this further up

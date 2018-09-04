@@ -25,6 +25,7 @@ object LoadShedderManager {
   def sendNewValue(loadShedderId: String, value: Int): Unit = {
     loadShedders.get(loadShedderId) match {
       case Some(actor) => actor ! SendNewValue(value)
+                          LOG.debug(s"sending value $value to ${actor.anchorPath}")
       case None => throw new Error(s"Trying to send new value to an unknown load shedder $loadShedderId")
     }
   }

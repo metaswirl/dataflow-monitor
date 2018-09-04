@@ -15,7 +15,7 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
   private val beginTime = System.currentTimeMillis()
   private val initPhaseDuration = ConfigFactory.load.getDouble("optimizer.initPhaseDuration")
   private var active = ConfigFactory.load.getBoolean("optimizer.active")
-  private val lPSolver = new LoadShedderOptimizer(model)
+  private val lPSolver = new LoadShedderOptimizer(model, mfw)
   private var initPhase = true
 
   def computeOutDist(task: Task): Int => Double = {
@@ -102,8 +102,6 @@ case class ModelTraversal(model: Model, mfw : ModelFileWriter) extends Runnable 
         LOG.error(ex.getMessage)
         return
     }
-    mfw.updateInferredMetrics(model)
-
     // solve LP after initialization period
     if ((!active) || (initPhase && System.currentTimeMillis() - beginTime < initPhaseDuration)) {
       return

@@ -26,6 +26,7 @@ class Task(val parent: Operator, val number: Int, val host: Option[String]) {
   var inQueueSaturation: Double = _
   var outQueueSaturation: Double = _
   var selectivity: Double = _
+  var dropRate: Double = _
   var inRate: Double = _
   var outRate: Double = _
   var capacity: Double = 0.0
