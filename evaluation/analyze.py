@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from collections import OrderedDict
 import pandas as pd
 import argparse
+from os.path import join as pjoin
 
 """
 Create timeseries plots 
@@ -26,11 +27,20 @@ def define_columns(key):
             columns.append(c)
     return columns
 
+
 parser = argparse.ArgumentParser(prog='PROG')
 parser.add_argument('-i', '--input-dir', help='input dir',
                     required=True, dest="input")
-plot = False
+#parser.add_argument('-o', '--output-dir', help='output dir',
+#                    required=True, dest="output")
 result = parser.parse_args()
+output_dir = result.input
+plot = False
+
+def save(name):
+    fpath = pjoin(output_dir, name)
+    print("Saving " + fpath)
+    plt.savefig(fpath)
 
 metrics = pd.read_csv(result.input + "/metrics.csv", sep=';')
 metrics.time = pd.to_datetime(metrics.time, unit='ms')
@@ -59,30 +69,41 @@ figsize=(20, 10)
 fig, axes = plt.subplots(len(conditions), 1, sharex=True, figsize=figsize)
 for c, ax in zip(conditions, axes):
     data[conditions[c]][['time', 'value']].groupby('time').sum().plot(ax=ax, title=c)
+save("timeseries1.png")
 
-plt.savefig("timeseries.png")
+conditions = OrderedDict([
+    ('dropRate', data.key.str.contains('dropRate')),
+    ('input queue saturation', data.key.str.contains('inPoolUsage')),
+    ('output queue saturation', data.key.str.contains('outPoolUsage')),
+    ('backlog', data.key.str.contains('backlog'))
+])
+figsize=(20, 10)
+fig, axes = plt.subplots(len(conditions), 1, sharex=True, figsize=figsize)
+for c, ax in zip(conditions, axes):
+    data[conditions[c]][['time', 'value']].groupby('time').sum().plot(ax=ax, title=c)
+save("timeseries2.png")
 
 newd = data.pivot(index='time', columns='key', values='value')
 summary = newd.groupby('bottleneck.0.bottleneckDelay').mean()
 columns = define_columns("outPoolUsage")
 summary[columns].plot(kind='bar')
-plt.savefig("bar-outPoolUsage.png")
+save("bar-outPoolUsage.png")
 
 columns = define_columns("inPoolUsage")
 summary[columns].plot(kind='bar')
-plt.savefig("bar-inPoolUsage.png")
+save("bar-inPoolUsage.png")
 
 columns = define_columns("latency")
 summary[columns].plot(kind='bar')
-plt.savefig("bar-latency.png")
+save("bar-latency.png")
 
 columns = define_columns("RecordsOutPerSecond")
 summary[columns].plot(kind='bar')
-plt.savefig("bar-RecordsOutPerSecond.png")
+save("bar-RecordsOutPerSecond.png")
 
 columns = define_columns("RecordsInPerSecond")
 summary[columns].plot(kind='bar')
-plt.savefig("bar-RecordsInPerSecond.png")
+save("bar-RecordsInPerSecond.png")
 
 columns = define_columns("latency")
 summary[columns].head()
@@ -91,4 +112,4 @@ for c in columns:
     summary['SUM_LATENCY'] += summary[c]
 
 summary['SUM_LATENCY'].plot(kind='bar', legend=False)
-plt.savefig('bar-agg-latency.png')
+save('bar-agg-latency.png')
