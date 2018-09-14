@@ -58,6 +58,7 @@ export function updateNode(nodes:Array<QueueElement>, isInput:boolean) {
             })
             .transition()
             .duration(inOutPoolResolution * 1000)
+            .styleTween("fill", arcTweenColor)
             .attrTween("d", arcInTween);
     }
     else {
@@ -71,7 +72,16 @@ export function updateNode(nodes:Array<QueueElement>, isInput:boolean) {
             })
             .transition()
             .duration(inOutPoolResolution * 1000)
+            .styleTween("fill", arcTweenColor)
             .attrTween("d", arcOutTween);
+    }
+
+}
+function arcTweenColor(d) {
+    let t = this._current;
+    if(t){
+        let interp = d3.interpolateRgb(t.color, d.color);
+        return interp
     }
 
 }

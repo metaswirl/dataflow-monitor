@@ -1,4 +1,5 @@
 import {
+    getDataFromEdges,
     getInitMetrics,
     getIsOptimized,
     getMetrics,
@@ -7,8 +8,9 @@ import {
     initMetricForTasks,
     optimizeLoad
 } from "./RestInterface";
-import {Metric, MetricPostObject} from "./datastructure";
+import {CardinalityByString, Metric, MetricPostObject} from "./datastructure";
 import {setSeries} from "./LinePlot";
+import {updateNodeLink} from "./node_links";
 
 
 getMetrics.done(function (result) {
@@ -35,6 +37,21 @@ getTopology.done(function (result) {
 });
 window.onload = function(){
   getOptimizeStatus();
+  setInterval(function () {
+      getDataFromEdges().done(function (result) {
+          let cardinalityByRest:Array<CardinalityByString> = [];
+          result.map(function (item) {
+              let cardinaltyByString = new CardinalityByString(
+                  item.src,
+                  item.dst,
+                  item.inFraction,
+                  item.outFraction);
+              cardinalityByRest.push(cardinaltyByString);
+          });
+          updateNodeLink(cardinalityByRest);
+      });
+      console.log("FYI")
+  }, 5000)
 };
 $("#taskoroperator").on("change", function () {
     getTopology.done(function (result) {

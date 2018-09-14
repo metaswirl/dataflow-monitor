@@ -7,6 +7,7 @@ import $ = require("jquery");
 const pathToOperators: string = "http://127.0.0.1:12345/data/operators";
 const pathToMetrics: string = "http://127.0.0.1:12345/data/metrics";
 const pathToTopology: string = "http://127.0.0.1:12345/data/topology";
+const pathToEdges: string = "http://127.0.0.1:12345/data/edges";
 const pathToOptimize:string = "http://127.0.0.1:12345/optimize";
 const pathToInit:string = "http://127.0.0.1:12345/data/metrics/tasks/init";
 let isOptimized:boolean = false;
@@ -76,5 +77,8 @@ export function getDataFromMetrics(metricId: string, taskId: string, since: numb
         + "&since="
         + since;
     return $.getJSON(encodedURI);
+}
+export function getDataFromEdges() {
+    return $.getJSON(pathToEdges)
 }
 

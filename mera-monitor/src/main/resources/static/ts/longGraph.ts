@@ -1,4 +1,4 @@
-import {getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
+import {getDataFromEdges, getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
 import {
     Cardinality,
     CardinalityByString,
@@ -11,7 +11,7 @@ import {
 import {colorScaleLines} from "./LinePlot";
 import {drawNode, updateNode} from "./node";
 import {inOutPoolResolution, nodeRadius, sides} from "./constants";
-import {drawNodeLink} from "./node_links";
+import {drawNodeLink, updateNodeLink} from "./node_links";
 import d3 = require("d3");
 
 
@@ -50,6 +50,14 @@ let shortGraphSvg = d3.select("#shortGraph")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 //Color Axis
 let nodeColor = colorScaleLines;
+//Set SVG Hierachy before Rest calls
+let links = graphSvg
+                .append("g")
+                .attr("class", "links");
+let linkOverlay = graphSvg
+                    .append("g")
+                    .attr("class", "lineOverlays");
+
 getTopology.done(function (result) {
     result.reverse();
     console.log(result);
@@ -116,22 +124,37 @@ getTopology.done(function (result) {
     //Prepare Cardinality List
     let cardinalityByName = getLinksByName(result);
 
-    //Draw the Links
-    graphSvg
-        .append("g")
-        .attr("class", "links")
-        .selectAll(".link")
-        .data(cardinalityByName)
-        .enter().append("path")
-        .attr("class", "link")
-        .attr("d", function (d: CardinalityByString) {
-            let ySource = yScalePerMaschine.get(getTaskByName(d.source).address);
-            let yTarget = yScalePerMaschine.get(getTaskByName(d.target).address);
-            let sx = xScale(getTaskByName(d.source).cx), sy = ySource(getTaskByName(d.source).cy),
-                tx = xScale(getTaskByName(d.target).cx), ty = yTarget(getTaskByName(d.target).cy),
-                dr = 0;
-            return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
+    getDataFromEdges().done(function (result) {
+        let cardinalityByRest:Array<CardinalityByString> = [];
+        result.map(function (item) {
+           let cardinaltyByString = new CardinalityByString(item.src, item.dst, item.inFraction, item.outFraction);
+           cardinalityByRest.push(cardinaltyByString);
         });
+        //Draw the Links
+        links
+            .selectAll(".link")
+            .data(cardinalityByRest)
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", function (d: CardinalityByString) {
+                let ySource = yScalePerMaschine.get(getTaskByName(d.source).address);
+                let yTarget = yScalePerMaschine.get(getTaskByName(d.target).address);
+                let sx = xScale(getTaskByName(d.source).cx), sy = ySource(getTaskByName(d.source).cy),
+                    tx = xScale(getTaskByName(d.target).cx), ty = yTarget(getTaskByName(d.target).cy),
+                    dr = 0;
+                return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
+            });
+        //Draw the LineOverlay
+        linkOverlay
+            .selectAll("lineOverlays")
+            .data(cardinalityByRest)
+            .enter().append(function (d: CardinalityByString) {
+            let obj = d3.select(this);
+            return drawNodeLink(obj, d)
+        });
+        updateNodeLink(cardinalityByRest);
+    });
+
 //Draw Machine Divider
     let dividers = graphSvg
         .append("g")
@@ -164,16 +187,7 @@ getTopology.done(function (result) {
         .text(function (d) {
             return d.machineId
         });
-    //Draw the LineOverlay
-    graphSvg
-        .append("g")
-        .attr("class", "lineOverlays")
-        .selectAll("lineOverlays")
-        .data(cardinalityByName)
-        .enter().append(function (d: CardinalityByString) {
-        let obj = d3.select(this);
-        return drawNodeLink(obj, d)
-    });
+
 
 
     //Prepare Data as Tasklist
@@ -208,6 +222,9 @@ getTopology.done(function (result) {
         let obj = d3.select(this);
         return drawNode(obj, xScale(d.cx), yScalePerMaschine.get(getTaskByName(d.id).address)(getTaskByName(d.id).cy), d);
         });
+
+
+
     //Init Metrics for in and out - Queue
     let initList:Array<string> = getInitList(taskList);
     initMetricForTasks("buffers.inPoolUsage", initList, inOutPoolResolution).done(function () {
@@ -217,7 +234,7 @@ getTopology.done(function (result) {
     });
     initMetricForTasks("buffers.outPoolUsage", initList, inOutPoolResolution).done(function () {
         setInterval(function () {
-            updateOutputQueue(initList)
+            updateOutputQueue(initList);
         },(inOutPoolResolution * 1000));
     });
 });

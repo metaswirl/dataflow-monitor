@@ -20,7 +20,7 @@ export function getTaskByName(key:string) {
 }
 export function setTaskByName(value:Task){
     if(taskMap.has(value.id)){
-        console.log("Already in Map")
+        console.log("Task already in Map")
     }
     else{
         taskMap.set(value.id, value);
@@ -46,10 +46,15 @@ export function getMachineCount(key:string) {
         return machineCount.get(key)
     }
 }
+let step = d3.scaleLinear()
+    .domain([1, 8])
+    .range([1.1, 0]);
 
-let colorScaleBuffer =  d3.scaleLinear()
-    .domain([0, 1.1])
-    .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
+// @ts-ignore
+let colorScaleBuffer = d3.scaleLinear()
+    .domain([1.1, step(2), step(3), step(4), step(5), step(6), step(7), 0])
+    .range(['#d73027', '#f46d43', '#fdae61', '#fee08b', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850'])
+    .interpolate(d3.interpolateHcl);
 
 export class Task {
     constructor(id:string, cx:number, cy:number, operator?:string, address?:string, input?:Array<string>){
@@ -94,18 +99,25 @@ export class Cardinality {
     target: Task
 }
 export class CardinalityByString {
-    constructor(source:string, target:string) {
+    constructor(source:string, target:string, inFraction?:number, outFraction?:number) {
         this.source = source;
         this.target = target;
+        this.inFraction = inFraction;
+        this.outFraction = outFraction;
     }
     reverse(){
         let target = this.source;
         this.source = this.target;
         this.target = target;
+        let inFra = this.outFraction;
+        this.outFraction = this.inFraction;
+        this.inFraction = inFra;
         return this
     }
     source: string;
     target: string;
+    inFraction?: number;
+    outFraction?:number;
 }
 
 export class MetricPostObject {

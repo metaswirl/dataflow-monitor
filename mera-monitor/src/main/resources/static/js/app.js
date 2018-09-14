@@ -30,7 +30,7 @@ define("datastructure", ["require", "exports", "d3"], function (require, exports
     exports.getTaskByName = getTaskByName;
     function setTaskByName(value) {
         if (taskMap.has(value.id)) {
-            console.log("Already in Map");
+            console.log("Task already in Map");
         }
         else {
             taskMap.set(value.id, value);
@@ -57,9 +57,14 @@ define("datastructure", ["require", "exports", "d3"], function (require, exports
         }
     }
     exports.getMachineCount = getMachineCount;
+    let step = d3.scaleLinear()
+        .domain([1, 8])
+        .range([1.1, 0]);
+    // @ts-ignore
     let colorScaleBuffer = d3.scaleLinear()
-        .domain([0, 1.1])
-        .range([d3.rgb(74, 255, 71), d3.rgb(255, 71, 71)]);
+        .domain([1.1, step(2), step(3), step(4), step(5), step(6), step(7), 0])
+        .range(['#d73027', '#f46d43', '#fdae61', '#fee08b', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850'])
+        .interpolate(d3.interpolateHcl);
     class Task {
         constructor(id, cx, cy, operator, address, input) {
             this.id = id;
@@ -93,14 +98,19 @@ define("datastructure", ["require", "exports", "d3"], function (require, exports
     }
     exports.Cardinality = Cardinality;
     class CardinalityByString {
-        constructor(source, target) {
+        constructor(source, target, inFraction, outFraction) {
             this.source = source;
             this.target = target;
+            this.inFraction = inFraction;
+            this.outFraction = outFraction;
         }
         reverse() {
             let target = this.source;
             this.source = this.target;
             this.target = target;
+            let inFra = this.outFraction;
+            this.outFraction = this.inFraction;
+            this.inFraction = inFra;
             return this;
         }
     }
@@ -168,6 +178,7 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
     const pathToOperators = "http://127.0.0.1:12345/data/operators";
     const pathToMetrics = "http://127.0.0.1:12345/data/metrics";
     const pathToTopology = "http://127.0.0.1:12345/data/topology";
+    const pathToEdges = "http://127.0.0.1:12345/data/edges";
     const pathToOptimize = "http://127.0.0.1:12345/optimize";
     const pathToInit = "http://127.0.0.1:12345/data/metrics/tasks/init";
     let isOptimized = false;
@@ -238,6 +249,10 @@ define("RestInterface", ["require", "exports", "datastructure", "jquery"], funct
         return $.getJSON(encodedURI);
     }
     exports.getDataFromMetrics = getDataFromMetrics;
+    function getDataFromEdges() {
+        return $.getJSON(pathToEdges);
+    }
+    exports.getDataFromEdges = getDataFromEdges;
 });
 define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./highcharts", "jquery", "d3"], function (require, exports, RestInterface_1, datastructure_2, Highcharts, $, d3) {
     "use strict";
@@ -352,96 +367,6 @@ define("LinePlot", ["require", "exports", "RestInterface", "datastructure", "./h
     }
     exports.setSeries = setSeries;
 });
-define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure", "LinePlot"], function (require, exports, RestInterface_2, datastructure_3, LinePlot_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    RestInterface_2.getMetrics.done(function (result) {
-        setOptions(result, "metrics");
-    });
-    RestInterface_2.getTopology.done(function (result) {
-        $("#Ids").empty();
-        if ($("#taskoroperator").val() == "byOperator") {
-            let optionsByOperator = [];
-            result.forEach(function (item) {
-                optionsByOperator.push(item.name);
-            });
-            setOptions(optionsByOperator, "Ids");
-        }
-        else {
-            let optionsByTask = [];
-            result.forEach(function (item) {
-                item.tasks.forEach(function (ite) {
-                    optionsByTask.push(ite.id);
-                });
-            });
-            setOptions(optionsByTask, "Ids");
-        }
-    });
-    window.onload = function () {
-        RestInterface_2.getOptimizeStatus();
-    };
-    $("#taskoroperator").on("change", function () {
-        RestInterface_2.getTopology.done(function (result) {
-            $("#Ids").empty();
-            console.log(result);
-            if ($("#taskoroperator").val() == "byOperator") {
-                let optionsByOperator = [];
-                result.forEach(function (item) {
-                    optionsByOperator.push(item.name);
-                });
-                setOptions(optionsByOperator, "Ids");
-            }
-            else {
-                let optionsByTask = [];
-                result.forEach(function (item) {
-                    item.tasks.forEach(function (ite) {
-                        optionsByTask.push(ite.id);
-                    });
-                });
-                setOptions(optionsByTask, "Ids");
-            }
-        });
-    });
-    $("#initButton").on("click", function () {
-        initMetricOnAction();
-    });
-    $("#optimizeBtn").on("click", function () {
-        let isoptimizedLoad = RestInterface_2.optimizeLoad();
-        isoptimizedLoad.done(function () {
-            if (RestInterface_2.getIsOptimized()) {
-                $("#optimizeBtn").addClass("isOptimized");
-            }
-            else {
-                $("#optimizeBtn").removeClass("isOptimized");
-            }
-        });
-    });
-    function initMetricOnAction() {
-        let metric = $("#metrics").val().toString();
-        let Ids = $("#Ids").val();
-        let resolutionString = $("input[name=resolutionselect]:checked").val();
-        let resolution = parseInt(resolutionString);
-        let post = RestInterface_2.initMetricForTasks(metric, Ids, resolution);
-        post.done(function () {
-            let metrics = RestInterface_2.getInitMetrics();
-            metrics.forEach(function (metric) {
-                metric.taskIds.forEach(function (task) {
-                    let selmetric = new datastructure_3.Metric(task, metric.metricId, metric.resolution);
-                    LinePlot_1.setSeries(selmetric, Date.now());
-                });
-            });
-        });
-    }
-    function setOptions(arrayOfOptions, parentElementTag) {
-        let metricSelector = document.getElementById(parentElementTag);
-        arrayOfOptions.forEach(function (value) {
-            let el = document.createElement("option");
-            el.textContent = value;
-            el.value = value;
-            metricSelector.appendChild(el);
-        });
-    }
-});
 define("node", ["require", "exports", "d3", "constants"], function (require, exports, d3, constants_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -497,6 +422,7 @@ define("node", ["require", "exports", "d3", "constants"], function (require, exp
             })
                 .transition()
                 .duration(constants_1.inOutPoolResolution * 1000)
+                .styleTween("fill", arcTweenColor)
                 .attrTween("d", arcInTween);
         }
         else {
@@ -510,10 +436,18 @@ define("node", ["require", "exports", "d3", "constants"], function (require, exp
             })
                 .transition()
                 .duration(constants_1.inOutPoolResolution * 1000)
+                .styleTween("fill", arcTweenColor)
                 .attrTween("d", arcOutTween);
         }
     }
     exports.updateNode = updateNode;
+    function arcTweenColor(d) {
+        let t = this._current;
+        if (t) {
+            let interp = d3.interpolateRgb(t.color, d.color);
+            return interp;
+        }
+    }
     function arcInTween(d) {
         let interp = d3.interpolate(this._current, d);
         this._current = d;
@@ -531,106 +465,7 @@ define("node", ["require", "exports", "d3", "constants"], function (require, exp
         };
     }
 });
-define("node_links", ["require", "exports", "datastructure", "constants", "longGraph", "d3"], function (require, exports, datastructure_4, constants_2, longGraph_1, d3) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function drawNodeLink(obj, link, level) {
-        let svg = obj;
-        let g = svg.append("g");
-        let percentToLength = d3.scaleLinear()
-            .range([constants_2.arcRadius.outer, constants_2.sendRecieveIndicator])
-            .domain([0, 100]);
-        let outputStream = svg.append("g");
-        outputStream.append("path")
-            .attr("class", "inStreamFull")
-            .datum(link)
-            .attr("id", function (d) {
-            return d.target + "inputStreamFull" + d.source;
-        })
-            .attr("d", function (d) {
-            let mT = calcFilling(d, false);
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
-        });
-        outputStream.append("path")
-            .attr("class", "inStreamLink")
-            .datum(link)
-            .attr("id", function (d) {
-            return d.target + "inputSteamLink" + d.source;
-        })
-            .attr("d", function (d) {
-            let mT = calcFilling(d, false, percentToLength(60));
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
-        });
-        let inputStreamMax = svg.append("g");
-        inputStreamMax.append("path")
-            .attr("class", "outStreamFull")
-            .datum(link.reverse())
-            .attr("id", function (d) {
-            return d.source + "outputStreamFull" + d.target;
-        })
-            .attr("d", function (d) {
-            let mT = calcFilling(d, true);
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
-        });
-        inputStreamMax.append("path")
-            .attr("class", "outStreamLink")
-            .datum(link)
-            .attr("id", function (d) {
-            return d.source + "outputStreamLink" + d.target;
-        })
-            .attr("d", function (d) {
-            let mT = calcFilling(d, true, percentToLength(5));
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
-        });
-        return g.node();
-    }
-    exports.drawNodeLink = drawNodeLink;
-    //Helper Functions
-    function calcFilling(link, reverse, level) {
-        let alpha = Math.atan((longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(link.target).address)(datastructure_4.getTaskByName(link.target).cy) - longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(link.source).address)(datastructure_4.getTaskByName(link.source).cy)) / (longGraph_1.xScale(datastructure_4.getTaskByName(link.target).cx) - longGraph_1.xScale(datastructure_4.getTaskByName(link.source).cx)));
-        let mX = longGraph_1.xScale(datastructure_4.getTaskByName(link.source).cx);
-        let mY = longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(link.source).address)(datastructure_4.getTaskByName(link.source).cy);
-        if (reverse) {
-            if (level != null) {
-                mX -= (level) * Math.cos(alpha);
-                mY -= (level) * Math.sin(alpha);
-            }
-            else {
-                mX -= (constants_2.sendRecieveIndicator) * Math.cos(alpha);
-                mY -= (constants_2.sendRecieveIndicator) * Math.sin(alpha);
-            }
-        }
-        else {
-            if (level != null) {
-                mX += (level) * Math.cos(alpha);
-                mY += (level) * Math.sin(alpha);
-            }
-            else {
-                mX += (constants_2.sendRecieveIndicator) * Math.cos(alpha);
-                mY += (constants_2.sendRecieveIndicator) * Math.sin(alpha);
-            }
-        }
-        let value = new datastructure_4.Value(mX, mY);
-        return value;
-    }
-});
-define("longGraph", ["require", "exports", "RestInterface", "datastructure", "LinePlot", "node", "constants", "node_links", "d3"], function (require, exports, RestInterface_3, datastructure_5, LinePlot_2, node_1, constants_3, node_links_1, d3) {
+define("longGraph", ["require", "exports", "RestInterface", "datastructure", "LinePlot", "node", "constants", "node_links", "d3"], function (require, exports, RestInterface_2, datastructure_3, LinePlot_1, node_1, constants_2, node_links_1, d3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     let margin = { top: 20, right: 20, bottom: 60, left: 20 };
@@ -667,8 +502,15 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     //Color Axis
-    let nodeColor = LinePlot_2.colorScaleLines;
-    RestInterface_3.getTopology.done(function (result) {
+    let nodeColor = LinePlot_1.colorScaleLines;
+    //Set SVG Hierachy before Rest calls
+    let links = graphSvg
+        .append("g")
+        .attr("class", "links");
+    let linkOverlay = graphSvg
+        .append("g")
+        .attr("class", "lineOverlays");
+    RestInterface_2.getTopology.done(function (result) {
         result.reverse();
         console.log(result);
         let hierachy = getHierachy(result);
@@ -723,19 +565,33 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         });
         //Prepare Cardinality List
         let cardinalityByName = getLinksByName(result);
-        //Draw the Links
-        graphSvg
-            .append("g")
-            .attr("class", "links")
-            .selectAll(".link")
-            .data(cardinalityByName)
-            .enter().append("path")
-            .attr("class", "link")
-            .attr("d", function (d) {
-            let ySource = exports.yScalePerMaschine.get(datastructure_5.getTaskByName(d.source).address);
-            let yTarget = exports.yScalePerMaschine.get(datastructure_5.getTaskByName(d.target).address);
-            let sx = exports.xScale(datastructure_5.getTaskByName(d.source).cx), sy = ySource(datastructure_5.getTaskByName(d.source).cy), tx = exports.xScale(datastructure_5.getTaskByName(d.target).cx), ty = yTarget(datastructure_5.getTaskByName(d.target).cy), dr = 0;
-            return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
+        RestInterface_2.getDataFromEdges().done(function (result) {
+            let cardinalityByRest = [];
+            result.map(function (item) {
+                let cardinaltyByString = new datastructure_3.CardinalityByString(item.src, item.dst, item.inFraction, item.outFraction);
+                cardinalityByRest.push(cardinaltyByString);
+            });
+            //Draw the Links
+            links
+                .selectAll(".link")
+                .data(cardinalityByRest)
+                .enter().append("path")
+                .attr("class", "link")
+                .attr("d", function (d) {
+                let ySource = exports.yScalePerMaschine.get(datastructure_3.getTaskByName(d.source).address);
+                let yTarget = exports.yScalePerMaschine.get(datastructure_3.getTaskByName(d.target).address);
+                let sx = exports.xScale(datastructure_3.getTaskByName(d.source).cx), sy = ySource(datastructure_3.getTaskByName(d.source).cy), tx = exports.xScale(datastructure_3.getTaskByName(d.target).cx), ty = yTarget(datastructure_3.getTaskByName(d.target).cy), dr = 0;
+                return "M" + sx + "," + sy + "A" + dr + "," + dr + " 0 0,1 " + tx + "," + ty;
+            });
+            //Draw the LineOverlay
+            linkOverlay
+                .selectAll("lineOverlays")
+                .data(cardinalityByRest)
+                .enter().append(function (d) {
+                let obj = d3.select(this);
+                return node_links_1.drawNodeLink(obj, d);
+            });
+            node_links_1.updateNodeLink(cardinalityByRest);
         });
         //Draw Machine Divider
         let dividers = graphSvg
@@ -767,16 +623,6 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             .text(function (d) {
             return d.machineId;
         });
-        //Draw the LineOverlay
-        graphSvg
-            .append("g")
-            .attr("class", "lineOverlays")
-            .selectAll("lineOverlays")
-            .data(cardinalityByName)
-            .enter().append(function (d) {
-            let obj = d3.select(this);
-            return node_links_1.drawNodeLink(obj, d);
-        });
         //Prepare Data as Tasklist
         let taskList = createTaskList(result);
         //Draw the Nodes
@@ -786,14 +632,14 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             .selectAll(".node")
             .data(taskList)
             .enter().append("circle")
-            .attr("r", constants_3.nodeRadius)
+            .attr("r", constants_2.nodeRadius)
             .attr("class", "node")
             .attr("cx", function (d) {
-            return exports.xScale(datastructure_5.getTaskByName(d.id).cx);
+            return exports.xScale(datastructure_3.getTaskByName(d.id).cx);
         })
             .attr("cy", function (d) {
-            let yScale = exports.yScalePerMaschine.get(datastructure_5.getTaskByName(d.id).address);
-            return yScale(datastructure_5.getTaskByName(d.id).cy);
+            let yScale = exports.yScalePerMaschine.get(datastructure_3.getTaskByName(d.id).address);
+            return yScale(datastructure_3.getTaskByName(d.id).cy);
         })
             .style("fill", function (d) {
             return nodeColor(d.id);
@@ -806,28 +652,28 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
             .data(taskList)
             .enter().append(function (d) {
             let obj = d3.select(this);
-            return node_1.drawNode(obj, exports.xScale(d.cx), exports.yScalePerMaschine.get(datastructure_5.getTaskByName(d.id).address)(datastructure_5.getTaskByName(d.id).cy), d);
+            return node_1.drawNode(obj, exports.xScale(d.cx), exports.yScalePerMaschine.get(datastructure_3.getTaskByName(d.id).address)(datastructure_3.getTaskByName(d.id).cy), d);
         });
         //Init Metrics for in and out - Queue
         let initList = getInitList(taskList);
-        RestInterface_3.initMetricForTasks("buffers.inPoolUsage", initList, constants_3.inOutPoolResolution).done(function () {
+        RestInterface_2.initMetricForTasks("buffers.inPoolUsage", initList, constants_2.inOutPoolResolution).done(function () {
             setInterval(function () {
                 updateInputQueue(initList);
-            }, (constants_3.inOutPoolResolution * 1000));
+            }, (constants_2.inOutPoolResolution * 1000));
         });
-        RestInterface_3.initMetricForTasks("buffers.outPoolUsage", initList, constants_3.inOutPoolResolution).done(function () {
+        RestInterface_2.initMetricForTasks("buffers.outPoolUsage", initList, constants_2.inOutPoolResolution).done(function () {
             setInterval(function () {
                 updateOutputQueue(initList);
-            }, (constants_3.inOutPoolResolution * 1000));
+            }, (constants_2.inOutPoolResolution * 1000));
         });
     });
     // Helper Functions
     function updateInputQueue(data) {
         let queueElements = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (constants_3.inOutPoolResolution + 200)).done(function (result) {
+            RestInterface_2.getDataFromMetrics("buffers.inPoolUsage", item, Date.now() - (constants_2.inOutPoolResolution + 200)).done(function (result) {
                 if (result.values.length != 0) {
-                    let queueElement = new datastructure_5.QueueElement("inQueue" /* left */, result.values[0][1], item);
+                    let queueElement = new datastructure_3.QueueElement("inQueue" /* left */, result.values[0][1], item);
                     queueElements.push(queueElement);
                     if (queueElements.length == data.length) {
                         node_1.updateNode(queueElements, true);
@@ -839,9 +685,9 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
     function updateOutputQueue(data) {
         let queueElements = [];
         data.forEach(function (item) {
-            RestInterface_3.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (constants_3.inOutPoolResolution + 200)).done(function (result) {
+            RestInterface_2.getDataFromMetrics("buffers.outPoolUsage", item, Date.now() - (constants_2.inOutPoolResolution + 200)).done(function (result) {
                 if (result.values.length != 0) {
-                    let queueElement = new datastructure_5.QueueElement("outQueue" /* right */, result.values[0][1], item);
+                    let queueElement = new datastructure_3.QueueElement("outQueue" /* right */, result.values[0][1], item);
                     queueElements.push(queueElement);
                     if (queueElements.length == data.length) {
                         node_1.updateNode(queueElements, false);
@@ -861,7 +707,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         let listOfTasks = [];
         input.forEach(function (item, i) {
             item.tasks.forEach(function (t, j) {
-                let task = new datastructure_5.Task(t.id, i, j);
+                let task = new datastructure_3.Task(t.id, i, j);
                 listOfTasks.push(task);
             });
         });
@@ -872,9 +718,9 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         for (let i = 1; i < dataset.length; i++) {
             dataset[i].tasks.forEach(function (task, j) {
                 task.input.forEach(function (input, k) {
-                    let target = new datastructure_5.Task(input, i - 1, k, dataset[i - 1].name);
-                    let source = new datastructure_5.Task(task.id, i, j, dataset[i].name, task.host);
-                    let cardinality = new datastructure_5.Cardinality(source, target);
+                    let target = new datastructure_3.Task(input, i - 1, k, dataset[i - 1].name);
+                    let source = new datastructure_3.Task(task.id, i, j, dataset[i].name, task.host);
+                    let cardinality = new datastructure_3.Cardinality(source, target);
                     links.push(cardinality);
                 });
             });
@@ -888,7 +734,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
                 task.input.forEach(function (input) {
                     let source = input;
                     let target = task.id;
-                    let cardinality = new datastructure_5.CardinalityByString(source, target);
+                    let cardinality = new datastructure_3.CardinalityByString(source, target);
                     links.push(cardinality);
                 });
             });
@@ -899,7 +745,7 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         let listToOrder = [];
         dataset.forEach(function (operator) {
             operator.tasks.forEach(function (task, i) {
-                let listTask = new datastructure_5.Task(task.id, datastructure_5.getXValue(operator.id), undefined, operator.id, task.address, task.input);
+                let listTask = new datastructure_3.Task(task.id, datastructure_3.getXValue(operator.id), undefined, operator.id, task.address, task.input);
                 listToOrder.push(listTask);
             });
         });
@@ -935,12 +781,255 @@ define("longGraph", ["require", "exports", "RestInterface", "datastructure", "Li
         entries.forEach(function (entry) {
             entry.values.forEach(function (operator) {
                 operator.values.forEach(function (task, k) {
-                    let mapTask = new datastructure_5.Task(task.id, task.cx, (k), operator.key, entry.key, task.input);
-                    datastructure_5.setTaskByName(mapTask);
+                    let mapTask = new datastructure_3.Task(task.id, task.cx, (k), operator.key, entry.key, task.input);
+                    datastructure_3.setTaskByName(mapTask);
                 });
             });
         });
         return entries;
+    }
+});
+define("node_links", ["require", "exports", "datastructure", "constants", "longGraph", "d3"], function (require, exports, datastructure_4, constants_3, longGraph_1, d3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    let percentToLength = d3.scaleLinear()
+        .range([constants_3.arcRadius.outer, constants_3.sendRecieveIndicator])
+        .domain([0, 100]);
+    function drawNodeLink(obj, link, level) {
+        let svg = obj;
+        let g = svg.append("g");
+        let outputStream = svg.append("g");
+        outputStream.append("path")
+            .attr("class", "inFractionFull")
+            .datum(link)
+            .attr("id", function (d) {
+            return d.target + "inputFractionFull" + d.source;
+        })
+            .attr("d", function (d) {
+            let mT = calcFilling(d, false);
+            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
+                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
+                + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
+        });
+        outputStream.append("path")
+            .attr("class", "inFractionLink")
+            .datum(link)
+            .attr("id", function (d) {
+            return d.target + "inputFractionLink" + d.source;
+        })
+            .attr("d", function (d) {
+            let mT = calcFilling(d, false, percentToLength(60));
+            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
+                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
+                + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
+        });
+        let inputStreamMax = svg.append("g");
+        inputStreamMax.append("path")
+            .attr("class", "outFractionFull")
+            .datum(link.reverse())
+            .attr("id", function (d) {
+            return d.source + "outputFractionFull" + d.target;
+        })
+            .attr("d", function (d) {
+            let mT = calcFilling(d, true);
+            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
+                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
+                + "A" + 0 + "," + 0 + " 0 0,1 "
+                + mT.x + ","
+                + mT.y;
+        });
+        inputStreamMax.append("path")
+            .attr("class", "outFractionLink")
+            .datum(link)
+            .attr("id", function (d) {
+            return normalizeString(d.source + "outputFractionLink" + d.target);
+        })
+            .attr("d", (d) => {
+            return line(d);
+        });
+        return g.node();
+    }
+    exports.drawNodeLink = drawNodeLink;
+    function updateNodeLink(updateNodeList) {
+        let svg = d3.selectAll(".outFractionLink");
+        console.log(svg);
+        updateNodeList.forEach(function (item) {
+            let svgItem = d3.select("#" + normalizeString(item.source + "outputFractionLink" + item.target));
+            if (svgItem) {
+                svgItem
+                    .datum(item)
+                    .attr("d", function (d) {
+                    return line(d);
+                });
+            }
+        });
+    }
+    exports.updateNodeLink = updateNodeLink;
+    //Helper Functions
+    function calcFilling(link, reverse, level) {
+        let alpha = Math.atan((longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(link.target).address)(datastructure_4.getTaskByName(link.target).cy) - longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(link.source).address)(datastructure_4.getTaskByName(link.source).cy)) / (longGraph_1.xScale(datastructure_4.getTaskByName(link.target).cx) - longGraph_1.xScale(datastructure_4.getTaskByName(link.source).cx)));
+        let mX = longGraph_1.xScale(datastructure_4.getTaskByName(link.source).cx);
+        let mY = longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(link.source).address)(datastructure_4.getTaskByName(link.source).cy);
+        if (reverse) {
+            if (level != null) {
+                mX -= (level) * Math.cos(alpha);
+                mY -= (level) * Math.sin(alpha);
+            }
+            else {
+                mX -= (constants_3.sendRecieveIndicator) * Math.cos(alpha);
+                mY -= (constants_3.sendRecieveIndicator) * Math.sin(alpha);
+            }
+        }
+        else {
+            if (level != null) {
+                mX += (level) * Math.cos(alpha);
+                mY += (level) * Math.sin(alpha);
+            }
+            else {
+                mX += (constants_3.sendRecieveIndicator) * Math.cos(alpha);
+                mY += (constants_3.sendRecieveIndicator) * Math.sin(alpha);
+            }
+        }
+        let value = new datastructure_4.Value(mX, mY);
+        return value;
+    }
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * Math.floor(max));
+    }
+    function line(d) {
+        let mT = calcFilling(d, true, percentToLength(getRandomInt(100)));
+        return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
+            + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
+            + "A" + 0 + "," + 0 + " 0 0,1 "
+            + mT.x + ","
+            + mT.y;
+    }
+    function pathTween(d1, precision) {
+        return function () {
+            let path0 = this, path1 = path0.cloneNode(), n0 = path0.getTotalLength(), n1 = (path1.setAttribute("d", d1), path1).getTotalLength();
+            // Uniform sampling of distance based on specified precision.
+            let distances = [0], i = 0, dt = precision / Math.max(n0, n1);
+            while ((i += dt) < 1)
+                distances.push(i);
+            distances.push(1);
+            // Compute point-interpolators at each distance.
+            let points = distances.map(function (t) {
+                let p0 = path0.getPointAtLength(t * n0), p1 = path1.getPointAtLength(t * n1);
+                return d3.interpolate([p0.x, p0.y], [p1.x, p1.y]);
+            });
+            return function (t) {
+                return t < 1 ? "M" + points.map(function (p) { return p(t); }).join("L") : d1;
+            };
+        };
+    }
+    function normalizeString(input) {
+        let output = input.replace(/[^a-zA-Z0-9]+/g, "");
+        return output;
+    }
+});
+define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure", "LinePlot", "node_links"], function (require, exports, RestInterface_3, datastructure_5, LinePlot_2, node_links_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    RestInterface_3.getMetrics.done(function (result) {
+        setOptions(result, "metrics");
+    });
+    RestInterface_3.getTopology.done(function (result) {
+        $("#Ids").empty();
+        if ($("#taskoroperator").val() == "byOperator") {
+            let optionsByOperator = [];
+            result.forEach(function (item) {
+                optionsByOperator.push(item.name);
+            });
+            setOptions(optionsByOperator, "Ids");
+        }
+        else {
+            let optionsByTask = [];
+            result.forEach(function (item) {
+                item.tasks.forEach(function (ite) {
+                    optionsByTask.push(ite.id);
+                });
+            });
+            setOptions(optionsByTask, "Ids");
+        }
+    });
+    window.onload = function () {
+        RestInterface_3.getOptimizeStatus();
+        setInterval(function () {
+            RestInterface_3.getDataFromEdges().done(function (result) {
+                let cardinalityByRest = [];
+                result.map(function (item) {
+                    let cardinaltyByString = new datastructure_5.CardinalityByString(item.src, item.dst, item.inFraction, item.outFraction);
+                    cardinalityByRest.push(cardinaltyByString);
+                });
+                node_links_2.updateNodeLink(cardinalityByRest);
+            });
+            console.log("FYI");
+        }, 5000);
+    };
+    $("#taskoroperator").on("change", function () {
+        RestInterface_3.getTopology.done(function (result) {
+            $("#Ids").empty();
+            console.log(result);
+            if ($("#taskoroperator").val() == "byOperator") {
+                let optionsByOperator = [];
+                result.forEach(function (item) {
+                    optionsByOperator.push(item.name);
+                });
+                setOptions(optionsByOperator, "Ids");
+            }
+            else {
+                let optionsByTask = [];
+                result.forEach(function (item) {
+                    item.tasks.forEach(function (ite) {
+                        optionsByTask.push(ite.id);
+                    });
+                });
+                setOptions(optionsByTask, "Ids");
+            }
+        });
+    });
+    $("#initButton").on("click", function () {
+        initMetricOnAction();
+    });
+    $("#optimizeBtn").on("click", function () {
+        let isoptimizedLoad = RestInterface_3.optimizeLoad();
+        isoptimizedLoad.done(function () {
+            if (RestInterface_3.getIsOptimized()) {
+                $("#optimizeBtn").addClass("isOptimized");
+            }
+            else {
+                $("#optimizeBtn").removeClass("isOptimized");
+            }
+        });
+    });
+    function initMetricOnAction() {
+        let metric = $("#metrics").val().toString();
+        let Ids = $("#Ids").val();
+        let resolutionString = $("input[name=resolutionselect]:checked").val();
+        let resolution = parseInt(resolutionString);
+        let post = RestInterface_3.initMetricForTasks(metric, Ids, resolution);
+        post.done(function () {
+            let metrics = RestInterface_3.getInitMetrics();
+            metrics.forEach(function (metric) {
+                metric.taskIds.forEach(function (task) {
+                    let selmetric = new datastructure_5.Metric(task, metric.metricId, metric.resolution);
+                    LinePlot_2.setSeries(selmetric, Date.now());
+                });
+            });
+        });
+    }
+    function setOptions(arrayOfOptions, parentElementTag) {
+        let metricSelector = document.getElementById(parentElementTag);
+        arrayOfOptions.forEach(function (value) {
+            let el = document.createElement("option");
+            el.textContent = value;
+            el.value = value;
+            metricSelector.appendChild(el);
+        });
     }
 });
 //# sourceMappingURL=app.js.map

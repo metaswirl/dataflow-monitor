@@ -41,25 +41,25 @@ circle {
 	stroke: rgba(10, 10, 10, 0.6);
 	stroke-width: 1.5px;
 }
-.outStreamFull{
+.outFractionFull{
 	fill: none;
 	stroke: rgba(67, 123, 191, 0.7);
 	stroke-width: 5px;
 
 }
-.outStreamLink{
+.outFractionLink{
 	fill: none;
 	stroke: #fff;
-	stroke-width: 5px;
+	stroke-width: 3.5px;
 
 }
-.inStreamFull{
+.inFractionFull{
 	fill: none;
 	stroke: rgba(67, 123, 191, 0.7);
 	stroke-width: 5px;
 
 }
-.inStreamLink{
+.inFractionLink{
 	fill: none;
 	stroke: #fff;
 	stroke-width: 3.5px;
