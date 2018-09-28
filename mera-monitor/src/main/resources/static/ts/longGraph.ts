@@ -1,13 +1,5 @@
 import {getDataFromEdges, getDataFromMetrics, getTopology, initMetricForTasks} from "./RestInterface";
-import {
-    Cardinality,
-    CardinalityByString,
-    getTaskByName,
-    getXValue,
-    QueueElement,
-    setTaskByName,
-    Task
-} from "./datastructure";
+import {CardinalityByString, getTaskByName, getXValue, QueueElement, setTaskByName, Task} from "./datastructure";
 import {colorScaleLines} from "./LinePlot";
 import {drawNode, updateNode} from "./node";
 import {inOutPoolResolution, nodeRadius, sides} from "./constants";
@@ -52,15 +44,14 @@ let shortGraphSvg = d3.select("#shortGraph")
 let nodeColor = colorScaleLines;
 //Set SVG Hierachy before Rest calls
 let links = graphSvg
-                .append("g")
-                .attr("class", "links");
+        .append("g")
+        .attr("class", "links");
 let linkOverlay = graphSvg
-                    .append("g")
-                    .attr("class", "lineOverlays");
+        .append("g")
+        .attr("class", "lineOverlays");
 
 getTopology.done(function (result) {
     result.reverse();
-    console.log(result);
     let hierachy = getHierachy(result);
     sumOfTPE = maxNumberOfTPE.reduce((a,b) => a + b.maxNumber, 0);
     let taskSpace = canvas.height/sumOfTPE;
@@ -76,9 +67,6 @@ getTopology.done(function (result) {
        yScalePerMaschine.set(machine.key, yScale);
        canvasStart = max;
     });
-    
-
-
     // xAxis prepare
     xScale.domain([0, result.length -1]);
     xScale.range([0, canvas.width]);
@@ -120,9 +108,6 @@ getTopology.done(function (result) {
                 return "translate(" + 0 + "," + textElem.getBBox().height * 0.5 + ")rotate(0)";
             }
         });
-
-    //Prepare Cardinality List
-    let cardinalityByName = getLinksByName(result);
 
     getDataFromEdges().done(function (result) {
         let cardinalityByRest:Array<CardinalityByString> = [];
@@ -206,11 +191,10 @@ getTopology.done(function (result) {
             return xScale(getTaskByName(d.id).cx)
         })
         .attr("cy", function (d: Task) {
-            let yScale = yScalePerMaschine.get(getTaskByName(d.id).address);
-            return yScale(getTaskByName(d.id).cy)
+            return yScalePerMaschine.get(getTaskByName(d.id).address)(getTaskByName(d.id).cy)
         })
-        .style("fill", function (d: Task) {
-            return nodeColor(d.id) as string
+        .style("fill", function () {
+            return "rgb(49, 130, 189)"
         });
     //Draw Node Overlay
     graphSvg
@@ -219,8 +203,7 @@ getTopology.done(function (result) {
         .selectAll("nodeOverlays")
         .data(taskList)
         .enter().append(function (d: Task) {
-        let obj = d3.select(this);
-        return drawNode(obj, xScale(d.cx), yScalePerMaschine.get(getTaskByName(d.id).address)(getTaskByName(d.id).cy), d);
+        return drawNode(d3.select(this), d);
         });
 
 
@@ -276,7 +259,6 @@ function getInitList(data:Array<Task>):Array<string> {
     });
     return initList;
 }
-
 function createTaskList(input):Array<Task> {
     let listOfTasks:Array<Task> = [];
     input.forEach(function (item, i) {
@@ -286,35 +268,6 @@ function createTaskList(input):Array<Task> {
         })
     });
     return listOfTasks;
-}
-
-function getLinks(dataset):Array<Cardinality> {
-    let links: Array<Cardinality> = [];
-    for (let i = 1; i < dataset.length; i++) {
-        dataset[i].tasks.forEach(function (task, j) {
-            task.input.forEach(function (input, k) {
-                let target = new Task(input, i-1, k, dataset[i-1].name);
-                let source = new Task(task.id, i, j, dataset[i].name, task.host);
-                let cardinality = new Cardinality(source, target);
-                links.push(cardinality);
-            })
-        })
-    }
-    return links;
-}
-function getLinksByName(dataset):Array<CardinalityByString> {
-    let links:Array<CardinalityByString> = [];
-    for (let i = 1; i < dataset.length; i++) {
-        dataset[i].tasks.forEach(function (task) {
-            task.input.forEach(function (input) {
-                let source = input;
-                let target = task.id;
-                let cardinality = new CardinalityByString(source, target);
-                links.push(cardinality);
-            })
-        })
-    }
-    return links
 }
 function getHierachy(dataset:Array<object>) {
     let listToOrder:Array<Task> = [];
@@ -336,8 +289,6 @@ function getHierachy(dataset:Array<object>) {
             return v.length
         })
         .entries(listToOrder);
-    console.log(parallelismList);
-
         parallelismList.forEach(function (machine) {
             let machineId = machine.key;
             let maxNumber = Math.max.apply(Math, machine.values.map(function(o) { return o.value; }));
