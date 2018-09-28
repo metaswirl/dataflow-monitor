@@ -803,44 +803,29 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
             .attr("class", "inFractionFull")
             .datum(link)
             .attr("id", function (d) {
-            return d.target + "inputFractionFull" + d.source;
+            return normalizeString(d.target + "inputFractionFull" + d.source);
         })
             .attr("d", function (d) {
-            let mT = calcFilling(d, false);
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
+            return line(d, false, percentToLength(100));
         });
         outputStream.append("path")
             .attr("class", "inFractionLink")
             .datum(link)
             .attr("id", function (d) {
-            return d.target + "inputFractionLink" + d.source;
+            return normalizeString(d.target + "inputFractionLink" + d.source);
         })
             .attr("d", function (d) {
-            let mT = calcFilling(d, false, percentToLength(60));
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
+            return line(d, false, percentToLength(getRandomInt(100)));
         });
         let inputStreamMax = svg.append("g");
         inputStreamMax.append("path")
             .attr("class", "outFractionFull")
             .datum(link.reverse())
             .attr("id", function (d) {
-            return d.source + "outputFractionFull" + d.target;
+            return normalizeString(d.source + "outputFractionFull" + d.target);
         })
             .attr("d", function (d) {
-            let mT = calcFilling(d, true);
-            return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
-                + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
-                + "A" + 0 + "," + 0 + " 0 0,1 "
-                + mT.x + ","
-                + mT.y;
+            return line(d, true, percentToLength(100));
         });
         inputStreamMax.append("path")
             .attr("class", "outFractionLink")
@@ -849,23 +834,25 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
             return normalizeString(d.source + "outputFractionLink" + d.target);
         })
             .attr("d", (d) => {
-            return line(d);
+            return line(d, true, percentToLength(getRandomInt(100)));
         });
         return g.node();
     }
     exports.drawNodeLink = drawNodeLink;
     function updateNodeLink(updateNodeList) {
-        let svg = d3.selectAll(".outFractionLink");
-        console.log(svg);
         updateNodeList.forEach(function (item) {
-            let svgItem = d3.select("#" + normalizeString(item.source + "outputFractionLink" + item.target));
-            if (svgItem) {
-                svgItem
-                    .datum(item)
-                    .attr("d", function (d) {
-                    return line(d);
-                });
-            }
+            let inLink = d3.select("#" + normalizeString(item.target + "inputFractionLink" + item.source));
+            inLink
+                .datum(item)
+                .transition()
+                .duration(1000)
+                .attrTween("d", pathTween(line(item, false, percentToLength(getRandomInt(100))), 4));
+            let outLink = d3.select("#" + normalizeString(item.target + "outputFractionLink" + item.source));
+            outLink
+                .datum(item)
+                .transition()
+                .duration(1000)
+                .attrTween("d", pathTween(line(item.reverse(), true, percentToLength(getRandomInt(100))), 4));
         });
     }
     exports.updateNodeLink = updateNodeLink;
@@ -900,8 +887,8 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
     function getRandomInt(max) {
         return Math.floor(Math.random() * Math.floor(max));
     }
-    function line(d) {
-        let mT = calcFilling(d, true, percentToLength(getRandomInt(100)));
+    function line(d, output, level) {
+        let mT = calcFilling(d, output, level);
         return "M" + longGraph_1.xScale(datastructure_4.getTaskByName(d.source).cx) + ","
             + longGraph_1.yScalePerMaschine.get(datastructure_4.getTaskByName(d.source).address)(datastructure_4.getTaskByName(d.source).cy)
             + "A" + 0 + "," + 0 + " 0 0,1 "
@@ -927,7 +914,7 @@ define("node_links", ["require", "exports", "datastructure", "constants", "longG
         };
     }
     function normalizeString(input) {
-        let output = input.replace(/[^a-zA-Z0-9]+/g, "");
+        let output = input.replace(/[^a-zA-Z0-9]/gm, "");
         return output;
     }
 });
@@ -967,7 +954,6 @@ define("interfaceLoads", ["require", "exports", "RestInterface", "datastructure"
                 });
                 node_links_2.updateNodeLink(cardinalityByRest);
             });
-            console.log("FYI");
         }, 5000);
     };
     $("#taskoroperator").on("change", function () {

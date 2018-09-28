@@ -14,29 +14,19 @@ export function drawNodeLink(obj, link:CardinalityByString, level?:number) {
             .attr("class", "inFractionFull")
             .datum(link)
             .attr("id", function (d: CardinalityByString) {
-                return d.target + "inputFractionFull" + d.source
+                return normalizeString(d.target + "inputFractionFull" + d.source)
             })
             .attr("d", function (d:CardinalityByString) {
-                let mT = calcFilling(d, false);
-                return "M" + xScale(getTaskByName(d.source).cx) + ","
-                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
-                    + "A" + 0 + "," + 0 + " 0 0,1 "
-                    + mT.x + ","
-                    + mT.y;
+                return line(d, false, percentToLength(100))
             });
         outputStream.append("path")
             .attr("class", "inFractionLink")
             .datum(link)
             .attr("id", function (d: CardinalityByString) {
-              return d.target + "inputFractionLink" + d.source
+              return normalizeString(d.target + "inputFractionLink" + d.source)
             })
             .attr("d", function (d:CardinalityByString) {
-                let mT = calcFilling(d, false, percentToLength(60));
-                return "M" + xScale(getTaskByName(d.source).cx) + ","
-                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
-                    + "A" + 0 + "," + 0 + " 0 0,1 "
-                    + mT.x + ","
-                    + mT.y;
+                return line(d, false, percentToLength(getRandomInt(100)))
             });
 
     let inputStreamMax = svg.append("g");
@@ -44,15 +34,10 @@ export function drawNodeLink(obj, link:CardinalityByString, level?:number) {
             .attr("class", "outFractionFull")
             .datum(link.reverse())
             .attr("id", function (d: CardinalityByString) {
-                return d.source + "outputFractionFull" + d.target
+                return normalizeString(d.source + "outputFractionFull" + d.target)
             })
             .attr("d", function (d: CardinalityByString) {
-                let mT = calcFilling(d, true);
-                return "M" + xScale(getTaskByName(d.source).cx) + ","
-                    + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
-                    + "A" + 0 + "," + 0 + " 0 0,1 "
-                    + mT.x + ","
-                    + mT.y
+               return line(d, true, percentToLength(100))
             });
         inputStreamMax.append("path")
             .attr("class", "outFractionLink")
@@ -61,26 +46,27 @@ export function drawNodeLink(obj, link:CardinalityByString, level?:number) {
                 return normalizeString(d.source + "outputFractionLink" + d.target)
             })
             .attr("d", (d) => {
-                return line(d)
+                return line(d, true, percentToLength(getRandomInt(100)))
             });
 
     return g.node();
 
 }
 export function updateNodeLink(updateNodeList:Array<CardinalityByString>) {
-    let svg = d3.selectAll(".outFractionLink");
-    console.log(svg);
     updateNodeList.forEach(function (item) {
-            let svgItem = d3.select("#" + normalizeString(item.source + "outputFractionLink" + item.target));
-            if(svgItem){
-                svgItem
-                    .datum(item)
-                    .attr("d", function (d) {
-                        return line(d)
-                    });
+        let inLink = d3.select("#" + normalizeString(item.target + "inputFractionLink" + item.source));
+            inLink
+                .datum(item)
+                .transition()
+                .duration(1000)
+                .attrTween("d", pathTween(line(item, false, percentToLength(getRandomInt(100))) ,4));
 
-            }
-
+        let outLink = d3.select("#" + normalizeString(item.target + "outputFractionLink" + item.source));
+            outLink
+                .datum(item)
+                .transition()
+                .duration(1000)
+                .attrTween("d", pathTween(line(item.reverse(), true, percentToLength(getRandomInt(100))) ,4));
         })
 }
 
@@ -116,8 +102,8 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * Math.floor(max));
 }
 
-function line(d) {
-    let mT = calcFilling(d, true, percentToLength(getRandomInt(100)));
+function line(d, output:Boolean, level:number) {
+    let mT = calcFilling(d, output , level);
     return "M" + xScale(getTaskByName(d.source).cx) + ","
         + yScalePerMaschine.get(getTaskByName(d.source).address)(getTaskByName(d.source).cy)
         + "A" + 0 + "," + 0 + " 0 0,1 "
@@ -149,6 +135,6 @@ function pathTween(d1, precision) {
     };
 }
 function normalizeString(input:string):string {
-    let output = input.replace(/[^a-zA-Z0-9]+/g,"");
+    let output = input.replace(/[^a-zA-Z0-9]/gm, "");
     return output;
 }

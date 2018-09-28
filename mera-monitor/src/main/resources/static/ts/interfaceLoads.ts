@@ -50,7 +50,6 @@ window.onload = function(){
           });
           updateNodeLink(cardinalityByRest);
       });
-      console.log("FYI")
   }, 5000)
 };
 $("#taskoroperator").on("change", function () {
