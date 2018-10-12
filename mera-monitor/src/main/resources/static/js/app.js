@@ -402,7 +402,7 @@ define("node", ["require", "exports", "d3", "datastructure", "constants", "longG
             .attr("class", "inQueueOutline");
         g.append("path")
             .datum({ endAngle: 2 * Math.PI })
-            .style("fill", "gray")
+            .style("fill", "rgba(106,106,106,0.8)")
             .style("stroke", "black")
             .attr("d", arcOut)
             .attr("class", "inQueue")
